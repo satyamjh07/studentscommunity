@@ -1,0 +1,173 @@
+/* ============================================
+   STUDY AURA — CLOUDINARY UI STYLES
+   Add to your existing style.css
+   ============================================ */
+
+/* ── Upload Progress Bar ─────────────────────── */
+.upload-progress-wrap {
+  position: relative;
+  height: 4px;
+  background: var(--surface2, #2a2a3a);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-top: 0.5rem;
+}
+
+.upload-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent, #6c63ff), var(--green, #22c55e));
+  border-radius: 99px;
+  transition: width 0.2s ease;
+}
+
+.upload-progress-label {
+  position: absolute;
+  right: 0;
+  top: -1.3rem;
+  font-size: 0.7rem;
+  color: var(--text3, #888);
+}
+
+/* ── Avatar Preview ──────────────────────────── */
+#avatar-preview,
+#settings-avatar-preview {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--surface2, #1e1e2e);
+  border: 2px solid var(--border, #333);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  transition: border-color 0.2s;
+}
+
+#avatar-preview img,
+#settings-avatar-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ── Post Composer Image Section ─────────────── */
+.post-image-section {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.post-image-attach-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.post-image-attach-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: var(--text3, #888);
+  background: none;
+  border: 1px solid var(--border, #333);
+  border-radius: 8px;
+  padding: 0.3rem 0.75rem;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.post-image-attach-btn:hover {
+  color: var(--accent, #6c63ff);
+  border-color: var(--accent, #6c63ff);
+}
+
+#post-image-input {
+  display: none;
+}
+
+/* ── Post Image Preview (in composer) ────────── */
+#post-image-preview {
+  display: none;
+  position: relative;
+  max-width: 200px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border, #333);
+}
+
+#post-image-preview img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.post-image-remove-btn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.65);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-size: 0.75rem;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.post-image-remove-btn:hover {
+  background: rgba(255, 60, 60, 0.8);
+}
+
+/* ── Post Image (in feed) ────────────────────── */
+.post-image-wrap {
+  margin: 0.5rem 0;
+  border-radius: 10px;
+  overflow: hidden;
+  max-height: 400px;
+}
+
+.post-image {
+  width: 100%;
+  max-height: 400px;
+  object-fit: cover;
+  display: block;
+  border-radius: 10px;
+  transition: opacity 0.2s;
+}
+
+.post-image:hover {
+  opacity: 0.92;
+}
+
+/* ── Lightbox ────────────────────────────────── */
+#image-lightbox {
+  animation: lb-fade-in 0.18s ease;
+}
+
+@keyframes lb-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── Upload size hint ────────────────────────── */
+.upload-hint {
+  font-size: 0.72rem;
+  color: var(--text3, #888);
+  margin-top: 0.2rem;
+}
+
+/* ── Onboarding upload progress placeholder ──── */
+#onboarding-upload-progress,
+#settings-upload-progress,
+#post-image-progress {
+  min-height: 4px;
+  margin-top: 0.4rem;
+}
