@@ -6,6 +6,13 @@
 // Expose Supabase URL for Edge Function calls in other files
 window.SUPABASE_URL = SUPABASE_URL;
 
+// ── Aura score cache — avoid hitting the Edge Function on every dashboard visit ──
+let _auraCacheScore = null;
+let _auraCacheLevel = null;
+let _auraCachePercentile = null;
+let _auraCacheTime = 0;
+const AURA_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
 // ── Navigation ───────────────────────────────
 function goToPage(pageId) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -21,7 +28,7 @@ function goToPage(pageId) {
 
   if (pageId === 'dashboard') loadDashboardData();
   if (pageId === 'timer') onTimerPageOpen();
-  if (pageId === 'community') loadPosts();
+  if (pageId === 'community') { loadPosts(); loadPopularPosts(); }
   if (pageId === 'whitenoise') onWhitenoisePageOpen();
   if (pageId === 'admin') loadAdminPanel();
   if (pageId === 'notifications') {
@@ -54,8 +61,9 @@ function closeMobileSidebar() {
 }
 
 // ── Dashboard Data ───────────────────────────
-async function loadDashboardData() {
+async function loadDashboardData(options = {}) {
   if (!currentUser) return;
+  const { skipAura = false } = options;
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
@@ -98,8 +106,8 @@ async function loadDashboardData() {
 
   buildWeeklyBars(allSessions);
 
-  // ── Aura Score — fetch from Edge Function ─────────────────────────
-  loadAuraScore();
+  // ── Aura Score — fetch from Edge Function (cached, skip after timer stop) ─
+  if (!skipAura) loadAuraScore();
 }
 
 // ── Aura Score ───────────────────────────────
@@ -110,6 +118,16 @@ async function loadAuraScore() {
   const cardEl   = document.getElementById('aura-card');
 
   if (!scoreEl) return; // aura card not in HTML yet
+
+  // ── Serve from cache if fresh ──────────────
+  const now = Date.now();
+  if (_auraCacheScore !== null && (now - _auraCacheTime) < AURA_CACHE_TTL_MS) {
+    scoreEl.textContent = _auraCacheScore;
+    if (levelEl) levelEl.textContent = _auraCacheLevel ?? '';
+    if (pctEl && _auraCachePercentile !== null) pctEl.textContent = `Top ${100 - _auraCachePercentile}% of users`;
+    return;
+  }
+
   scoreEl.textContent  = '...';
   if (levelEl) levelEl.textContent = '';
   if (pctEl) pctEl.textContent = '';
@@ -130,10 +148,16 @@ async function loadAuraScore() {
     if (!res.ok) return;
     const data = await res.json();
 
-    scoreEl.textContent = data.aura_score ?? '—';
-    if (levelEl) levelEl.textContent = data.aura_level ?? '';
-    if (pctEl && data.percentile !== undefined) {
-      pctEl.textContent = `Top ${100 - data.percentile}% of users`;
+    // ── Populate cache ─────────────────────
+    _auraCacheScore      = data.aura_score ?? '—';
+    _auraCacheLevel      = data.aura_level ?? '';
+    _auraCachePercentile = data.percentile ?? null;
+    _auraCacheTime       = Date.now();
+
+    scoreEl.textContent = _auraCacheScore;
+    if (levelEl) levelEl.textContent = _auraCacheLevel;
+    if (pctEl && _auraCachePercentile !== null) {
+      pctEl.textContent = `Top ${100 - _auraCachePercentile}% of users`;
     }
 
     // Animate the score card
@@ -178,3 +202,23 @@ function buildWeeklyBars(sessions) {
       '" style="height:' + Math.max(pct, 4) + '%" data-val="' + label + '"></div></div>';
   }).join('');
 }
+
+document.querySelectorAll('.accordion-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const content = btn.nextElementSibling;
+
+    // close others (optional, feels cleaner)
+    document.querySelectorAll('.accordion-content').forEach(item => {
+      if (item !== content) {
+        item.style.maxHeight = null;
+      }
+    });
+
+    // toggle current
+    if (content.style.maxHeight) {
+      content.style.maxHeight = null;
+    } else {
+      content.style.maxHeight = content.scrollHeight + "px";
+    }
+  });
+});

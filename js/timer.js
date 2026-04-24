@@ -108,7 +108,7 @@ async function stopTimer() {
   elapsedSeconds = 0;
 
   loadTodaySessions();
-  loadDashboardData();
+  loadDashboardData({ skipAura: true }); // aura only changes daily, skip the Edge Function call
 }
 
 function stopTimerClean() {
@@ -163,7 +163,7 @@ async function resumeSession() {
     showToast('⚠️ Could not recover session: ' + err.message);
   }
 
-  loadDashboardData();
+  loadDashboardData({ skipAura: true });
 }
 
 async function discardSession() {

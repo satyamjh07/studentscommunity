@@ -57,7 +57,7 @@ async function callEdge(fnName, body) {
 // ── Render posts ─────────────────────────────
 async function loadPosts() {
   const list = document.getElementById('posts-list');
-  list.innerHTML = '<div class="loading-text">Loading posts...</div>';
+ list.innerHTML = new Array(4).fill(0).map(renderPostSkeleton).join('');
 
   const { data: posts, error } = await db.from('posts')
     .select('*, profiles(id, name, avatar_url, class, target_year, bio, role)')
@@ -155,11 +155,11 @@ function renderPost(post, score, myVote, previewComments, totalComments) {
       '<div class="post-actions-row">' +
         '<div class="emoji-vote-group">' +
           '<button class="emoji-vote-btn ' + likeActive + '" onclick="castVote(\'' + post.id + '\', 1)" title="Like">' +
-            '👍 ' + (score > 0 ? '<span class="emoji-count score-pos">' + score + '</span>' : '') +
-          '</button>' +
+  '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l-8 8h6v8h4v-8h6z"/></svg>' + likeCount +
+'</button>' +
           '<button class="emoji-vote-btn ' + dislikeActive + '" onclick="castVote(\'' + post.id + '\', -1)" title="Dislike">' +
-            '👎 ' + (score < 0 ? '<span class="emoji-count score-neg">' + Math.abs(score) + '</span>' : '') +
-          '</button>' +
+  ' <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 20l8-8h-6V4h-4v8H4z"/></svg>' + dislikeCount +
+'</button>' +
         '</div>' +
         '<button class="post-action-btn" onclick="openComments(\'' + post.id + '\', event)">' +
           '<svg width="13" height="13"><use href="#ic-chat"/></svg> ' +
@@ -400,50 +400,73 @@ async function openComments(postId, event) {
     '<div class="loading-text">Loading...</div>';
   document.getElementById("comments-list").innerHTML =
     '<div class="loading-text">Loading comments...</div>';
+  const voteRow = document.getElementById("modal-vote-row");
+  if (voteRow) { voteRow.style.display = "none"; voteRow.innerHTML = ""; }
 
-  const [{ data: post }, { data: comments }] = await Promise.all([
-    db
-      .from("posts")
-      .select(
-        "*, profiles(id, name, avatar_url, class, target_year, bio, role)",
-      )
-      .eq("id", postId)
-      .single(),
-    db
-      .from("comments")
-      .select("*, profiles(id, name, avatar_url, role)")
-      .eq("post_id", postId)
-      .order("created_at", { ascending: true }),
+  const [{ data: post }, { data: comments }, { data: allVotes }, { data: myVoteData }] = await Promise.all([
+    db.from("posts").select("*, profiles(id, name, avatar_url, class, target_year, bio, role)").eq("id", postId).single(),
+    db.from("comments").select("*, profiles(id, name, avatar_url, role)").eq("post_id", postId).order("created_at", { ascending: true }),
+    db.from("votes").select("value").eq("post_id", postId),
+    currentUser
+      ? db.from("votes").select("value").eq("post_id", postId).eq("user_id", currentUser.id).maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
 
   if (post) {
     activePostData = post;
     const p = post.profiles || {};
     const av = p.avatar_url
-      ? '<img src="' +
-        escHtml(p.avatar_url) +
-        '" alt="' +
-        escHtml(p.name || "User") +
-        '">'
+      ? '<img src="' + escHtml(p.avatar_url) + '" alt="' + escHtml(p.name || "User") + '">'
       : '<svg width="16" height="16" style="color:var(--text3)"><use href="#ic-user"/></svg>';
+
+    // Build images HTML using _buildImageGrid if available
+    let imagesHtml = '';
+    const imgs = _extractPostImages(post);
+    if (imgs.length && typeof _buildImageGrid === 'function') {
+      imagesHtml = _buildImageGrid(imgs);
+    }
+
+    const titleHtml = post.title
+      ? '<div class="modal-post-title">' + escHtml(post.title) + '</div>'
+      : '';
+
     document.getElementById("modal-post-content").innerHTML =
       '<div class="modal-post">' +
-      '<div class="modal-post-header">' +
-      '<div class="post-avatar small">' +
-      av +
-      "</div>" +
-      '<div><span class="post-author-name">' +
-      escHtml(p.name || "Anonymous") +
-      roleBadge(p.role) +
-      "</span>" +
-      '<span class="post-time"> · ' +
-      timeAgo(post.created_at) +
-      "</span></div>" +
-      "</div>" +
-      '<div class="modal-post-text">' +
-      escHtml(post.content) +
-      "</div>" +
-      "</div>";
+        '<div class="modal-post-header">' +
+          '<button class="post-avatar-btn" onclick="openProfileModal(\'' + (post.user_id || '') + '\')" title="View profile">' +
+            '<div class="post-avatar small">' + av + '</div>' +
+          '</button>' +
+          '<div>' +
+            '<button class="post-author-link" onclick="openProfileModal(\'' + (post.user_id || '') + '\')">' +
+              escHtml(p.name || "Anonymous") + roleBadge(p.role) +
+            '</button>' +
+            '<span class="post-time"> · ' + timeAgo(post.created_at) + '</span>' +
+          '</div>' +
+        '</div>' +
+        titleHtml +
+        '<div class="modal-post-text">' + escHtml(post.content) + '</div>' +
+        imagesHtml +
+      '</div>';
+
+    // ── Vote + Report row ─────────────────────────────────
+    const totalScore = (allVotes || []).reduce((a, v) => a + v.value, 0);
+    const myVote = myVoteData ? myVoteData.value : 0;
+    const likeActive    = myVote === 1  ? 'emoji-vote-active' : '';
+    const dislikeActive = myVote === -1 ? 'emoji-vote-active' : '';
+    if (voteRow) {
+      voteRow.innerHTML =
+        '<div class="emoji-vote-group">' +
+          '<button class="emoji-vote-btn ' + likeActive + '" onclick="castVote(\'' + postId + '\', 1)">' +
+            '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l-8 8h6v8h4v-8h6z"/></svg>' +
+          '</button>' +
+          '<span style="font-size:0.85rem;font-weight:700;color:var(--accent);min-width:28px;text-align:center">' + (totalScore > 0 ? '+' : '') + totalScore + '</span>' +
+          '<button class="emoji-vote-btn ' + dislikeActive + '" onclick="castVote(\'' + postId + '\', -1)">' +
+            '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 20l8-8h-6V4h-4v8H4z"/></svg>' +
+          '</button>' +
+        '</div>' +
+        '<button class="post-report-btn" style="margin-left:auto" onclick="openReportModal(\'post\', \'' + postId + '\', null)">🚩 Report</button>';
+      voteRow.style.display = 'flex';
+    }
   }
   renderCommentsInModal(comments || []);
 }
@@ -458,53 +481,38 @@ function renderCommentsInModal(comments) {
   list.innerHTML = comments
     .map((c) => {
       const name = c.profiles ? c.profiles.name : "Anonymous";
-      const av =
-        c.profiles && c.profiles.avatar_url
-          ? '<img src="' +
-            escHtml(c.profiles.avatar_url) +
-            '" alt="' +
-            escHtml(name) +
-            '">'
-          : '<svg width="14" height="14" style="color:var(--text3)"><use href="#ic-user"/></svg>';
       const profileId = c.profiles ? c.profiles.id : "";
       const profileRole = c.profiles ? c.profiles.role : "";
+      const av =
+        c.profiles && c.profiles.avatar_url
+          ? '<img src="' + escHtml(c.profiles.avatar_url) + '" alt="' + escHtml(name) + '">'
+          : '<svg width="14" height="14" style="color:var(--text3)"><use href="#ic-user"/></svg>';
+      const avatarEl = profileId
+        ? '<button class="post-avatar-btn" onclick="openProfileModal(\'' + profileId + '\')" title="View profile"><div class="comment-avatar">' + av + '</div></button>'
+        : '<div class="comment-avatar">' + av + '</div>';
+      const nameEl = profileId
+        ? '<button class="post-author-link" style="font-size:0.82rem" onclick="openProfileModal(\'' + profileId + '\')">' + escHtml(name) + roleBadge(profileRole) + '</button>'
+        : '<span class="comment-author-name">' + escHtml(name) + roleBadge(profileRole) + '</span>';
       return (
-        '<div class="comment-item" id="comment-' +
-        c.id +
-        '">' +
-        '<div class="comment-avatar">' +
-        av +
-        "</div>" +
+        '<div class="comment-item" id="comment-' + c.id + '">' +
+        avatarEl +
         '<div class="comment-content">' +
         '<div class="comment-author">' +
-        escHtml(name) +
-        roleBadge(profileRole) +
-        ' <span class="comment-time">' +
-        timeAgo(c.created_at) +
-        "</span>" +
-        "</div>" +
-        '<div class="comment-text">' +
-        escHtml(c.content) +
-        "</div>" +
+        nameEl +
+        ' <span class="comment-time">' + timeAgo(c.created_at) + '</span>' +
+        '</div>' +
+        '<div class="comment-text">' + escHtml(c.content) + '</div>' +
         '<div class="comment-actions">' +
-        "<button class=\"comment-action-btn\" onclick=\"openReportModal('comment', null, '" +
-        c.id +
-        "')\">🚩 Report</button>" +
+        '<button class="comment-action-btn" onclick="openReportModal(\'comment\', null, \'' + c.id + '\')">🚩 Report</button>' +
         (canModerate()
-          ? '<button class="comment-action-btn mod-btn" onclick="modDeleteComment(\'' +
-            c.id +
-            "')\">🗑️ Delete</button>"
-          : "") +
+          ? '<button class="comment-action-btn mod-btn" onclick="modDeleteComment(\'' + c.id + '\')">🗑️ Delete</button>'
+          : '') +
         (canModerate() && profileRole !== "admin" && profileId
-          ? '<button class="comment-action-btn mod-btn" onclick="openMuteModal(\'' +
-            profileId +
-            "', '" +
-            escHtml(name).replace(/'/g, "\\'") +
-            "')\">🔇 Mute</button>"
-          : "") +
-        "</div>" +
-        "</div>" +
-        "</div>"
+          ? '<button class="comment-action-btn mod-btn" onclick="openMuteModal(\'' + profileId + "', '" + escHtml(name).replace(/'/g, "\\'") + '\')">🔇 Mute</button>'
+          : '') +
+        '</div>' +
+        '</div>' +
+        '</div>'
       );
     })
     .join("");
@@ -512,6 +520,8 @@ function renderCommentsInModal(comments) {
 
 function closeCommentModal() {
   document.getElementById("comment-modal").style.display = "none";
+  const voteRow = document.getElementById("modal-vote-row");
+  if (voteRow) { voteRow.style.display = "none"; voteRow.innerHTML = ""; }
   activePostId = null;
   activePostData = null;
 }
@@ -598,3 +608,271 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+// ============================================================
+// HELPER: extract image array from a post object
+// Handles image_urls (array or JSON string) and legacy image_url
+// ============================================================
+function _extractPostImages(post) {
+  if (!post) return [];
+  if (Array.isArray(post.image_urls) && post.image_urls.length) return post.image_urls;
+  if (typeof post.image_urls === 'string' && post.image_urls.length > 2) {
+    try { return JSON.parse(post.image_urls); } catch (e) {}
+  }
+  if (post.image_url) return [post.image_url];
+  return [];
+}
+
+// ============================================================
+// POPULAR POSTS SIDEBAR
+// Shows posts with 10+ upvotes in the right sidebar.
+// Clicking opens a full modal with comments + vote buttons.
+// ============================================================
+
+let popularPostActiveId = null;
+
+async function loadPopularPosts() {
+  const container = document.getElementById('popular-posts-list');
+  if (!container) return;
+
+  container.innerHTML = '<div class="popular-posts-loading">Loading...</div>';
+
+  // Fetch all votes to compute scores
+  const { data: allVotes } = await db.from('votes').select('post_id, value');
+  if (!allVotes) {
+    container.innerHTML = '<div class="popular-posts-empty">No popular posts yet</div>';
+    return;
+  }
+
+  // Build score map
+  const scoreMap = {};
+  allVotes.forEach(v => {
+    scoreMap[v.post_id] = (scoreMap[v.post_id] || 0) + v.value;
+  });
+
+  // Filter post IDs with score >= 10
+  const popularIds = Object.keys(scoreMap).filter(id => scoreMap[id] >= 10);
+
+  if (popularIds.length === 0) {
+    container.innerHTML = '<div class="popular-posts-empty">No popular posts yet.<br><span style="font-size:0.7rem;color:var(--text3)">Posts with 10+ upvotes appear here</span></div>';
+    return;
+  }
+
+  // Fetch those posts
+  const { data: posts } = await db.from('posts')
+    .select('*, profiles(id, name, avatar_url, role)')
+    .in('id', popularIds)
+    .order('created_at', { ascending: false })
+    .limit(10);
+
+  if (!posts || posts.length === 0) {
+    container.innerHTML = '<div class="popular-posts-empty">No popular posts yet</div>';
+    return;
+  }
+
+  // Sort by score desc
+  posts.sort((a, b) => (scoreMap[b.id] || 0) - (scoreMap[a.id] || 0));
+
+  container.innerHTML = posts.map(post => {
+    const p = post.profiles || {};
+    const score = scoreMap[post.id] || 0;
+    const avatarHtml = p.avatar_url
+      ? '<img src="' + escHtml(p.avatar_url) + '" alt="' + escHtml(p.name || 'User') + '">'
+      : '<svg width="12" height="12" style="color:var(--text3)"><use href="#ic-user"/></svg>';
+    const titleText = post.title ? post.title : (post.content.substring(0, 50) + (post.content.length > 50 ? '...' : ''));
+    const excerpt = post.content.substring(0, 80) + (post.content.length > 80 ? '...' : '');
+
+    return '<button class="popular-post-item" onclick="openPopularPostModal(\'' + post.id + '\')">' +
+      '<div class="popular-post-meta">' +
+        '<div class="popular-post-avatar">' + avatarHtml + '</div>' +
+        '<span class="popular-post-author">' + escHtml(p.name || 'Anonymous') + '</span>' +
+        '<span class="popular-post-score">▲ ' + score + '</span>' +
+      '</div>' +
+      (post.title ? '<div class="popular-post-title">' + escHtml(post.title) + '</div>' : '') +
+      '<div class="popular-post-excerpt">' + escHtml(excerpt) + '</div>' +
+    '</button>';
+  }).join('');
+}
+
+async function openPopularPostModal(postId) {
+  popularPostActiveId = postId;
+  const modal = document.getElementById('popular-post-modal');
+  if (!modal) return;
+  modal.style.display = 'flex';
+
+  document.getElementById('popular-modal-post-content').innerHTML = '<div class="loading-text">Loading...</div>';
+  document.getElementById('popular-comments-list').innerHTML = '<div class="loading-text">Loading comments...</div>';
+  document.getElementById('popular-modal-vote-row').innerHTML = '';
+  if (document.getElementById('popular-comment-input')) document.getElementById('popular-comment-input').value = '';
+
+  const [{ data: post }, { data: comments }, { data: votes }] = await Promise.all([
+    db.from('posts').select('*, profiles(id, name, avatar_url, class, target_year, bio, role)').eq('id', postId).single(),
+    db.from('comments').select('*, profiles(id, name, avatar_url, role)').eq('post_id', postId).order('created_at', { ascending: true }),
+    db.from('votes').select('post_id, value').eq('post_id', postId)
+  ]);
+
+  let myVote = 0;
+  let totalScore = 0;
+  if (votes) {
+    votes.forEach(v => { totalScore += v.value; });
+    if (currentUser) {
+      const { data: mv } = await db.from('votes').select('value').eq('post_id', postId).eq('user_id', currentUser ? currentUser.id : '').maybeSingle();
+      if (mv) myVote = mv.value;
+    }
+  }
+
+  if (post) {
+    const p = post.profiles || {};
+    const av = p.avatar_url
+      ? '<img src="' + escHtml(p.avatar_url) + '" alt="' + escHtml(p.name || 'User') + '">'
+      : '<svg width="16" height="16" style="color:var(--text3)"><use href="#ic-user"/></svg>';
+
+    // Images
+    let imagesHtml = '';
+    const imgs = _extractPostImages(post);
+    if (imgs.length && typeof _buildImageGrid === 'function') {
+      imagesHtml = _buildImageGrid(imgs);
+    }
+
+    const titleHtml = post.title ? '<div class="modal-post-title">' + escHtml(post.title) + '</div>' : '';
+
+    document.getElementById('popular-modal-post-content').innerHTML =
+      '<div class="modal-post">' +
+        '<div class="modal-post-header">' +
+          '<button class="post-avatar-btn" onclick="openProfileModal(\'' + (post.user_id || '') + '\')" title="View profile">' +
+            '<div class="post-avatar small">' + av + '</div>' +
+          '</button>' +
+          '<div>' +
+            '<button class="post-author-link" onclick="openProfileModal(\'' + (post.user_id || '') + '\')">' +
+              escHtml(p.name || 'Anonymous') + roleBadge(p.role) +
+            '</button>' +
+            '<span class="post-time"> · ' + timeAgo(post.created_at) + '</span>' +
+          '</div>' +
+        '</div>' +
+        titleHtml +
+        '<div class="modal-post-text">' + escHtml(post.content) + '</div>' +
+        imagesHtml +
+      '</div>';
+
+    // Vote + report row
+    const likeActive   = myVote === 1  ? 'emoji-vote-active' : '';
+    const dislikeActive = myVote === -1 ? 'emoji-vote-active' : '';
+
+    document.getElementById('popular-modal-vote-row').innerHTML =
+      '<div class="emoji-vote-group">' +
+        '<button class="emoji-vote-btn ' + likeActive + '" onclick="castVoteInPopular(\'' + postId + '\', 1)">' +
+          '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l-8 8h6v8h4v-8h6z"/></svg>' +
+        '</button>' +
+        '<span style="font-size:0.85rem;font-weight:700;color:var(--accent);min-width:28px;text-align:center">' + (totalScore > 0 ? '+' : '') + totalScore + '</span>' +
+        '<button class="emoji-vote-btn ' + dislikeActive + '" onclick="castVoteInPopular(\'' + postId + '\', -1)">' +
+          '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 20l8-8h-6V4h-4v8H4z"/></svg>' +
+        '</button>' +
+      '</div>' +
+      '<button class="post-report-btn" style="margin-left:auto" onclick="openReportModal(\'post\', \'' + postId + '\', null)">🚩 Report</button>';
+  }
+
+  // Render comments
+  renderPopularModalComments(comments || []);
+}
+
+function renderPopularModalComments(comments) {
+  const list = document.getElementById('popular-comments-list');
+  if (!list) return;
+  if (!comments || comments.length === 0) {
+    list.innerHTML = '<div class="empty-state" style="padding:2rem"><svg width="28" height="28" style="color:var(--text3);margin-bottom:.4rem"><use href="#ic-chat"/></svg><div>No comments yet — be the first!</div></div>';
+    return;
+  }
+  list.innerHTML = comments.map(c => {
+    const name = c.profiles ? c.profiles.name : 'Anonymous';
+    const profileId = c.profiles ? c.profiles.id : '';
+    const profileRole = c.profiles ? c.profiles.role : '';
+    const av = c.profiles && c.profiles.avatar_url
+      ? '<img src="' + escHtml(c.profiles.avatar_url) + '" alt="' + escHtml(name) + '">'
+      : '<svg width="14" height="14" style="color:var(--text3)"><use href="#ic-user"/></svg>';
+    const avatarEl = profileId
+      ? '<button class="post-avatar-btn" onclick="openProfileModal(\'' + profileId + '\')" title="View profile"><div class="comment-avatar">' + av + '</div></button>'
+      : '<div class="comment-avatar">' + av + '</div>';
+    const nameEl = profileId
+      ? '<button class="post-author-link" style="font-size:0.82rem" onclick="openProfileModal(\'' + profileId + '\')">' + escHtml(name) + roleBadge(profileRole) + '</button>'
+      : '<span>' + escHtml(name) + roleBadge(profileRole) + '</span>';
+    return '<div class="comment-item" id="pop-comment-' + c.id + '">' +
+      avatarEl +
+      '<div class="comment-content">' +
+        '<div class="comment-author">' +
+          nameEl +
+          ' <span class="comment-time">' + timeAgo(c.created_at) + '</span>' +
+        '</div>' +
+        '<div class="comment-text">' + escHtml(c.content) + '</div>' +
+        '<div class="comment-actions">' +
+          '<button class="comment-action-btn" onclick="openReportModal(\'comment\', null, \'' + c.id + '\')">🚩 Report</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+async function castVoteInPopular(postId, value) {
+  if (!currentUser) return showToast('Sign in to vote');
+  const { data: existing } = await db.from('votes').select('id, value').eq('post_id', postId).eq('user_id', currentUser.id).maybeSingle();
+  if (existing) {
+    if (existing.value === value) await db.from('votes').delete().eq('id', existing.id);
+    else await db.from('votes').update({ value }).eq('id', existing.id);
+  } else {
+    await db.from('votes').insert({ post_id: postId, user_id: currentUser.id, value });
+  }
+  // Refresh the modal vote row
+  openPopularPostModal(postId);
+  loadPosts();
+}
+
+function closePopularPostModal() {
+  const modal = document.getElementById('popular-post-modal');
+  if (modal) modal.style.display = 'none';
+  popularPostActiveId = null;
+}
+
+function handlePopularModalClick(e) {
+  if (e.target === document.getElementById('popular-post-modal')) closePopularPostModal();
+}
+
+// Wire up popular comment submit
+document.addEventListener('DOMContentLoaded', () => {
+  const submitBtn = document.getElementById('popular-submit-comment-btn');
+  if (submitBtn) {
+    submitBtn.addEventListener('click', () => {
+      if (popularPostActiveId) submitPopularComment(popularPostActiveId);
+    });
+  }
+  const input = document.getElementById('popular-comment-input');
+  if (input) {
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        if (popularPostActiveId) submitPopularComment(popularPostActiveId);
+      }
+    });
+  }
+});
+
+async function submitPopularComment(postId) {
+  if (!currentUser) return showToast('Sign in to comment');
+  const input = document.getElementById('popular-comment-input');
+  const content = (input ? input.value : '').trim();
+  if (!content) return showToast('Write a comment first!');
+
+  const btn = document.getElementById('popular-submit-comment-btn');
+  if (btn) btn.disabled = true;
+
+  try {
+    await callEdge('add-comment', { post_id: postId, content });
+    if (input) input.value = '';
+    const { data: comments } = await db.from('comments')
+      .select('*, profiles(id, name, avatar_url, role)')
+      .eq('post_id', postId).order('created_at', { ascending: true });
+    renderPopularModalComments(comments || []);
+    loadPosts();
+  } catch (err) {
+    showToast('❌ ' + err.message);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}

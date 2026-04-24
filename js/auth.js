@@ -170,8 +170,7 @@ async function loadUserProfile() {
   applyTheme(profile.theme || 'dark');
   updateSidebarUI();
   showScreen('app-screen');
-  goToPage('dashboard');
-  loadDashboardData();
+  goToPage('dashboard'); // ← this already calls loadDashboardData() internally
   checkUnfinishedSession();
   loadNotificationCount();
 }
