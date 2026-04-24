@@ -19,9 +19,40 @@
     <!-- SVG SPRITE -->
     <svg
       xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      fill="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path d="M12 4l-8 8h6v8h4v-8h6z" />
+    </svg>
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      fill="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path d="M12 20l8-8h-6V4h-4v8H4z" />
+    </svg>
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
       style="display: none"
       aria-hidden="true"
     >
+      <symbol id="ic-like" viewBox="0 0 24 24">
+        <path
+          fill="currentColor"
+          d="M14 9V5a3 3 0 0 0-6 0v4H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h7.5a3 3 0 0 0 2.9-2.2l2.4-8A2 2 0 0 0 18 9h-4zM7 5a1 1 0 0 1 2 0v4H7V5zm12 7l-2.4 8a1 1 0 0 1-1 .7H5v-9h4.7a1 1 0 0 0 1-1V5h3v5a1 1 0 0 0 1 1h3.8a.5.5 0 0 1 .5.6z"
+        />
+      </symbol>
+
+      <symbol id="ic-dislike" viewBox="0 0 24 24">
+        <path
+          fill="currentColor"
+          d="M10 15v4a3 3 0 0 0 6 0v-4h3a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2h-7.5a3 3 0 0 0-2.9 2.2l-2.4 8A2 2 0 0 0 6 15h4zm7-2h-4.7a1 1 0 0 0-1 1v5h-3v-5a1 1 0 0 0-1-1H4.2a.5.5 0 0 1-.5-.6l2.4-8a1 1 0 0 1 1-.7H19v9z"
+        />
+      </symbol>
       <symbol
         id="ic-dashboard"
         viewBox="0 0 24 24"
@@ -743,49 +774,173 @@
             <h2>Community</h2>
             <p>Share your daily targets &amp; cheer each other on</p>
           </div>
+
           <div class="community-layout">
-            <div class="post-composer">
-              <textarea
-                id="post-content"
-                placeholder="Share your study target for today..."
-                rows="3"
-              ></textarea>
-              <div class="post-image-section">
-                <div class="post-image-attach-row">
-                  <label
-                    for="post-image-input"
-                    class="post-image-attach-btn"
-                    title="Add image to post"
-                  >
-                    🖼️ Add Image
-                  </label>
-                  <input type="file" id="post-image-input" accept="image/*" />
-                  <p class="upload-hint">Max 1 MB</p>
+            <!-- LEFT SIDE (main content — wider) -->
+            <div class="community-main">
+              <!-- Tabs -->
+              <div class="community-tabs">
+                <button
+                  id="tab-all-posts"
+                  class="community-tab-btn community-tab-active"
+                >
+                  <svg width="14" height="14"><use href="#ic-globe" /></svg>
+                  <span>All Posts</span>
+                </button>
+
+                <button id="tab-my-posts" class="community-tab-btn">
+                  <svg width="14" height="14"><use href="#ic-user" /></svg>
+                  <span>My Posts</span>
+                </button>
+
+                <div class="community-tab-indicator"></div>
+              </div>
+
+              <!-- Composer -->
+              <div class="post-composer">
+                <input
+                  type="text"
+                  id="post-title"
+                  class="post-title-input"
+                  placeholder="Add a title (optional)"
+                  maxlength="120"
+                />
+                <textarea
+                  id="post-content"
+                  placeholder="Add details of your post"
+                  rows="3"
+                ></textarea>
+
+                <div class="post-image-section">
+                  <div class="post-image-attach-row">
+                    <button
+                      type="button"
+                      id="post-image-add-btn"
+                      class="post-image-add-btn"
+                    >
+                      🖼️ Add Image
+                    </button>
+                    <input
+                      type="file"
+                      id="post-image-input"
+                      accept="image/*"
+                      multiple
+                    />
+                    <span id="post-image-count"></span>
+                  </div>
+                  <div id="post-image-thumbs"></div>
+                  <div id="post-image-preview"></div>
                 </div>
-                <div id="post-image-preview">
-                  <button
-                    class="post-image-remove-btn"
-                    id="post-image-remove-btn"
-                    title="Remove image"
-                  >
-                    ✕
-                  </button>
+                <div class="composer-footer">
+                  <span class="composer-hint">
+                    <svg width="13" height="13"><use href="#ic-target" /></svg>
+                    Daily target
+                  </span>
+                  <button id="post-btn" class="btn-primary">Post</button>
                 </div>
               </div>
-              <div class="composer-footer">
-                <span class="composer-hint">
-                  <svg width="13" height="13"><use href="#ic-target" /></svg>
-                  Daily target
-                </span>
-                <button class="btn-primary composer-post-btn" id="post-btn">
-                  <svg width="13" height="13"><use href="#ic-send" /></svg> Post
+
+              <!-- Posts -->
+              <div id="posts-list" class="posts-list"></div>
+            </div>
+
+            <!-- RIGHT SIDEBAR -->
+            <div class="community-sidebar">
+
+              <!-- POPULAR POSTS SECTION -->
+              <div class="sidebar-section popular-posts-section">
+                <div class="sidebar-section-header">
+                  <span class="sidebar-section-icon">🔥</span>
+                  <h3 class="sidebar-section-title">Popular Posts</h3>
+                </div>
+                <div id="popular-posts-list" class="popular-posts-list">
+                  <div class="popular-posts-loading">Loading...</div>
+                </div>
+              </div>
+
+              <!-- COMMUNITY GUIDE SECTION -->
+              <div class="sidebar-section">
+                <div class="sidebar-section-header">
+                  <span class="sidebar-section-icon">📜</span>
+                  <h3 class="sidebar-section-title">Community Guide</h3>
+                </div>
+
+                <div class="accordion-item">
+                  <button class="accordion-btn">✅ What to Post</button>
+                  <div class="accordion-content">
+                    <ul>
+                      <li>Doubts (PCM)</li>
+                      <li>Daily targets</li>
+                      <li>Study tips</li>
+                      <li>Motivation</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div class="accordion-item">
+                  <button class="accordion-btn">❌ What NOT to Post</button>
+                  <div class="accordion-content">
+                    <ul>
+                      <li>Abuse / toxic content</li>
+                      <li>Spam / promotion</li>
+                      <li>Irrelevant posts</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div class="accordion-item">
+                  <button class="accordion-btn">📏 Rules</button>
+                  <div class="accordion-content">
+                    <ul>
+                      <li>Respect everyone</li>
+                      <li>No cheating discussion</li>
+                      <li>Stay focused on JEE</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div class="accordion-item">
+                  <button class="accordion-btn">🚨 How to Report</button>
+                  <div class="accordion-content">
+                    <ul>
+                      <li>Click 3 dots on post</li>
+                      <li>Select Report</li>
+                      <li>Submit reason</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- POPULAR POST MODAL -->
+          <div id="popular-post-modal" class="modal-overlay" style="display:none" onclick="handlePopularModalClick(event)">
+            <div class="modal popular-post-modal-inner">
+              <div class="modal-header">
+                <h3>Post &amp; Comments</h3>
+                <button class="icon-btn" onclick="closePopularPostModal()">
+                  <svg width="17" height="17"><use href="#ic-x" /></svg>
+                </button>
+              </div>
+              <!-- Single scrollable body: post + votes + comments all in one -->
+              <div class="modal-body-scroll">
+                <div id="popular-modal-post-content" class="modal-post-wrapper"></div>
+                <div class="popular-modal-vote-row" id="popular-modal-vote-row"></div>
+                <div id="popular-comments-list" class="comments-list-modal"></div>
+              </div>
+              <!-- Composer pinned at bottom, outside scroll area -->
+              <div class="comment-composer-row modal-composer-pinned">
+                <textarea id="popular-comment-input" rows="2" placeholder="Add a comment..."></textarea>
+                <button class="icon-btn accent-icon-btn" id="popular-submit-comment-btn">
+                  <svg width="16" height="16"><use href="#ic-send" /></svg>
                 </button>
               </div>
             </div>
-            <div id="posts-list" class="posts-list"></div>
           </div>
         </div>
-
+        <!--
+         -->
         <!-- NOTIFICATIONS -->
         <div class="page" id="page-notifications">
           <div class="page-header">
@@ -926,21 +1081,49 @@
           <div class="settings-layout">
             <div class="settings-section">
               <h3>Profile</h3>
-             <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem">
-  <div id="settings-avatar-preview" style="
-    width:72px;height:72px;border-radius:50%;overflow:hidden;
-    background:var(--surface2);border:2px solid var(--border);
-    display:flex;align-items:center;justify-content:center;font-size:2rem;
-  ">👤</div>
-  <div>
-    <label for="settings-avatar-input" class="post-image-attach-btn" style="cursor:pointer">
-      📷 Change Photo
-    </label>
-    <input type="file" id="settings-avatar-input" accept="image/*" style="display:none">
-    <p class="upload-hint">JPEG / PNG / WebP · Max 1 MB</p>
-    <div id="settings-upload-progress"></div>
-  </div>
-</div>
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 1rem;
+                  margin-bottom: 1rem;
+                "
+              >
+                <div
+                  id="settings-avatar-preview"
+                  style="
+                    width: 72px;
+                    height: 72px;
+                    border-radius: 50%;
+                    overflow: hidden;
+                    background: var(--surface2);
+                    border: 2px solid var(--border);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 2rem;
+                  "
+                >
+                  👤
+                </div>
+                <div>
+                  <label
+                    for="settings-avatar-input"
+                    class="post-image-attach-btn"
+                    style="cursor: pointer"
+                  >
+                    📷 Change Photo
+                  </label>
+                  <input
+                    type="file"
+                    id="settings-avatar-input"
+                    accept="image/*"
+                    style="display: none"
+                  />
+                  <p class="upload-hint">JPEG / PNG / WebP · Max 1 MB</p>
+                  <div id="settings-upload-progress"></div>
+                </div>
+              </div>
               <div class="form-group">
                 <label>Full Name</label><input type="text" id="settings-name" />
               </div>
@@ -1120,10 +1303,14 @@
             <svg width="17" height="17"><use href="#ic-x" /></svg>
           </button>
         </div>
-        <!-- Post content at top -->
-        <div id="modal-post-content" class="modal-post-wrapper"></div>
-        <!-- Add comment -->
-        <div class="comment-composer-row">
+        <!-- Single scrollable body: post content + comments -->
+        <div class="modal-body-scroll">
+          <div id="modal-post-content" class="modal-post-wrapper"></div>
+          <div id="modal-vote-row" class="popular-modal-vote-row" style="display:none"></div>
+          <div id="comments-list" class="comments-list-modal"></div>
+        </div>
+        <!-- Composer pinned at bottom -->
+        <div class="comment-composer-row modal-composer-pinned">
           <textarea
             id="comment-input"
             rows="2"
@@ -1133,8 +1320,6 @@
             <svg width="16" height="16"><use href="#ic-send" /></svg>
           </button>
         </div>
-        <!-- All comments scrollable -->
-        <div id="comments-list" class="comments-list-modal"></div>
       </div>
     </div>
 
@@ -1328,6 +1513,43 @@
         if (e.target === document.getElementById("comment-modal"))
           closeCommentModal();
       }
+
+      // ── Modal scroll lock ────────────────────────────────────────
+      // Prevents the background from scrolling when any modal is open.
+      // Works by watching modal-overlay visibility changes automatically,
+      // so community.js doesn't need to be touched.
+      (function () {
+        let _scrollY = 0;
+
+        function lockScroll() {
+          _scrollY = window.scrollY;
+          document.body.style.top = -_scrollY + 'px';
+          document.body.classList.add('modal-open');
+        }
+        function unlockScroll() {
+          document.body.classList.remove('modal-open');
+          document.body.style.top = '';
+          window.scrollTo(0, _scrollY);
+        }
+
+        // Watch all .modal-overlay elements for display changes
+        document.addEventListener('DOMContentLoaded', function () {
+          const overlays = document.querySelectorAll('.modal-overlay');
+          const observer = new MutationObserver(function () {
+            const anyOpen = Array.from(overlays).some(function (el) {
+              return el.style.display !== 'none' && el.style.display !== '';
+            });
+            if (anyOpen) {
+              lockScroll();
+            } else {
+              unlockScroll();
+            }
+          });
+          overlays.forEach(function (el) {
+            observer.observe(el, { attributes: true, attributeFilter: ['style'] });
+          });
+        });
+      })();
     </script>
 
     <script src="js/config.js"></script>
@@ -1342,5 +1564,6 @@
     <script src="js/cloudinary.js"></script>
     <script src="js/cloudinary-profile.js"></script>
     <script src="js/cloudinary-community.js"></script>
+    <script src="js/my-posts.js"></script>
   </body>
 </html>
