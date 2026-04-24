@@ -3,19 +3,21 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Study Aura</title>
+    <title>ZEROday</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap"
-      rel="stylesheet"
-    />
+   <link
+  href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap"
+  rel="stylesheet"
+/>
+ <link rel="icon" type="image/png" href="logo2.png">
     <link rel="stylesheet" href="css/themes.css" />
     <link rel="stylesheet" href="css/style.css" />
     <link rel="stylesheet" href="css/cloudinary-styles.css" />
+    <link rel="stylesheet" href="css/zeroday-theme.css" />
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   </head>
-  <body data-theme="dark">
+  <body data-theme="dark" >
     <!-- SVG SPRITE -->
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -23,6 +25,7 @@
       height="24"
       fill="currentColor"
       viewBox="0 0 24 24"
+      style="display: none"
     >
       <path d="M12 4l-8 8h6v8h4v-8h6z" />
     </svg>
@@ -32,6 +35,7 @@
       height="24"
       fill="currentColor"
       viewBox="0 0 24 24"
+      style="display: none"
     >
       <path d="M12 20l8-8h-6V4h-4v8H4z" />
     </svg>
@@ -394,12 +398,10 @@
       <div class="auth-container">
         <div class="auth-brand">
           <div class="brand-logo">
-            <svg width="32" height="32" style="color: var(--accent)">
-              <use href="#ic-star" />
-            </svg>
+           <img src="logo2.png"  width="35" height="35" alt="">
           </div>
-          <h1>Study Aura</h1>
-          <p>Your focused study companion</p>
+          <h1>ZEROday</h1>
+          <p>Your reality check starts here.</p>
         </div>
         <div class="auth-card">
           <div class="auth-tabs">
@@ -459,9 +461,7 @@
       <div class="auth-container">
         <div class="auth-brand">
           <div class="brand-logo">
-            <svg width="32" height="32" style="color: var(--accent)">
-              <use href="#ic-star" />
-            </svg>
+           <img src="logo2.png"  width="32" height="32" alt="">
           </div>
           <h1>Set Up Profile</h1>
           <p>Tell us about yourself</p>
@@ -540,10 +540,8 @@
       <!-- Sidebar -->
       <nav class="sidebar" id="sidebar">
         <div class="sidebar-brand">
-          <svg width="20" height="20" style="color: var(--accent)">
-            <use href="#ic-star" />
-          </svg>
-          <span>Study Aura</span>
+         <img src="logo2.png"  width="35" height="35" alt="">
+          <span>ZEROday</span>
         </div>
         <div class="sidebar-user" id="sidebar-user">
           <div class="sidebar-avatar" id="sidebar-avatar-img">
@@ -625,7 +623,7 @@
           <svg width="14" height="14" style="color: var(--accent)">
             <use href="#ic-star" />
           </svg>
-          Study Aura
+          ZEROday
         </div>
         <div class="mobile-avatar" id="mobile-avatar">
           <svg width="14" height="14" style="color: var(--text3)">
@@ -637,12 +635,21 @@
 
       <!-- Main Content -->
       <main class="main-content">
+        <!-- ZEROday: Timer ring gradient -->
+  <svg width="0" height="0" style="position:absolute">
+    <defs>
+      <linearGradient id="timerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#7c6fff"/>
+        <stop offset="100%" stop-color="#00d4ff"/>
+      </linearGradient>
+    </defs>
+  </svg>
         <!-- DASHBOARD -->
         <div class="page active" id="page-dashboard">
-          <div class="page-header">
-            <h2>Dashboard</h2>
-            <p id="dashboard-greeting">Ready to study?</p>
-          </div>
+         <div class="page-header">
+  <h2>Command Center</h2>
+  <p id="dashboard-greeting">Your reality check starts here</p>
+</div>
           <div class="stats-grid">
             <div class="stat-card accent-blue">
               <div class="stat-icon">
@@ -705,28 +712,25 @@
             </div>
             <div class="quick-actions-card">
               <h3>Quick Actions</h3>
-              <button class="qa-btn" onclick="goToPage('timer')">
-                <svg width="14" height="14"><use href="#ic-play" /></svg> Start
-                Studying
-              </button>
-              <button class="qa-btn" onclick="goToPage('community')">
-                <svg width="14" height="14"><use href="#ic-send" /></svg> Post a
-                Target
-              </button>
-              <button class="qa-btn" onclick="goToPage('whitenoise')">
-                <svg width="14" height="14"><use href="#ic-music" /></svg> Play
-                White Noise
-              </button>
+             <button class="qa-btn" onclick="goToPage('timer')">
+  <svg width="14" height="14"><use href="#ic-play" /></svg> Lock In
+</button>
+<button class="qa-btn" onclick="goToPage('community')">
+  <svg width="14" height="14"><use href="#ic-send" /></svg> Declare Target
+</button>
+<button class="qa-btn" onclick="goToPage('whitenoise')">
+  <svg width="14" height="14"><use href="#ic-music" /></svg> Focus Mode
+</button>
             </div>
           </div>
         </div>
 
         <!-- TIMER -->
         <div class="page" id="page-timer">
-          <div class="page-header">
-            <h2>Study Timer</h2>
-            <p>Track your focused study sessions</p>
-          </div>
+        <div class="page-header">
+  <h2>Focus Timer</h2>
+  <p>Every second counts. Don't waste it.</p>
+</div>
           <div class="timer-container">
             <div class="timer-ring">
               <svg class="timer-svg" viewBox="0 0 200 200">
@@ -770,10 +774,11 @@
 
         <!-- COMMUNITY -->
         <div class="page" id="page-community">
-          <div class="page-header">
-            <h2>Community</h2>
-            <p>Share your daily targets &amp; cheer each other on</p>
-          </div>
+         <div class="page-header">
+  <h2>Community</h2>
+  <p>Post your targets. Own your progress.</p>
+</div>
+ 
 
           <div class="community-layout">
             <!-- LEFT SIDE (main content — wider) -->
@@ -806,10 +811,10 @@
                   maxlength="120"
                 />
                 <textarea
-                  id="post-content"
-                  placeholder="Add details of your post"
-                  rows="3"
-                ></textarea>
+  id="post-content"
+  placeholder="What are you grinding today?"
+  rows="3"
+></textarea>
 
                 <div class="post-image-section">
                   <div class="post-image-attach-row">
@@ -945,7 +950,7 @@
         <div class="page" id="page-notifications">
           <div class="page-header">
             <h2>Notifications</h2>
-            <p>Updates from the Study Aura team</p>
+            <p>Updates from the ZEROday team</p>
           </div>
           <div id="admin-panel" class="admin-panel" style="display: none">
             <div class="admin-title">
@@ -1367,7 +1372,7 @@
         <p
           style="font-size: 0.85rem; color: var(--text2); margin: 0.5rem 0 1rem"
         >
-          Help us keep Study Aura safe. Describe why you're reporting this
+          Help us keep ZEROday safe. Describe why you're reporting this
           content.
         </p>
         <div class="form-group">
@@ -1565,5 +1570,7 @@
     <script src="js/cloudinary-profile.js"></script>
     <script src="js/cloudinary-community.js"></script>
     <script src="js/my-posts.js"></script>
+    <script src="js/zeroday-notif-patch.js"></script>
   </body>
 </html>
+
