@@ -1,34 +1,390 @@
 /* ============================================
-   STUDY AURA — CLOUDINARY UI STYLES
-   Add to your existing style.css
+   STUDY AURA — CLOUDINARY UI STYLES (v3)
+   Paste into your style.css (or keep as separate file)
    ============================================ */
 
-/* ── Upload Progress Bar ─────────────────────── */
-.upload-progress-wrap {
-  position: relative;
-  height: 4px;
-  background: var(--surface2, #2a2a3a);
-  border-radius: 99px;
-  overflow: hidden;
+/* ─────────────────────────────────────────────
+   POST COMPOSER ADDITIONS
+   ───────────────────────────────────────────── */
+
+/* Post title input */
+.post-title-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border, #333);
+  color: var(--text1, #f0f0f0);
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0.35rem 0;
+  margin-bottom: 0.5rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.post-title-input::placeholder { color: var(--text3, #888); font-weight: 400; }
+.post-title-input:focus { border-bottom-color: var(--accent, #6c63ff); }
+
+/* Image attach row */
+.post-image-attach-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.post-image-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  color: var(--text3, #888);
+  background: none;
+  border: 1px dashed var(--border, #444);
+  border-radius: 8px;
+  padding: 0.28rem 0.7rem;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  user-select: none;
+}
+.post-image-add-btn:hover {
+  color: var(--accent, #6c63ff);
+  border-color: var(--accent, #6c63ff);
+}
+
+#post-image-input { display: none; }
+
+#post-image-count {
+  font-size: 0.72rem;
+  color: var(--text3, #888);
+}
+
+/* Thumbnail strip */
+#post-image-thumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
   margin-top: 0.5rem;
 }
 
+.composer-thumb {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid var(--border, #333);
+  background: var(--surface2, #1e1e2e);
+  transition: border-color 0.2s;
+  flex-shrink: 0;
+}
+.composer-thumb.thumb-ready { border-color: var(--green, #22c55e); }
+.composer-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.thumb-remove-btn {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.7);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-size: 0.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  transition: background 0.15s;
+  z-index: 2;
+}
+.thumb-remove-btn:hover { background: rgba(220,50,50,0.9); }
+
+/* Spinner overlay on thumb */
+.thumb-spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 1;
+}
+
+/* Upload progress bar (reused for profile) */
+.upload-progress-wrap {
+  height: 3px;
+  background: var(--surface2, #2a2a3a);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-top: 0.4rem;
+}
 .upload-progress-bar {
   height: 100%;
   background: linear-gradient(90deg, var(--accent, #6c63ff), var(--green, #22c55e));
   border-radius: 99px;
-  transition: width 0.2s ease;
+  transition: width 0.2s;
 }
 
-.upload-progress-label {
+/* Spin ring — used in thumb and lightbox */
+.spin-ring {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255,255,255,0.25);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ─────────────────────────────────────────────
+   POST TITLE (in feed card)
+   ───────────────────────────────────────────── */
+.post-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text1, #f0f0f0);
+  margin-bottom: 0.25rem;
+  line-height: 1.35;
+}
+
+/* ─────────────────────────────────────────────
+   IMAGE GRID (in feed post card)
+   Proportional layouts for 1–5 images.
+   Each grid fills the post card width.
+   ───────────────────────────────────────────── */
+
+.img-grid {
+  margin: 0.6rem 0 0.2rem;
+  border-radius: 10px;
+  overflow: hidden;
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  max-height: 480px;  /* cap overall height */
+}
+
+/* 1 image — full width, natural aspect up to max-height */
+.img-grid-1 {
+  grid-template-columns: 1fr;
+  grid-template-rows: minmax(160px, 360px);
+}
+
+/* 2 images — side by side, equal */
+.img-grid-2 {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 220px;
+}
+
+/* 3 images — first full left, two stacked right */
+.img-grid-3 {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 140px 140px;
+}
+.img-grid-3 .img-cell:first-child {
+  grid-row: span 2;
+}
+
+/* 4 images — 2×2 grid */
+.img-grid-4 {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 160px 160px;
+}
+
+/* 5 images — large left (spans rows), 2 stacked right top, 2 stacked right bottom */
+.img-grid-5 {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 120px 120px 120px;
+}
+.img-grid-5 .img-cell:first-child {
+  grid-row: span 2;
+}
+
+/* Individual image cell */
+.img-cell {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface2, #1e1e2e);
+  cursor: pointer;
+}
+.img-cell img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.22s ease, opacity 0.15s;
+}
+.img-cell:hover img {
+  transform: scale(1.04);
+  opacity: 0.9;
+}
+
+/* "+N more" overlay on last cell */
+.img-cell-more::after {
+  content: '';
   position: absolute;
-  right: 0;
-  top: -1.3rem;
-  font-size: 0.7rem;
-  color: var(--text3, #888);
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+}
+.img-more-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 1.4rem;
+  font-weight: 700;
+  z-index: 1;
+  text-shadow: 0 1px 6px rgba(0,0,0,0.6);
 }
 
-/* ── Avatar Preview ──────────────────────────── */
+/* ─────────────────────────────────────────────
+   LIGHTBOX
+   ───────────────────────────────────────────── */
+
+#post-lightbox {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  align-items: center;
+  justify-content: center;
+}
+#post-lightbox.lb-open {
+  display: flex;
+  animation: lb-in 0.18s ease;
+}
+
+@keyframes lb-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.lb-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.92);
+  cursor: zoom-out;
+}
+
+.lb-shell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: 3rem 4rem;
+  box-sizing: border-box;
+}
+
+.lb-img-wrap {
+  position: relative;
+  max-width: 90vw;
+  max-height: 88vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#lb-main-img {
+  max-width: 88vw;
+  max-height: 86vh;
+  object-fit: contain;
+  border-radius: 10px;
+  box-shadow: 0 12px 60px rgba(0,0,0,0.7);
+  transition: opacity 0.2s;
+  position: relative;
+  z-index: 1;
+  display: block;
+}
+
+.lb-spinner {
+  display: none;
+  position: absolute;
+  inset: 0;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+.lb-spinner .spin-ring {
+  width: 32px;
+  height: 32px;
+  border-width: 3px;
+}
+
+/* Close button */
+.lb-close {
+  position: fixed;
+  top: 1.1rem;
+  right: 1.4rem;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  transition: background 0.15s;
+  line-height: 1;
+}
+.lb-close:hover { background: rgba(255,80,80,0.7); }
+
+/* Prev / Next arrows */
+.lb-arrow {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-size: 2.4rem;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  transition: background 0.15s;
+  line-height: 1;
+}
+.lb-arrow:hover { background: rgba(255,255,255,0.25); }
+.lb-prev { left: 1rem; }
+.lb-next { right: 1rem; }
+
+/* Image counter */
+.lb-counter {
+  position: fixed;
+  bottom: 1.2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  color: rgba(255,255,255,0.7);
+  font-size: 0.82rem;
+  background: rgba(0,0,0,0.45);
+  padding: 0.25rem 0.75rem;
+  border-radius: 99px;
+  z-index: 10;
+  letter-spacing: 0.04em;
+}
+
+/* ─────────────────────────────────────────────
+   AVATAR PREVIEW (profile / settings)
+   ───────────────────────────────────────────── */
 #avatar-preview,
 #settings-avatar-preview {
   width: 80px;
@@ -42,8 +398,8 @@
   justify-content: center;
   font-size: 2rem;
   transition: border-color 0.2s;
+  flex-shrink: 0;
 }
-
 #avatar-preview img,
 #settings-avatar-preview img {
   width: 100%;
@@ -51,123 +407,20 @@
   object-fit: cover;
 }
 
-/* ── Post Composer Image Section ─────────────── */
-.post-image-section {
-  margin-top: 0.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-
-.post-image-attach-row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.post-image-attach-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-size: 0.8rem;
-  color: var(--text3, #888);
-  background: none;
-  border: 1px solid var(--border, #333);
-  border-radius: 8px;
-  padding: 0.3rem 0.75rem;
-  cursor: pointer;
-  transition: color 0.15s, border-color 0.15s;
-}
-
-.post-image-attach-btn:hover {
-  color: var(--accent, #6c63ff);
-  border-color: var(--accent, #6c63ff);
-}
-
-#post-image-input {
-  display: none;
-}
-
-/* ── Post Image Preview (in composer) ────────── */
-#post-image-preview {
-  display: none;
-  position: relative;
-  max-width: 200px;
-  border-radius: 10px;
-  overflow: hidden;
-  border: 1px solid var(--border, #333);
-}
-
-#post-image-preview img {
-  width: 100%;
-  height: auto;
-  display: block;
-}
-
-.post-image-remove-btn {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: rgba(0,0,0,0.65);
-  color: #fff;
-  border: none;
-  cursor: pointer;
-  font-size: 0.75rem;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-}
-
-.post-image-remove-btn:hover {
-  background: rgba(255, 60, 60, 0.8);
-}
-
-/* ── Post Image (in feed) ────────────────────── */
-.post-image-wrap {
-  margin: 0.5rem 0;
-  border-radius: 10px;
-  overflow: hidden;
-  max-height: 400px;
-}
-
-.post-image {
-  width: 100%;
-  max-height: 400px;
-  object-fit: cover;
-  display: block;
-  border-radius: 10px;
-  transition: opacity 0.2s;
-}
-
-.post-image:hover {
-  opacity: 0.92;
-}
-
-/* ── Lightbox ────────────────────────────────── */
-#image-lightbox {
-  animation: lb-fade-in 0.18s ease;
-}
-
-@keyframes lb-fade-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-
-/* ── Upload size hint ────────────────────────── */
 .upload-hint {
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   color: var(--text3, #888);
-  margin-top: 0.2rem;
+  margin-top: 0.15rem;
 }
 
-/* ── Onboarding upload progress placeholder ──── */
-#onboarding-upload-progress,
-#settings-upload-progress,
-#post-image-progress {
-  min-height: 4px;
-  margin-top: 0.4rem;
+/* ─────────────────────────────────────────────
+   MOBILE TWEAKS
+   ───────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .lb-arrow { width: 2.4rem; height: 2.4rem; font-size: 1.8rem; }
+  .lb-prev  { left: 0.3rem; }
+  .lb-next  { right: 0.3rem; }
+  .lb-shell { padding: 3.5rem 2.8rem; }
+  .img-grid-3, .img-grid-4, .img-grid-5 { grid-template-rows: auto; max-height: 320px; }
+  .img-grid-5 .img-cell:first-child { grid-row: span 1; }
 }
