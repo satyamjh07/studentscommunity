@@ -31,6 +31,10 @@ function loadSettingsForm() {
   const currentTheme = document.body.getAttribute('data-theme') || 'dark';
   document.querySelectorAll('.theme-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.theme === currentTheme);
+    // Wire up click — remove old listener by cloning
+    const fresh = btn.cloneNode(true);
+    btn.parentNode.replaceChild(fresh, btn);
+    fresh.addEventListener('click', () => applyTheme(fresh.dataset.theme));
   });
 }
 

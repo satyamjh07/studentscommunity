@@ -114,6 +114,8 @@ function renderPost(post, score, myVote, previewComments, totalComments) {
 
   const likeActive   = myVote === 1  ? 'emoji-vote-active' : '';
   const dislikeActive = myVote === -1 ? 'emoji-vote-active' : '';
+  const likeCount    = score > 0 ? '<span class="emoji-count score-pos">' + score + '</span>' : '';
+  const dislikeCount = score < 0 ? '<span class="emoji-count score-neg">' + Math.abs(score) + '</span>' : '';
 
   let commentsPreviewHtml = '';
   if (previewComments.length > 0) {
@@ -214,20 +216,26 @@ async function submitComment(postId) {
   if (!currentUser) return showToast('Sign in to comment');
   const input = document.getElementById('comment-input');
   const content = (input ? input.value : '').trim();
-  if (!content) return showToast('Write a comment first!');
+  const pendingUrl = window._commentImageUrl || null;
+
+  if (!content && !pendingUrl) return showToast('Write a comment or add an image first!');
+  if (window._commentImageUploading) return showToast('Image still uploading, please wait...');
 
   const btn = document.getElementById('comment-submit-btn');
   if (btn) { btn.disabled = true; btn.textContent = 'Posting...'; }
 
   try {
-    await callEdge('add-comment', { post_id: postId, content });
+    const payload = { post_id: postId, content: content || ' ' };
+    if (pendingUrl) payload.image_url = pendingUrl;
+    await callEdge('add-comment', payload);
     if (input) input.value = '';
+    _clearCommentImage();
     // Refresh comments in modal
     if (activePostId) {
       const { data: comments } = await db.from('comments')
         .select('*, profiles(id, name, avatar_url, role)')
         .eq('post_id', activePostId).order('created_at', { ascending: true });
-      renderCommentsInModal(comments || []);
+      renderCommentsInModal(comments || [], await _fetchCommentVoteMap(comments || []));
     }
     loadPosts();
   } catch (err) {
@@ -468,10 +476,11 @@ async function openComments(postId, event) {
       voteRow.style.display = 'flex';
     }
   }
-  renderCommentsInModal(comments || []);
+  renderCommentsInModal(comments || [], await _fetchCommentVoteMap(comments || []));
 }
 
-function renderCommentsInModal(comments) {
+function renderCommentsInModal(comments, commentVoteMap) {
+  commentVoteMap = commentVoteMap || {};
   const list = document.getElementById("comments-list");
   if (!comments || comments.length === 0) {
     list.innerHTML =
@@ -493,6 +502,28 @@ function renderCommentsInModal(comments) {
       const nameEl = profileId
         ? '<button class="post-author-link" style="font-size:0.82rem" onclick="openProfileModal(\'' + profileId + '\')">' + escHtml(name) + roleBadge(profileRole) + '</button>'
         : '<span class="comment-author-name">' + escHtml(name) + roleBadge(profileRole) + '</span>';
+
+      // Comment image
+      const imgHtml = _buildCommentImageHtml(c);
+
+      // Comment votes
+      const voteData = commentVoteMap[c.id] || { score: 0, myVote: 0 };
+      const cvLikeActive    = voteData.myVote ===  1 ? 'emoji-vote-active' : '';
+      const cvDislikeActive = voteData.myVote === -1 ? 'emoji-vote-active' : '';
+      const scoreDisplay = voteData.score !== 0
+        ? '<span class="comment-vote-score ' + (voteData.score > 0 ? 'score-pos' : 'score-neg') + '">' + (voteData.score > 0 ? '+' : '') + voteData.score + '</span>'
+        : '';
+      const voteHtml =
+        '<div class="comment-vote-group" id="cvg-' + c.id + '">' +
+          '<button class="comment-vote-btn ' + cvLikeActive + '" onclick="castCommentVote(\'' + c.id + '\', 1, \'modal\')" title="Upvote">' +
+            '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l-8 8h6v8h4v-8h6z"/></svg>' +
+          '</button>' +
+          scoreDisplay +
+          '<button class="comment-vote-btn ' + cvDislikeActive + '" onclick="castCommentVote(\'' + c.id + '\', -1, \'modal\')" title="Downvote">' +
+            '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 20l8-8h-6V4h-4v8H4z"/></svg>' +
+          '</button>' +
+        '</div>';
+
       return (
         '<div class="comment-item" id="comment-' + c.id + '">' +
         avatarEl +
@@ -502,7 +533,9 @@ function renderCommentsInModal(comments) {
         ' <span class="comment-time">' + timeAgo(c.created_at) + '</span>' +
         '</div>' +
         '<div class="comment-text">' + escHtml(c.content) + '</div>' +
+        imgHtml +
         '<div class="comment-actions">' +
+        voteHtml +
         '<button class="comment-action-btn" onclick="openReportModal(\'comment\', null, \'' + c.id + '\')">🚩 Report</button>' +
         (canModerate()
           ? '<button class="comment-action-btn mod-btn" onclick="modDeleteComment(\'' + c.id + '\')">🗑️ Delete</button>'
@@ -771,10 +804,12 @@ async function openPopularPostModal(postId) {
   }
 
   // Render comments
-  renderPopularModalComments(comments || []);
+  const voteMap = await _fetchCommentVoteMap(comments || []);
+  renderPopularModalComments(comments || [], voteMap);
 }
 
-function renderPopularModalComments(comments) {
+function renderPopularModalComments(comments, commentVoteMap) {
+  commentVoteMap = commentVoteMap || {};
   const list = document.getElementById('popular-comments-list');
   if (!list) return;
   if (!comments || comments.length === 0) {
@@ -794,6 +829,26 @@ function renderPopularModalComments(comments) {
     const nameEl = profileId
       ? '<button class="post-author-link" style="font-size:0.82rem" onclick="openProfileModal(\'' + profileId + '\')">' + escHtml(name) + roleBadge(profileRole) + '</button>'
       : '<span>' + escHtml(name) + roleBadge(profileRole) + '</span>';
+
+    const imgHtml = _buildCommentImageHtml(c);
+
+    const voteData = commentVoteMap[c.id] || { score: 0, myVote: 0 };
+    const cvLikeActive    = voteData.myVote ===  1 ? 'emoji-vote-active' : '';
+    const cvDislikeActive = voteData.myVote === -1 ? 'emoji-vote-active' : '';
+    const scoreDisplay = voteData.score !== 0
+      ? '<span class="comment-vote-score ' + (voteData.score > 0 ? 'score-pos' : 'score-neg') + '">' + (voteData.score > 0 ? '+' : '') + voteData.score + '</span>'
+      : '';
+    const voteHtml =
+      '<div class="comment-vote-group" id="cvg-pop-' + c.id + '">' +
+        '<button class="comment-vote-btn ' + cvLikeActive + '" onclick="castCommentVote(\'' + c.id + '\', 1, \'popular\')" title="Upvote">' +
+          '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l-8 8h6v8h4v-8h6z"/></svg>' +
+        '</button>' +
+        scoreDisplay +
+        '<button class="comment-vote-btn ' + cvDislikeActive + '" onclick="castCommentVote(\'' + c.id + '\', -1, \'popular\')" title="Downvote">' +
+          '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 20l8-8h-6V4h-4v8H4z"/></svg>' +
+        '</button>' +
+      '</div>';
+
     return '<div class="comment-item" id="pop-comment-' + c.id + '">' +
       avatarEl +
       '<div class="comment-content">' +
@@ -802,7 +857,9 @@ function renderPopularModalComments(comments) {
           ' <span class="comment-time">' + timeAgo(c.created_at) + '</span>' +
         '</div>' +
         '<div class="comment-text">' + escHtml(c.content) + '</div>' +
+        imgHtml +
         '<div class="comment-actions">' +
+          voteHtml +
           '<button class="comment-action-btn" onclick="openReportModal(\'comment\', null, \'' + c.id + '\')">🚩 Report</button>' +
         '</div>' +
       '</div>' +
@@ -857,18 +914,25 @@ async function submitPopularComment(postId) {
   if (!currentUser) return showToast('Sign in to comment');
   const input = document.getElementById('popular-comment-input');
   const content = (input ? input.value : '').trim();
-  if (!content) return showToast('Write a comment first!');
+  const pendingUrl = window._popularCommentImageUrl || null;
+
+  if (!content && !pendingUrl) return showToast('Write a comment or add an image first!');
+  if (window._popularCommentImageUploading) return showToast('Image still uploading, please wait...');
 
   const btn = document.getElementById('popular-submit-comment-btn');
   if (btn) btn.disabled = true;
 
   try {
-    await callEdge('add-comment', { post_id: postId, content });
+    const payload = { post_id: postId, content: content || ' ' };
+    if (pendingUrl) payload.image_url = pendingUrl;
+    await callEdge('add-comment', payload);
     if (input) input.value = '';
+    _clearPopularCommentImage();
     const { data: comments } = await db.from('comments')
       .select('*, profiles(id, name, avatar_url, role)')
       .eq('post_id', postId).order('created_at', { ascending: true });
-    renderPopularModalComments(comments || []);
+    const voteMap = await _fetchCommentVoteMap(comments || []);
+    renderPopularModalComments(comments || [], voteMap);
     loadPosts();
   } catch (err) {
     showToast('❌ ' + err.message);
@@ -876,3 +940,211 @@ async function submitPopularComment(postId) {
     if (btn) btn.disabled = false;
   }
 }
+// ============================================================
+// COMMENT IMAGE HELPERS
+// ============================================================
+
+/**
+ * Builds the HTML for a comment's attached image (if any).
+ * Reuses the existing lightbox (openPostLightbox).
+ */
+function _buildCommentImageHtml(c) {
+  const url = c.image_url || null;
+  if (!url) return '';
+  const thumb = typeof getOptimizedUrl === 'function'
+    ? getOptimizedUrl(url, 'w_600,q_auto,f_auto')
+    : url;
+  const full = typeof getOptimizedUrl === 'function'
+    ? getOptimizedUrl(url, 'w_1800,q_auto,f_auto')
+    : url;
+  return (
+    '<div class="comment-image-wrap">' +
+      '<img src="' + escHtml(thumb) + '" alt="Comment image" class="comment-img" ' +
+        'onclick="openPostLightbox([\'' + escHtml(full).replace(/'/g, "\\'") + '\'], 0)" ' +
+        'loading="lazy">' +
+    '</div>'
+  );
+}
+
+// ============================================================
+// COMMENT VOTES
+// ============================================================
+
+/**
+ * Fetches comment_votes for the given comments and returns a map:
+ * { [commentId]: { score: number, myVote: -1|0|1 } }
+ */
+async function _fetchCommentVoteMap(comments) {
+  if (!comments || comments.length === 0) return {};
+  const ids = comments.map(c => c.id);
+
+  const [{ data: allVotes }, { data: myVotes }] = await Promise.all([
+    db.from('comment_votes').select('comment_id, value').in('comment_id', ids),
+    currentUser
+      ? db.from('comment_votes').select('comment_id, value').eq('user_id', currentUser.id).in('comment_id', ids)
+      : Promise.resolve({ data: [] }),
+  ]);
+
+  const scoreMap = {};
+  (allVotes || []).forEach(v => {
+    scoreMap[v.comment_id] = (scoreMap[v.comment_id] || 0) + v.value;
+  });
+  const myVoteMap = {};
+  (myVotes || []).forEach(v => { myVoteMap[v.comment_id] = v.value; });
+
+  const result = {};
+  ids.forEach(id => {
+    result[id] = { score: scoreMap[id] || 0, myVote: myVoteMap[id] || 0 };
+  });
+  return result;
+}
+
+/**
+ * Cast/toggle a vote on a comment.
+ * context: 'modal' | 'popular'
+ */
+async function castCommentVote(commentId, value, context) {
+  if (!currentUser) return showToast('Sign in to vote');
+
+  const { data: existing } = await db.from('comment_votes')
+    .select('id, value').eq('comment_id', commentId).eq('user_id', currentUser.id).maybeSingle();
+
+  if (existing) {
+    if (existing.value === value) {
+      await db.from('comment_votes').delete().eq('id', existing.id);
+    } else {
+      await db.from('comment_votes').update({ value }).eq('id', existing.id);
+    }
+  } else {
+    await db.from('comment_votes').insert({ comment_id: commentId, user_id: currentUser.id, value });
+  }
+
+  // Refresh only the affected comment's vote display (optimistic re-render)
+  const postId = context === 'popular' ? popularPostActiveId : activePostId;
+  if (!postId) return;
+
+  const { data: comments } = await db.from('comments')
+    .select('*, profiles(id, name, avatar_url, role)')
+    .eq('post_id', postId).order('created_at', { ascending: true });
+  const voteMap = await _fetchCommentVoteMap(comments || []);
+
+  if (context === 'popular') {
+    renderPopularModalComments(comments || [], voteMap);
+  } else {
+    renderCommentsInModal(comments || [], voteMap);
+  }
+}
+
+// ============================================================
+// COMMENT IMAGE PICKER — injected into both modals on DOM ready
+// ============================================================
+
+// State for main comment modal
+window._commentImageUrl        = null;
+window._commentImageUploading  = false;
+
+// State for popular post modal
+window._popularCommentImageUrl       = null;
+window._popularCommentImageUploading = false;
+
+function _clearCommentImage() {
+  window._commentImageUrl = null;
+  window._commentImageUploading = false;
+  const prev = document.getElementById('comment-img-preview');
+  if (prev) prev.innerHTML = '';
+  const inp = document.getElementById('comment-image-input');
+  if (inp) inp.value = '';
+}
+
+function _clearPopularCommentImage() {
+  window._popularCommentImageUrl = null;
+  window._popularCommentImageUploading = false;
+  const prev = document.getElementById('popular-comment-img-preview');
+  if (prev) prev.innerHTML = '';
+  const inp = document.getElementById('popular-comment-image-input');
+  if (inp) inp.value = '';
+}
+
+/**
+ * Generic handler: uploads the chosen file to Cloudinary and stores the URL.
+ */
+function _handleCommentImagePick(file, previewEl, isPopular) {
+  if (!file) return;
+  if (!file.type.startsWith('image/')) { showToast('Only image files allowed'); return; }
+  if (file.size > 1 * 1024 * 1024) { showToast('Image must be under 1MB'); return; }
+
+  if (isPopular) {
+    window._popularCommentImageUrl = null;
+    window._popularCommentImageUploading = true;
+  } else {
+    window._commentImageUrl = null;
+    window._commentImageUploading = true;
+  }
+
+  // Show local preview immediately
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    if (!previewEl) return;
+    previewEl.innerHTML =
+      '<div class="comment-img-preview-wrap">' +
+        '<img src="' + e.target.result + '" alt="preview">' +
+        '<button class="comment-img-remove-btn" onclick="' + (isPopular ? '_clearPopularCommentImage' : '_clearCommentImage') + '()" title="Remove">×</button>' +
+        '<div class="comment-img-uploading-label" id="' + (isPopular ? 'pop-' : '') + 'cimg-upload-label">Uploading…</div>' +
+      '</div>';
+  };
+  reader.readAsDataURL(file);
+
+  // Upload
+  uploadImageToCloudinary(file, { maxSizeMB: 1, folder: 'study_aura/comments' })
+    .then(function(url) {
+      const optimized = typeof getOptimizedUrl === 'function'
+        ? getOptimizedUrl(url, 'w_1200,q_auto,f_auto')
+        : url;
+      if (isPopular) {
+        window._popularCommentImageUrl = optimized;
+        window._popularCommentImageUploading = false;
+      } else {
+        window._commentImageUrl = optimized;
+        window._commentImageUploading = false;
+      }
+      const label = document.getElementById((isPopular ? 'pop-' : '') + 'cimg-upload-label');
+      if (label) label.textContent = '✓ Ready';
+    })
+    .catch(function(err) {
+      showToast('Image upload failed: ' + err.message);
+      if (isPopular) _clearPopularCommentImage();
+      else _clearCommentImage();
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  // ── Wire up main comment modal image picker ──
+  const cimgInput = document.getElementById('comment-image-input');
+  const cimgBtn   = document.getElementById('comment-image-btn');
+  const cimgPrev  = document.getElementById('comment-img-preview');
+  if (cimgInput) {
+    cimgInput.style.display = 'none';
+    if (cimgBtn) {
+      cimgBtn.addEventListener('click', function() { cimgInput.click(); });
+    }
+    cimgInput.addEventListener('change', function() {
+      _handleCommentImagePick(this.files[0], cimgPrev, false);
+      this.value = '';
+    });
+  }
+
+  // ── Wire up popular modal image picker ──
+  const pcimgInput = document.getElementById('popular-comment-image-input');
+  const pcimgBtn   = document.getElementById('popular-comment-image-btn');
+  const pcimgPrev  = document.getElementById('popular-comment-img-preview');
+  if (pcimgInput) {
+    pcimgInput.style.display = 'none';
+    if (pcimgBtn) {
+      pcimgBtn.addEventListener('click', function() { pcimgInput.click(); });
+    }
+    pcimgInput.addEventListener('change', function() {
+      _handleCommentImagePick(this.files[0], pcimgPrev, true);
+      this.value = '';
+    });
+  }
+});

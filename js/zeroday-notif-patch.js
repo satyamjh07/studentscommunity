@@ -1,8 +1,10 @@
 // ============================================================
-// ZERODAY — NOTIFICATION NAVBAR PATCH v1.0
-// Moves notifications from the sidebar link to a floating
-// bell icon in the mobile topbar and desktop header.
-// Preserves all existing notifications.js functionality.
+// ZERODAY — NOTIFICATION NAVBAR PATCH v1.1 (FIXED)
+// Fixes:
+//   1. Desktop bell had no click listener → panel never opened
+//   2. Duplicate id="notif-badge" caused DOM conflicts
+//   3. Mobile close / bell toggle unreliable after async innerHTML rebuild
+//   4. Mobile panel z-index lower than topbar on some browsers
 // ============================================================
 
 (function ZDNotifPatch() {
@@ -23,9 +25,10 @@
       var bellWrap = document.createElement('div');
       bellWrap.className = 'notif-bell-wrap';
       bellWrap.style.position = 'relative';
-      bellWrap.innerHTML = _bellButtonHTML();
+      // FIX: use unique id "notif-badge-mobile" to avoid duplicate-id conflict
+      //      with the sidebar's existing id="notif-badge"
+      bellWrap.innerHTML = _bellButtonHTML('notif-bell-btn', 'notif-badge-mobile');
 
-      // Insert before the mobile-avatar
       var mobileAvatar = topbar.querySelector('.mobile-avatar');
       if (mobileAvatar) {
         topbar.insertBefore(bellWrap, mobileAvatar);
@@ -34,77 +37,67 @@
       }
     }
 
-    // Desktop: inject a fixed top-right bell (visible only on wide screens)
+    // Desktop: fixed top-right bell (visible only on wide screens)
     _injectDesktopBell();
   }
 
-  function _bellButtonHTML() {
+  // FIX: badgeId param so every badge element has a unique id
+  function _bellButtonHTML(btnId, badgeId) {
     return [
-      '<button id="notif-bell-btn" aria-label="Notifications" title="Notifications">',
+      '<button id="' + btnId + '" aria-label="Notifications" title="Notifications">',
         '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">',
           '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>',
           '<path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
         '</svg>',
-        '<span class="notif-badge" id="notif-badge" style="display:none">0</span>',
+        '<span class="notif-badge" id="' + badgeId + '" style="display:none">0</span>',
       '</button>'
     ].join('');
   }
 
   function _injectDesktopBell() {
-    // On desktop the mobile-topbar is hidden; we append a bell to the sidebar brand area
-    var sidebarBrand = document.querySelector('.sidebar-brand');
-    if (!sidebarBrand) return;
+    var desktopWrap = document.createElement('div');
+    desktopWrap.className = 'notif-bell-wrap zd-desktop-bell';
+    desktopWrap.style.cssText = [
+      'position:fixed',
+      'top:1.1rem',
+      'right:1.4rem',
+      'z-index:10000',  // FIX: must be above np-panel (9999) so badge stays visible
+      'display:none'
+    ].join(';');
 
-    // Only inject if not already there (mobile already injected one)
-    if (document.getElementById('notif-bell-btn')) {
-      // Clone for desktop placement
-      var desktopWrap = document.createElement('div');
-      desktopWrap.className = 'notif-bell-wrap zd-desktop-bell';
-      desktopWrap.style.cssText = [
-        'position:fixed',
-        'top:1.1rem',
-        'right:1.4rem',
-        'z-index:900',
-        'display:none'
-      ].join(';');
+    // FIX: use unique id "notif-bell-btn-desktop" and "notif-badge-desktop"
+    desktopWrap.innerHTML = [
+      '<button id="notif-bell-btn-desktop" aria-label="Notifications" title="Notifications"',
+      ' style="width:38px;height:38px;display:flex;align-items:center;justify-content:center;',
+      'background:rgba(124,111,255,0.07);border:1px solid rgba(124,111,255,0.15);border-radius:50%;',
+      'cursor:pointer;color:var(--text2);transition:all 0.2s;position:relative;">',
+        '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">',
+          '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>',
+          '<path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
+        '</svg>',
+        '<span class="notif-badge" id="notif-badge-desktop" style="display:none">0</span>',
+      '</button>'
+    ].join('');
 
-      desktopWrap.innerHTML = [
-        '<button id="notif-bell-btn-desktop" aria-label="Notifications" title="Notifications"',
-        ' style="width:38px;height:38px;display:flex;align-items:center;justify-content:center;',
-        'background:rgba(124,111,255,0.07);border:1px solid rgba(124,111,255,0.15);border-radius:50%;',
-        'cursor:pointer;color:var(--text2);transition:all 0.2s;position:relative;">',
-          '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">',
-            '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>',
-            '<path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
-          '</svg>',
-          '<span class="notif-badge" id="notif-badge-desktop" style="display:none">0</span>',
-        '</button>'
-      ].join('');
+    document.body.appendChild(desktopWrap);
 
-      document.body.appendChild(desktopWrap);
-
-      // Show only on desktop
-      var mq = window.matchMedia('(min-width: 769px)');
-      function handleMQ(e) { desktopWrap.style.display = e.matches ? 'block' : 'none'; }
+    // Show only on desktop
+    var mq = window.matchMedia('(min-width: 769px)');
+    function handleMQ(e) { desktopWrap.style.display = e.matches ? 'block' : 'none'; }
+    if (mq.addEventListener) {
       mq.addEventListener('change', handleMQ);
-      handleMQ(mq);
-
-      // Wire desktop bell
-      desktopWrap.querySelector('#notif-bell-btn-desktop').addEventListener('click', function (e) {
-        e.stopPropagation();
-        _toggle();
-      });
-
-      // Attach panel to desktop wrap
-      _desktopWrap = desktopWrap;
+    } else {
+      mq.addListener(handleMQ); // Safari < 14 fallback
     }
+    handleMQ(mq);
+
+    _desktopWrap = desktopWrap;
   }
 
   var _desktopWrap = null;
 
   // ── 2. Remove notifications from sidebar nav ────────────
   function _patchSidebarNav() {
-    // Find and hide the notifications nav link
     var navLinks = document.querySelectorAll('.nav-link');
     navLinks.forEach(function (link) {
       if (link.dataset.page === 'notifications') {
@@ -118,24 +111,36 @@
   var _isOpen = false;
 
   function _initPanelLogic() {
-    // Wire up the main bell btn
-    document.addEventListener('click', function (e) {
-      var bellBtn = document.getElementById('notif-bell-btn');
-      var panel   = document.getElementById('zd-notif-panel');
+    // FIX: Wire BOTH bell buttons here with their own click listeners.
+    // Previously the desktop bell was never wired — this was the main bug.
 
-      if (bellBtn && bellBtn.contains(e.target)) {
+    // Mobile bell
+    document.addEventListener('click', function (e) {
+      var mobileBell  = document.getElementById('notif-bell-btn');
+      var desktopBell = document.getElementById('notif-bell-btn-desktop');
+      var panel       = document.getElementById('zd-notif-panel');
+
+      // Bell button clicks — toggle panel
+      if ((mobileBell  && mobileBell.contains(e.target)) ||
+          (desktopBell && desktopBell.contains(e.target))) {
         e.stopPropagation();
         _toggle();
         return;
       }
 
-      // Close on outside click
+      // Close button or mark-read button inside panel — let their
+      // onclick handlers fire; don't interfere here.
+      if (_isOpen && panel && panel.contains(e.target)) {
+        return;
+      }
+
+      // Outside click → close
       if (_isOpen && panel && !panel.contains(e.target)) {
         _closePanel();
       }
-    });
+    }, true); // FIX: use capture phase so this fires before any stopPropagation
 
-    // Load initial count
+    // Load initial badge count
     _refreshBadge();
     // Poll every 90s
     setInterval(_refreshBadge, 90000);
@@ -148,15 +153,15 @@
   function _openPanel() {
     _isOpen = true;
     _ensurePanel();
-    _loadNotifications();
     var panel = document.getElementById('zd-notif-panel');
     if (panel) {
       _positionPanel(panel);
       requestAnimationFrame(function () {
+        _positionPanel(panel);
         panel.classList.add('np-open');
+        _loadNotifications();
       });
     }
-    // Mark as seen
     _markSeen();
     _refreshBadge();
   }
@@ -178,28 +183,69 @@
     panel.setAttribute('aria-label', 'Notifications');
     panel.innerHTML = '<div class="np-body"><div class="np-empty"><div class="np-empty-title">Loading...</div></div></div>';
 
-    // Always attach to body so it can't shift any topbar elements,
-    // and position it via fixed coords calculated from the bell button.
     document.body.appendChild(panel);
     _positionPanel(panel);
+
+    // FIX: Use event delegation on the panel itself for close/mark-read buttons.
+    // This survives innerHTML rebuilds since the listener is on the panel element,
+    // not on the dynamically-created buttons inside it.
+    panel.addEventListener('click', function (e) {
+      // Close button
+      if (e.target.closest('.np-close-btn')) {
+        e.stopPropagation();
+        _closePanel();
+        return;
+      }
+      // Mark all read button
+      if (e.target.closest('.np-mark-read-btn')) {
+        e.stopPropagation();
+        ZDNotif._markAllRead();
+        return;
+      }
+      // Admin broadcast button
+      if (e.target.closest('.np-admin-btn')) {
+        e.stopPropagation();
+        _openBroadcast();
+        return;
+      }
+    });
   }
 
   function _positionPanel(panel) {
-    // Find the active bell button (desktop or mobile)
+    var isMobile = window.innerWidth < 769;
+
+    if (isMobile) {
+      // FIX: z-index must beat mobile-topbar (z-index: 99) but we also need
+      //      the panel to render BELOW the topbar, not on top of it.
+      //      Use z-index: 200 (above topbar's 99, below modals at 1000+)
+      panel.style.position  = 'fixed';
+      panel.style.top       = '56px'; // height of mobile-topbar
+      panel.style.left      = '8px';
+      panel.style.right     = '8px';
+      panel.style.width     = 'auto';
+      panel.style.maxHeight = 'calc(100vh - 72px)';
+      panel.style.zIndex    = '200';
+      return;
+    }
+
+    // Desktop: anchor below the bell button
     var bell = document.getElementById('notif-bell-btn-desktop') ||
                document.getElementById('notif-bell-btn');
     if (!bell) return;
 
-    var rect = bell.getBoundingClientRect();
-    var panelW = Math.min(380, window.innerWidth - 16);
-    var left = rect.right - panelW;
+    var rect   = bell.getBoundingClientRect();
+    var panelW = 380;
+    var left   = rect.right - panelW;
     if (left < 8) left = 8;
+    if (left + panelW > window.innerWidth - 8) left = window.innerWidth - panelW - 8;
 
-    panel.style.position = 'fixed';
-    panel.style.top      = (rect.bottom + 10) + 'px';
-    panel.style.left     = left + 'px';
-    panel.style.width    = panelW + 'px';
-    panel.style.right    = 'auto';
+    panel.style.position  = 'fixed';
+    panel.style.top       = (rect.bottom + 8) + 'px';
+    panel.style.left      = left + 'px';
+    panel.style.right     = 'auto';
+    panel.style.width     = panelW + 'px';
+    panel.style.maxHeight = 'calc(100vh - ' + (rect.bottom + 20) + 'px)';
+    panel.style.zIndex    = '9999';
   }
 
   // ── 5. Load notifications from Supabase ─────────────────
@@ -207,13 +253,11 @@
     var panel = document.getElementById('zd-notif-panel');
     if (!panel) return;
 
-    // Check if user is logged in (currentUser global from auth.js)
     if (typeof currentUser === 'undefined' || !currentUser) {
       panel.innerHTML = _emptyHTML('Sign in to see notifications');
       return;
     }
 
-    // Check admin
     var isAdmin = _isAdmin();
 
     panel.innerHTML = _headerHTML(isAdmin) +
@@ -235,17 +279,22 @@
         body = '<div class="np-body">' + _emptyBodyHTML() + '</div>';
       } else {
         body = '<div class="np-body">' + notifs.map(_notifItemHTML).join('') + '</div>' +
-               '<div class="np-footer"><button class="np-mark-read-btn" onclick="ZDNotif._markAllRead()">Mark all as read</button></div>';
+               '<div class="np-footer"><button class="np-mark-read-btn">Mark all as read</button></div>';
       }
 
       panel.innerHTML = _headerHTML(isAdmin) + body;
+      _positionPanel(panel);
 
     } catch (err) {
       panel.innerHTML = _headerHTML(isAdmin) +
         '<div class="np-body"><div class="np-empty"><div class="np-empty-title">Failed to load</div></div></div>';
+      _positionPanel(panel);
     }
   }
 
+  // FIX: Removed inline onclick="ZDNotif.xxx()" from all header buttons.
+  //      Clicks are now handled by the delegated listener on the panel element
+  //      (set up once in _ensurePanel), so they survive innerHTML rebuilds.
   function _headerHTML(isAdmin) {
     return [
       '<div class="np-header">',
@@ -254,7 +303,7 @@
         '</div>',
         '<div class="np-header-right">',
           isAdmin ? [
-            '<button class="np-admin-btn" onclick="ZDNotif.openBroadcast()">',
+            '<button class="np-admin-btn">',
               '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px">',
                 '<line x1="22" y1="2" x2="11" y2="13"/>',
                 '<polygon points="22 2 15 22 11 13 2 9 22 2"/>',
@@ -262,7 +311,7 @@
               'Broadcast',
             '</button>'
           ].join('') : '',
-          '<button class="np-close-btn" onclick="ZDNotif.close()" aria-label="Close">✕</button>',
+          '<button class="np-close-btn" aria-label="Close">✕</button>',
         '</div>',
       '</div>'
     ].join('');
@@ -283,20 +332,18 @@
 
   function _notifItemHTML(n) {
     var isPersonal = n.user_id !== null;
-    var iconMap = {
-      danger:  '🚨', warn: '⚠️', success: '✅', info: '📢'
-    };
-    var typeKey = n.type || 'info';
-    var icon = iconMap[typeKey] || '📢';
-    var timeStr = _timeAgo(n.created_at);
+    var iconMap = { danger: '🚨', warn: '⚠️', success: '✅', info: '📢' };
+    var typeKey  = n.type || 'info';
+    var icon     = iconMap[typeKey] || '📢';
+    var timeStr  = _timeAgo(n.created_at);
 
     return [
       '<div class="np-item' + (isPersonal ? ' np-item--unread' : '') + '">',
         '<div class="np-item-icon type-' + _escHtml(typeKey) + '">' + icon + '</div>',
         '<div class="np-item-content">',
-          '<div class="np-item-title">' + _escHtml(n.title || '') + '</div>',
-          '<div class="np-item-body">' + _escHtml(n.message || n.body || '') + '</div>',
-          '<div class="np-item-time">' + timeStr + (isPersonal ? ' · Personal' : '') + '</div>',
+          '<div class="np-item-title">'  + _escHtml(n.title   || '')           + '</div>',
+          '<div class="np-item-body">'   + _escHtml(n.message || n.body || '') + '</div>',
+          '<div class="np-item-time">'   + timeStr + (isPersonal ? ' · Personal' : '') + '</div>',
         '</div>',
       '</div>'
     ].join('');
@@ -315,13 +362,16 @@
         .select('id', { count: 'exact', head: true })
         .or('user_id.is.null,user_id.eq.' + currentUser.id);
 
-      var total = result.count || 0;
-      var seen  = parseInt(localStorage.getItem('sa_notif_seen') || '0');
+      var total  = result.count || 0;
+      var seen   = parseInt(localStorage.getItem('sa_notif_seen') || '0');
       var unread = Math.max(0, total - seen);
 
+      // FIX: updated badge IDs to match the new unique IDs
       var badges = [
-        document.getElementById('notif-badge'),
-        document.getElementById('notif-badge-desktop')
+        document.getElementById('notif-badge-mobile'),
+        document.getElementById('notif-badge-desktop'),
+        // Also sync the original sidebar badge if it still exists
+        document.getElementById('notif-badge')
       ];
       badges.forEach(function (badge) {
         if (!badge) return;
@@ -349,7 +399,6 @@
   function _openBroadcast() {
     _closePanel();
 
-    // Remove existing
     var existing = document.getElementById('zd-broadcast-overlay');
     if (existing) existing.remove();
 
@@ -366,7 +415,7 @@
             '</svg>',
             'Broadcast Notification',
           '</div>',
-          '<button class="np-close-btn" onclick="document.getElementById(\'zd-broadcast-overlay\').remove()">✕</button>',
+          '<button class="np-close-btn np-broadcast-close">✕</button>',
         '</div>',
         '<div class="np-composer-body">',
           '<div class="np-field">',
@@ -390,8 +439,8 @@
           '</div>',
         '</div>',
         '<div class="np-composer-footer">',
-          '<button class="np-cancel-btn" onclick="document.getElementById(\'zd-broadcast-overlay\').remove()">Cancel</button>',
-          '<button class="np-send-btn" id="zd-npc-send-btn" onclick="ZDNotif._send()">',
+          '<button class="np-cancel-btn np-broadcast-close">Cancel</button>',
+          '<button class="np-send-btn" id="zd-npc-send-btn">',
             '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px">',
               '<line x1="22" y1="2" x2="11" y2="13"/>',
               '<polygon points="22 2 15 22 11 13 2 9 22 2"/>',
@@ -415,7 +464,16 @@
       }
     });
 
-    // Close on backdrop
+    // Send button
+    var sendBtn = document.getElementById('zd-npc-send-btn');
+    if (sendBtn) sendBtn.addEventListener('click', _sendBroadcast);
+
+    // Close buttons (✕ and Cancel) — use class instead of inline onclick
+    overlay.querySelectorAll('.np-broadcast-close').forEach(function (btn) {
+      btn.addEventListener('click', function () { overlay.remove(); });
+    });
+
+    // Close on backdrop click
     overlay.addEventListener('click', function (e) {
       if (e.target === overlay) overlay.remove();
     });
@@ -429,7 +487,6 @@
     var titleEl = document.getElementById('zd-npc-title');
     var bodyEl  = document.getElementById('zd-npc-body');
     var sendBtn = document.getElementById('zd-npc-send-btn');
-    var typeEl  = document.querySelector('input[name="zd-npc-type"]:checked');
 
     var title   = titleEl && titleEl.value.trim();
     var message = bodyEl  && bodyEl.value.trim();
@@ -441,7 +498,6 @@
     sendBtn.textContent = 'Sending…';
 
     try {
-      // Use existing send-notification Edge Function
       var sessionResult = await db.auth.getSession();
       var session = sessionResult.data && sessionResult.data.session;
       if (!session) throw new Error('Not authenticated');
@@ -450,7 +506,7 @@
       var res = await fetch(EDGE_BASE + '/functions/v1/send-notification', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type':  'application/json',
           'Authorization': 'Bearer ' + session.access_token
         },
         body: JSON.stringify({ title: title, message: message, user_id: null })
@@ -460,7 +516,8 @@
       if (!res.ok) throw new Error(json.error || 'Failed to send');
 
       if (typeof showToast === 'function') showToast('✅ Notification broadcast sent!');
-      document.getElementById('zd-broadcast-overlay').remove();
+      var overlay = document.getElementById('zd-broadcast-overlay');
+      if (overlay) overlay.remove();
       _refreshBadge();
 
     } catch (err) {
@@ -472,8 +529,7 @@
 
   // ── 8. Helpers ───────────────────────────────────────────
   function _isAdmin() {
-    if (typeof currentProfile !== 'undefined' && currentProfile && currentProfile.role === 'admin') return true;
-    return false;
+    return typeof currentProfile !== 'undefined' && currentProfile && currentProfile.role === 'admin';
   }
 
   function _escHtml(str) {
@@ -488,29 +544,33 @@
   function _timeAgo(ts) {
     if (!ts) return '';
     var diff = Math.floor((Date.now() - new Date(ts).getTime()) / 1000);
-    if (diff < 60)  return 'just now';
-    if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
-    if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+    if (diff < 60)    return 'just now';
+    if (diff < 3600)  return Math.floor(diff / 60)   + 'm ago';
+    if (diff < 86400) return Math.floor(diff / 3600)  + 'h ago';
     return Math.floor(diff / 86400) + 'd ago';
   }
 
   // ── 9. Public API ─────────────────────────────────────────
   window.ZDNotif = {
-    toggle:         _toggle,
-    close:          _closePanel,
-    open:           _openPanel,
-    openBroadcast:  _openBroadcast,
-    _send:          _sendBroadcast,
+    toggle:        _toggle,
+    close:         _closePanel,
+    open:          _openPanel,
+    openBroadcast: _openBroadcast,
+    _send:         _sendBroadcast,
     _markAllRead: function () {
       _markSeen();
-      var badges = [document.getElementById('notif-badge'), document.getElementById('notif-badge-desktop')];
+      var badges = [
+        document.getElementById('notif-badge-mobile'),
+        document.getElementById('notif-badge-desktop'),
+        document.getElementById('notif-badge')
+      ];
       badges.forEach(function (b) { if (b) b.style.display = 'none'; });
       if (typeof showToast === 'function') showToast('All notifications marked as read');
     },
     refresh: _refreshBadge
   };
 
-  // Also patch the existing loadNotificationCount so it updates new badges
+  // Patch the existing loadNotificationCount so it updates new badges too
   var _origLoadNotifCount = window.loadNotificationCount;
   window.loadNotificationCount = function () {
     _refreshBadge();
