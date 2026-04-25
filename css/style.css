@@ -3267,3 +3267,169 @@ body.modal-open {
     display: none;
   }
 }
+/* ============================================================
+   COMMENT IMAGES & VOTES — new feature styles
+   ============================================================ */
+
+/* ── Comment composer restructure ── */
+.comment-composer-inner {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 0;
+}
+
+.comment-composer-inputs {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  width: 100%;
+}
+
+.comment-composer-inputs textarea {
+  flex: 1;
+}
+
+.comment-composer-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+/* ── Image attach button in comment box ── */
+.comment-image-btn {
+  background: transparent;
+  color: var(--text3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.comment-image-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-soft, rgba(99,102,241,0.08));
+}
+
+/* ── Preview strip above the comment textarea ── */
+.comment-img-preview {
+  width: 100%;
+}
+.comment-img-preview-wrap {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 6px;
+  border-radius: 10px;
+  overflow: hidden;
+  max-width: 160px;
+}
+.comment-img-preview-wrap img {
+  width: 160px;
+  height: 100px;
+  object-fit: cover;
+  display: block;
+  border-radius: 10px;
+  border: 1.5px solid var(--border);
+}
+.comment-img-remove-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(0,0,0,0.65);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+.comment-img-uploading-label {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0,0,0,0.55);
+  color: #fff;
+  font-size: 0.68rem;
+  text-align: center;
+  padding: 3px 0;
+}
+
+/* ── Image inside a rendered comment ── */
+.comment-image-wrap {
+  margin-top: 8px;
+  margin-bottom: 4px;
+}
+.comment-img {
+  max-width: min(260px, 100%);
+  max-height: 200px;
+  border-radius: 10px;
+  object-fit: cover;
+  cursor: zoom-in;
+  border: 1.5px solid var(--border);
+  display: block;
+  transition: opacity 0.15s;
+}
+.comment-img:hover {
+  opacity: 0.88;
+}
+
+/* ── Comment vote group ── */
+.comment-vote-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--surface2, rgba(255,255,255,0.05));
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 2px 6px;
+}
+.comment-vote-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text3);
+  padding: 2px 3px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  transition: color 0.15s, transform 0.1s;
+  line-height: 1;
+}
+.comment-vote-btn:hover {
+  color: var(--accent);
+  transform: scale(1.15);
+}
+.comment-vote-btn.emoji-vote-active {
+  color: var(--accent);
+}
+.comment-vote-score {
+  font-size: 0.72rem;
+  font-weight: 700;
+  min-width: 16px;
+  text-align: center;
+  padding: 0 1px;
+}
+.comment-vote-score.score-pos { color: var(--green, #22c55e); }
+.comment-vote-score.score-neg { color: var(--red,   #ef4444); }
+
+/* ── comment-actions row spacing adjustment ── */
+.comment-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}

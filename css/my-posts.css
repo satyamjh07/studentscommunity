@@ -1,0 +1,506 @@
+/* ============================================================
+   ZERODAY — NOTIFICATION PANEL THEME FIX
+   Replaces the hardcoded dark-only rgba values in the panel
+   with CSS variables so all 6 themes work correctly.
+
+   HOW TO USE:
+   Replace the entire "NOTIFICATION PANEL (navbar modal)"
+   section in zeroday-theme.css with this block,
+   OR just <link> this file AFTER zeroday-theme.css.
+   ============================================================ */
+
+/* ── Bell wrapper & button ──────────────────────────────── */
+.notif-bell-wrap {
+  position: relative;
+  flex-shrink: 0;
+  align-self: flex-start;
+  margin-top: 0.25rem;
+}
+
+#notif-bell-btn,
+#notif-bell-btn-desktop {
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-glow);
+  border: 1px solid var(--border-hover);
+  border-radius: 50%;
+  cursor: pointer;
+  color: var(--text2);
+  transition: all 0.2s;
+  position: relative;
+}
+
+#notif-bell-btn:hover,
+#notif-bell-btn-desktop:hover {
+  background: var(--accent-glow);
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 0 20px var(--accent-glow);
+  filter: brightness(1.4);
+}
+
+.notif-badge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  min-width: 18px;
+  height: 18px;
+  background: var(--red);
+  border-radius: 99px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.3rem;
+  border: 1.5px solid var(--bg);
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+/* ── Notification dropdown panel ────────────────────────── */
+.np-panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 380px;
+  background: var(--card);
+  border: 1px solid var(--border-hover);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  z-index: 9999;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(-8px) scale(0.97);
+  pointer-events: none;
+  transition: opacity 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+              transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+  max-height: calc(100vh - 4rem);
+}
+
+.np-panel.np-open {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: all;
+}
+
+/* ── Header ─────────────────────────────────────────────── */
+.np-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.1rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg2);
+}
+
+.np-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.np-header-title {
+  font-family: 'Bebas Neue', 'Space Grotesk', sans-serif;
+  font-size: 1.1rem;
+  letter-spacing: 0.08em;
+  color: var(--text);
+}
+
+.np-unread-badge {
+  background: var(--red);
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 800;
+  padding: 0.1rem 0.4rem;
+  border-radius: 99px;
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+.np-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* ── Admin broadcast button ─────────────────────────────── */
+.np-admin-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.7rem;
+  background: var(--accent-glow);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  color: var(--accent);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  font-family: 'Space Grotesk', sans-serif;
+  transition: all 0.18s;
+  opacity: 0.85;
+}
+
+.np-admin-btn:hover {
+  opacity: 1;
+  background: var(--accent-glow);
+  filter: brightness(1.3);
+  box-shadow: 0 4px 16px var(--accent-glow);
+}
+
+/* ── Close button ───────────────────────────────────────── */
+.np-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--text3);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: color 0.15s;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.np-close-btn:hover { color: var(--text); }
+
+/* ── Body / scroll area ─────────────────────────────────── */
+.np-body {
+  max-height: calc(100vh - 180px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-hover) transparent;
+}
+
+.np-body::-webkit-scrollbar { width: 4px; }
+.np-body::-webkit-scrollbar-track { background: transparent; }
+.np-body::-webkit-scrollbar-thumb {
+  background: var(--border-hover);
+  border-radius: 99px;
+}
+
+/* ── Notification items ─────────────────────────────────── */
+.np-item {
+  padding: 0.85rem 1.1rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  transition: background 0.15s;
+  cursor: default;
+}
+
+.np-item:hover { background: var(--bg2); }
+
+.np-item.np-item--unread {
+  background: var(--bg3);
+  border-left: 2px solid var(--accent);
+}
+
+.np-item-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 0.85rem;
+}
+
+/* Icon type backgrounds use semantic theme colors */
+.np-item-icon.type-info    { background: var(--accent-glow); color: var(--blue); }
+.np-item-icon.type-warn    { background: var(--accent-glow); color: var(--orange); }
+.np-item-icon.type-danger  { background: var(--accent-glow); color: var(--red); }
+.np-item-icon.type-success { background: var(--accent-glow); color: var(--green); }
+
+.np-item-content { flex: 1; min-width: 0; }
+
+.np-item-title {
+  font-size: 0.83rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 0.2rem;
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+.np-item-body {
+  font-size: 0.78rem;
+  color: var(--text2);
+  line-height: 1.5;
+}
+
+.np-item-time {
+  font-size: 0.68rem;
+  color: var(--text3);
+  margin-top: 0.3rem;
+  letter-spacing: 0.04em;
+}
+
+/* ── Empty state ────────────────────────────────────────── */
+.np-empty {
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  color: var(--text3);
+}
+
+.np-empty-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text2);
+  margin-bottom: 0.3rem;
+}
+
+.np-empty-sub { font-size: 0.75rem; }
+
+/* ── Footer ─────────────────────────────────────────────── */
+.np-footer {
+  padding: 0.75rem 1.1rem;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  background: var(--bg2);
+}
+
+.np-mark-read-btn {
+  background: transparent;
+  border: none;
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  font-family: 'Space Grotesk', sans-serif;
+  transition: color 0.15s;
+}
+
+.np-mark-read-btn:hover { color: var(--accent2); }
+
+/* ── Broadcast composer overlay ─────────────────────────── */
+.np-composer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  opacity: 0;
+  transition: opacity 0.22s;
+}
+
+.np-composer-overlay.np-composer-overlay--open { opacity: 1; }
+
+.np-composer {
+  width: 100%;
+  max-width: 480px;
+  background: var(--card);
+  border: 1px solid var(--border-hover);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.np-composer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.2rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg2);
+}
+
+.np-composer-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: 'Bebas Neue', 'Space Grotesk', sans-serif;
+  font-size: 1rem;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+}
+
+.np-composer-body {
+  padding: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  max-height: 65vh;
+  overflow-y: auto;
+  background: var(--card);
+}
+
+.np-field { display: flex; flex-direction: column; gap: 0.35rem; }
+
+.np-label {
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text3);
+  font-weight: 700;
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+/* ── Inputs ─────────────────────────────────────────────── */
+.np-input,
+.np-select,
+.np-textarea {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius-xs);
+  padding: 0.6rem 0.8rem;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.85rem;
+  width: 100%;
+  transition: all 0.2s;
+}
+
+.np-input::placeholder,
+.np-textarea::placeholder {
+  color: var(--text3);
+}
+
+.np-input:focus,
+.np-select:focus,
+.np-textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--bg3);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.np-textarea { resize: none; }
+
+.np-char-count {
+  font-size: 0.68rem;
+  color: var(--text3);
+  text-align: right;
+  font-family: 'DM Mono', monospace;
+}
+
+/* ── Type selector grid ─────────────────────────────────── */
+.np-type-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem;
+}
+
+.np-type-option {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.7rem;
+  border-radius: 6px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text2);
+  transition: all 0.18s;
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+.np-type-option input[type="radio"] { display: none; }
+
+/* Checked states use semantic theme colors */
+.np-type-info:has(input:checked) {
+  background: var(--accent-glow);
+  border-color: var(--blue);
+  color: var(--blue);
+}
+.np-type-success:has(input:checked) {
+  background: var(--accent-glow);
+  border-color: var(--green);
+  color: var(--green);
+}
+.np-type-warn:has(input:checked) {
+  background: var(--accent-glow);
+  border-color: var(--orange);
+  color: var(--orange);
+}
+.np-type-danger:has(input:checked) {
+  background: var(--accent-glow);
+  border-color: var(--red);
+  color: var(--red);
+}
+
+/* ── Composer footer buttons ────────────────────────────── */
+.np-composer-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  padding: 1rem 1.2rem;
+  border-top: 1px solid var(--border);
+  background: var(--bg2);
+}
+
+.np-cancel-btn {
+  padding: 0.55rem 1rem;
+  background: transparent;
+  border: 1px solid var(--border-hover);
+  border-radius: 7px;
+  color: var(--text2);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'Space Grotesk', sans-serif;
+  transition: all 0.18s;
+  letter-spacing: 0.04em;
+}
+
+.np-cancel-btn:hover {
+  background: var(--bg3);
+  border-color: var(--border-hover);
+  color: var(--text);
+}
+
+/* Send button uses the theme accent gradient */
+.np-send-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1.1rem;
+  background: var(--accent-grad);
+  border: none;
+  border-radius: 7px;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  font-family: 'Space Grotesk', sans-serif;
+  transition: all 0.2s;
+  box-shadow: 0 4px 16px var(--accent-glow);
+}
+
+.np-send-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px var(--accent-glow);
+  filter: brightness(1.1);
+}
+
+.np-send-btn:disabled {
+  opacity: 0.5;
+  transform: none;
+  cursor: not-allowed;
+}
+
+/* ── Mobile responsive ──────────────────────────────────── */
+@media (max-width: 768px) {
+  .np-panel {
+    border-radius: 12px;
+  }
+}
