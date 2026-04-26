@@ -203,9 +203,15 @@
         return;
       }
       // Admin broadcast button
-      if (e.target.closest('.np-admin-btn')) {
+      if (e.target.closest('.np-admin-btn') && !e.target.closest('.np-direct-btn')) {
         e.stopPropagation();
         _openBroadcast();
+        return;
+      }
+      // Admin direct (send to user) button
+      if (e.target.closest('.np-direct-btn')) {
+        e.stopPropagation();
+        _openDirect();
         return;
       }
     });
@@ -303,6 +309,13 @@
         '</div>',
         '<div class="np-header-right">',
           isAdmin ? [
+            '<button class="np-admin-btn np-direct-btn" style="margin-right:0.3rem">',
+              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px">',
+                '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>',
+                '<circle cx="12" cy="7" r="4"/>',
+              '</svg>',
+              'Send to User',
+            '</button>',
             '<button class="np-admin-btn">',
               '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px">',
                 '<line x1="22" y1="2" x2="11" y2="13"/>',
@@ -483,6 +496,272 @@
     });
   }
 
+  // ── Send to a specific user by email ────────────────────
+  function _openDirect() {
+    _closePanel();
+
+    var existing = document.getElementById('zd-direct-overlay');
+    if (existing) existing.remove();
+
+    var overlay = document.createElement('div');
+    overlay.id = 'zd-direct-overlay';
+    overlay.className = 'np-composer-overlay';
+    overlay.innerHTML = [
+      '<div class="np-composer" role="dialog">',
+        '<div class="np-composer-header">',
+          '<div class="np-composer-title">',
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px">',
+              '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>',
+              '<circle cx="12" cy="7" r="4"/>',
+            '</svg>',
+            'Send to User',
+          '</div>',
+          '<button class="np-close-btn np-direct-close">✕</button>',
+        '</div>',
+
+        '<div class="np-composer-body">',
+
+          // ── Email lookup ─────────────────────────────
+          '<div class="np-field">',
+            '<label class="np-label">Recipient Email <span style="color:var(--red)">*</span></label>',
+            '<div style="display:flex;gap:0.5rem;align-items:center">',
+              '<input class="np-input" id="zd-direct-email" placeholder="user@example.com" type="email" style="flex:1"/>',
+              '<button id="zd-direct-lookup-btn" style="',
+                'padding:0.55rem 0.85rem;background:var(--accent-glow);border:1px solid var(--accent);',
+                'border-radius:var(--radius-xs);color:var(--accent);font-size:0.78rem;font-weight:700;',
+                'cursor:pointer;white-space:nowrap;font-family:\'Space Grotesk\',sans-serif;',
+                'transition:all 0.18s;letter-spacing:0.04em">',
+                'Look Up',
+              '</button>',
+            '</div>',
+            // User preview card — shown after successful lookup
+            '<div id="zd-direct-user-preview" style="display:none;margin-top:0.6rem;',
+              'background:var(--bg2);border:1px solid var(--border-hover);border-radius:var(--radius-xs);',
+              'padding:0.6rem 0.8rem;display:none;align-items:center;gap:0.6rem">',
+              '<div id="zd-direct-user-avatar" style="',
+                'width:34px;height:34px;border-radius:50%;background:var(--bg3);',
+                'border:2px solid var(--border-hover);display:flex;align-items:center;',
+                'justify-content:center;overflow:hidden;flex-shrink:0;font-size:1.1rem">',
+                '👤',
+              '</div>',
+              '<div style="flex:1;min-width:0">',
+                '<div id="zd-direct-user-name" style="font-size:0.85rem;font-weight:700;color:var(--text);font-family:\'Space Grotesk\',sans-serif"></div>',
+                '<div id="zd-direct-user-email-disp" style="font-size:0.72rem;color:var(--text3);font-family:\'DM Mono\',monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>',
+              '</div>',
+              '<div id="zd-direct-user-check" style="color:var(--green);font-size:1rem">✓</div>',
+            '</div>',
+            '<div id="zd-direct-lookup-err" style="font-size:0.72rem;color:var(--red);margin-top:0.3rem;display:none"></div>',
+          '</div>',
+
+          // ── Type ──────────────────────────────────────
+          '<div class="np-field">',
+            '<label class="np-label">Type</label>',
+            '<div class="np-type-grid">',
+              '<label class="np-type-option np-type-info"><input type="radio" name="zd-direct-type" value="info" checked><span>📢 Info</span></label>',
+              '<label class="np-type-option np-type-success"><input type="radio" name="zd-direct-type" value="success"><span>✅ Success</span></label>',
+              '<label class="np-type-option np-type-warn"><input type="radio" name="zd-direct-type" value="warn"><span>⚠️ Warning</span></label>',
+              '<label class="np-type-option np-type-danger"><input type="radio" name="zd-direct-type" value="danger"><span>🚨 Alert</span></label>',
+            '</div>',
+          '</div>',
+
+          // ── Title ─────────────────────────────────────
+          '<div class="np-field">',
+            '<label class="np-label">Title <span style="color:var(--red)">*</span></label>',
+            '<input class="np-input" id="zd-direct-title" placeholder="Notification title" maxlength="80"/>',
+            '<div class="np-char-count" id="zd-direct-title-count">0 / 80</div>',
+          '</div>',
+
+          // ── Message ───────────────────────────────────
+          '<div class="np-field">',
+            '<label class="np-label">Message <span style="color:var(--red)">*</span></label>',
+            '<textarea class="np-textarea" id="zd-direct-body" placeholder="Personal message to this user…" rows="3" maxlength="280"></textarea>',
+            '<div class="np-char-count" id="zd-direct-body-count">0 / 280</div>',
+          '</div>',
+
+        '</div>',
+
+        '<div class="np-composer-footer">',
+          '<button class="np-cancel-btn np-direct-close">Cancel</button>',
+          '<button class="np-send-btn" id="zd-direct-send-btn" disabled style="opacity:0.4;cursor:not-allowed">',
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px">',
+              '<line x1="22" y1="2" x2="11" y2="13"/>',
+              '<polygon points="22 2 15 22 11 13 2 9 22 2"/>',
+            '</svg>',
+            'Send',
+          '</button>',
+        '</div>',
+      '</div>'
+    ].join('');
+
+    document.body.appendChild(overlay);
+
+    // ── Char counters ──────────────────────────────────
+    ['title', 'body'].forEach(function (field) {
+      var el    = document.getElementById('zd-direct-' + field);
+      var count = document.getElementById('zd-direct-' + field + '-count');
+      if (el && count) {
+        el.addEventListener('input', function () {
+          count.textContent = el.value.length + ' / ' + el.maxLength;
+        });
+      }
+    });
+
+    // ── Look Up button ─────────────────────────────────
+    var lookupBtn = document.getElementById('zd-direct-lookup-btn');
+    var emailInput = document.getElementById('zd-direct-email');
+    var sendBtn = document.getElementById('zd-direct-send-btn');
+
+    lookupBtn.addEventListener('click', async function () {
+      var email = emailInput.value.trim().toLowerCase();
+      var errEl   = document.getElementById('zd-direct-lookup-err');
+      var preview = document.getElementById('zd-direct-user-preview');
+
+      errEl.style.display   = 'none';
+      preview.style.display = 'none';
+      sendBtn.disabled      = true;
+      sendBtn.style.opacity = '0.4';
+      sendBtn.style.cursor  = 'not-allowed';
+      overlay._resolvedUserId = null;
+
+      if (!email || !email.includes('@')) {
+        errEl.textContent   = 'Enter a valid email address.';
+        errEl.style.display = 'block';
+        return;
+      }
+
+      lookupBtn.textContent = 'Looking up…';
+      lookupBtn.disabled    = true;
+
+      try {
+        // Look up user by email in the profiles table
+        var result = await db.from('profiles')
+          .select('id, name, email, avatar_url')
+          .eq('email', email)
+          .single();
+
+        if (result.error || !result.data) {
+          throw new Error('No user found with that email address.');
+        }
+
+        var user = result.data;
+        overlay._resolvedUserId = user.id;
+
+        // Show the user preview card
+        var nameEl   = document.getElementById('zd-direct-user-name');
+        var emailEl  = document.getElementById('zd-direct-user-email-disp');
+        var avatarEl = document.getElementById('zd-direct-user-avatar');
+
+        nameEl.textContent  = user.name || 'Unknown';
+        emailEl.textContent = user.email || email;
+
+        if (user.avatar_url) {
+          avatarEl.innerHTML = '<img src="' + _escHtml(user.avatar_url) + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+        } else {
+          avatarEl.textContent = '👤';
+        }
+
+        preview.style.display = 'flex';
+
+        // Enable Send button now that we have a valid user
+        sendBtn.disabled      = false;
+        sendBtn.style.opacity = '1';
+        sendBtn.style.cursor  = 'pointer';
+
+      } catch (err) {
+        errEl.textContent   = '❌ ' + err.message;
+        errEl.style.display = 'block';
+      } finally {
+        lookupBtn.textContent = 'Look Up';
+        lookupBtn.disabled    = false;
+      }
+    });
+
+    // Also trigger lookup on Enter in email field
+    emailInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); lookupBtn.click(); }
+    });
+
+    // ── Send button ────────────────────────────────────
+    sendBtn.addEventListener('click', function () { _sendDirect(overlay); });
+
+    // ── Close buttons ──────────────────────────────────
+    overlay.querySelectorAll('.np-direct-close').forEach(function (btn) {
+      btn.addEventListener('click', function () { overlay.remove(); });
+    });
+    overlay.addEventListener('click', function (e) {
+      if (e.target === overlay) overlay.remove();
+    });
+
+    requestAnimationFrame(function () {
+      overlay.classList.add('np-composer-overlay--open');
+      emailInput.focus();
+    });
+  }
+
+  async function _sendDirect(overlay) {
+    var titleEl   = document.getElementById('zd-direct-title');
+    var bodyEl    = document.getElementById('zd-direct-body');
+    var sendBtn   = document.getElementById('zd-direct-send-btn');
+    var userId    = overlay._resolvedUserId;
+    var userEmail = document.getElementById('zd-direct-user-email-disp');
+
+    var title   = titleEl && titleEl.value.trim();
+    var message = bodyEl  && bodyEl.value.trim();
+
+    if (!userId) {
+      if (typeof showToast === 'function') showToast('Look up a user first');
+      return;
+    }
+    if (!title) {
+      if (typeof showToast === 'function') showToast('Title is required');
+      titleEl && titleEl.focus();
+      return;
+    }
+    if (!message) {
+      if (typeof showToast === 'function') showToast('Message is required');
+      bodyEl && bodyEl.focus();
+      return;
+    }
+
+    sendBtn.disabled    = true;
+    sendBtn.textContent = 'Sending…';
+
+    try {
+      var sessionResult = await db.auth.getSession();
+      var session = sessionResult.data && sessionResult.data.session;
+      if (!session) throw new Error('Not authenticated');
+
+      var EDGE_BASE = window.SUPABASE_URL || '';
+      var res = await fetch(EDGE_BASE + '/functions/v1/send-notification', {
+        method: 'POST',
+        headers: {
+          'Content-Type':  'application/json',
+          'Authorization': 'Bearer ' + session.access_token
+        },
+        body: JSON.stringify({
+          title:   title,
+          message: message,
+          user_id: userId    // ← specific user, not null broadcast
+        })
+      });
+
+      var json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Failed to send');
+
+      var recipientEmail = userEmail ? userEmail.textContent : 'user';
+      if (typeof showToast === 'function') {
+        showToast('✅ Notification sent to ' + recipientEmail + '!');
+      }
+      overlay.remove();
+      _refreshBadge();
+
+    } catch (err) {
+      if (typeof showToast === 'function') showToast('❌ ' + err.message);
+      sendBtn.disabled    = false;
+      sendBtn.textContent = 'Send';
+    }
+  }
+
   async function _sendBroadcast() {
     var titleEl = document.getElementById('zd-npc-title');
     var bodyEl  = document.getElementById('zd-npc-body');
@@ -556,7 +835,9 @@
     close:         _closePanel,
     open:          _openPanel,
     openBroadcast: _openBroadcast,
+    openDirect:    _openDirect,
     _send:         _sendBroadcast,
+    _sendDirect:   _sendDirect,
     _markAllRead: function () {
       _markSeen();
       var badges = [
