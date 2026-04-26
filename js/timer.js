@@ -1,17 +1,20 @@
 // ============================================
-// STUDY AURA — TIMER (v3 — Secure)
-// Duration is computed SERVER-SIDE via Edge Function.
-// Frontend only sends start_time + end_time.
+// STUDY AURA — TIMER (v4 — Drift-Free)
+// BUG FIX: Timer display now uses wall-clock
+// difference from sessionStartTime on every tick,
+// instead of incrementing elapsedSeconds by 1.
+// This means tab-backgrounding, page switches,
+// and setInterval jitter can NEVER cause the
+// display to lag behind the real elapsed time.
 // ============================================
 
 let timerInterval = null;
-let sessionStartTime = null;
-let elapsedSeconds = 0;
+let sessionStartTime = null;   // ISO string — the ground truth
+let elapsedSeconds = 0;        // only kept for stopTimer fallback display
 
 const TIMER_KEY = 'sa_timer_start';
 
 // ── Edge Function base URL ──────────────────
-// Replace with your actual Supabase project URL if different
 const EDGE_BASE = window.SUPABASE_URL || 'https://biqdrsqirzxnznyucwtz.supabase.co';
 
 // Helper: call an Edge Function with the user's JWT
@@ -56,6 +59,16 @@ function updateTimerUI(seconds) {
   document.getElementById('ring-progress').style.strokeDashoffset = offset;
 }
 
+// ── FIX: Compute elapsed from wall-clock, not a counter ──────────────
+// Previously: elapsedSeconds++ every 1000ms → drifts when tab is
+// backgrounded, device is busy, or user navigates away and back.
+// Now: elapsed = Math.floor((Date.now() - startTimestamp) / 1000)
+// This is always accurate, no matter what the browser does to the interval.
+function _getElapsedSeconds() {
+  if (!sessionStartTime) return 0;
+  return Math.floor((Date.now() - new Date(sessionStartTime).getTime()) / 1000);
+}
+
 function startTimer() {
   if (timerInterval) return;
   sessionStartTime = new Date().toISOString();
@@ -68,10 +81,12 @@ function startTimer() {
   document.getElementById('timer-stop-btn').style.display = 'inline-flex';
   document.getElementById('timer-status').textContent = 'Studying...';
 
+  // Tick every 500ms so we never visually skip a second, but always
+  // read the real wall-clock elapsed time — never a drifting counter.
   timerInterval = setInterval(() => {
-    elapsedSeconds++;
-    updateTimerUI(elapsedSeconds);
-  }, 1000);
+    const elapsed = _getElapsedSeconds();
+    updateTimerUI(elapsed);
+  }, 500);
 }
 
 async function stopTimer() {
@@ -80,7 +95,8 @@ async function stopTimer() {
   timerInterval = null;
 
   const endTime = new Date().toISOString();
-  const localDuration = elapsedSeconds; // for UI display only
+  // Wall-clock duration for fallback display (server is authoritative)
+  const localDuration = _getElapsedSeconds();
 
   localStorage.removeItem(TIMER_KEY);
 
@@ -108,7 +124,7 @@ async function stopTimer() {
   elapsedSeconds = 0;
 
   loadTodaySessions();
-  loadDashboardData({ skipAura: true }); // aura only changes daily, skip the Edge Function call
+  loadDashboardData({ skipAura: true });
 }
 
 function stopTimerClean() {
@@ -116,7 +132,7 @@ function stopTimerClean() {
   localStorage.removeItem(TIMER_KEY);
 }
 
-// ── Save 'active' marker to DB (unchanged from v2) ──────────────────
+// ── Save 'active' marker to DB ───────────────────────────────────────
 async function saveSessionStart(startTime) {
   if (!currentUser) return;
   await db.from('study_sessions').insert({
@@ -151,7 +167,6 @@ async function resumeSession() {
   localStorage.removeItem(TIMER_KEY);
   document.getElementById('resume-modal').style.display = 'none';
 
-  // ── SECURE: Use Edge Function for recovery too ───────────────────
   try {
     const result = await callEdge('save-session', {
       start_time: startTime,
@@ -178,7 +193,7 @@ async function discardSession() {
   }
 }
 
-// ── Load today's sessions (unchanged) ────────────────────────────────
+// ── Load today's sessions ────────────────────────────────────────────
 async function loadTodaySessions() {
   const list = document.getElementById('sessions-list');
   if (!currentUser) return;
@@ -208,6 +223,29 @@ async function loadTodaySessions() {
   }).join('');
 }
 
+// ── FIX: Restore live display when user navigates back to timer page ─
+// Previously onTimerPageOpen() only loaded session history.
+// If a session is running, the display was frozen at wherever it was
+// when the user left. Now we restart the display interval correctly.
 function onTimerPageOpen() {
   loadTodaySessions();
+
+  // If a session is already running (user navigated away and came back),
+  // re-sync the display immediately and restart the interval.
+  const storedStart = localStorage.getItem(TIMER_KEY);
+  if (storedStart && !timerInterval) {
+    // Re-attach the in-memory start time in case it was lost
+    if (!sessionStartTime) sessionStartTime = storedStart;
+
+    // Show correct elapsed immediately (no waiting for first tick)
+    updateTimerUI(_getElapsedSeconds());
+
+    document.getElementById('timer-start-btn').style.display = 'none';
+    document.getElementById('timer-stop-btn').style.display = 'inline-flex';
+    document.getElementById('timer-status').textContent = 'Studying...';
+
+    timerInterval = setInterval(() => {
+      updateTimerUI(_getElapsedSeconds());
+    }, 500);
+  }
 }
