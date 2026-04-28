@@ -5,6 +5,28 @@
 //   2. User sounds   → stored as base64 in localStorage → local only
 // ============================================
 
+const CURATED_SOUNDS = [
+  {
+    id: 'forest',
+    name: 'Forest',
+    description: 'Nature · Calming',
+    url: 'https://res.cloudinary.com/dn5uwablh/video/upload/q_auto/f_auto/v1777351984/Forest_skgvsv.mp3'
+  },
+  {
+    id: 'cafe',
+    name: 'Cafe',
+    description: 'Ambient · Focus',
+    url: 'https://res.cloudinary.com/dn5uwablh/video/upload/q_auto/f_auto/v1777351984/Cafe_uvqzov.mp3'
+  },
+    {
+    id: 'rain',
+    name: 'Rain',
+    description: 'Nature · Focus · Calm',
+    url: 'https://res.cloudinary.com/dn5uwablh/video/upload/q_auto/f_auto/v1777351987/Rain_txgoof.mp3'
+  }
+];
+
+
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 const audioEls = {};   // id → <audio> element
 
@@ -49,46 +71,32 @@ function _buildAudioEl(src) {
 async function loadAdminSounds() {
   const grid = document.getElementById('admin-sounds-grid');
   if (!grid) return;
-  grid.innerHTML = '<div class="loading-text">Loading sounds...</div>';
+  grid.innerHTML = '';
 
-  try {
-    const { data: files, error } = await db.storage.from('whitenoise').list('admin', { limit: 50 });
-    if (error || !files || files.length === 0) {
-      grid.innerHTML = '<div class="empty-state" style="padding:1rem;font-size:.85rem">No ambient sounds uploaded yet.</div>';
-      return;
-    }
-    grid.innerHTML = '';
-    files.forEach(file => {
-      const id = 'admin_' + file.name.replace(/\W/g,'_');
-      const { data: urlData } = db.storage.from('whitenoise').getPublicUrl('admin/' + file.name);
-      const url = urlData?.publicUrl;
-      if (!url) return;
-      if (!audioEls[id]) audioEls[id] = _buildAudioEl(url);
-      const label = file.name.replace(/\.[^.]+$/,'').replace(/[-_]/g,' ');
-      const card = document.createElement('div');
-      card.className='noise-card custom-noise-card';
-      card.id='custom-card-' + id;
-      card.innerHTML=`
-        <div class="noise-visual custom-visual"></div>
-        <div class="noise-info">
-          <h3>${escHtml(label)}</h3>
-          <p>Ambient · by admin</p>
-        </div>
-        <button class="noise-btn" onclick="toggleAudioSound('${id}')">
-          <svg width="13" height="13"><use href="#ic-play"/></svg> Play
-        </button>
-        <div class="volume-wrap">
-          <svg width="12" height="12" style="color:var(--text3)"><use href="#ic-volume"/></svg>
-          <input type="range" class="volume-slider" min="0" max="1" step="0.05" value="0.6"
-                 oninput="setCustomVolume('${id}', this.value)">
-        </div>
-        ${isAdmin() ? `<button class="noise-delete-btn" onclick="deleteAdminSound('${file.name}')" title="Delete">✕</button>` : ''}
-      `;
-      grid.appendChild(card);
-    });
-  } catch(e) {
-    grid.innerHTML='<div class="empty-state">Failed to load sounds</div>';
-  }
+  CURATED_SOUNDS.forEach(sound => {
+    const id = sound.id;
+    if (!audioEls[id]) audioEls[id] = _buildAudioEl(sound.url);
+
+    const card = document.createElement('div');
+    card.className = 'noise-card custom-noise-card';
+    card.id = 'custom-card-' + id;
+    card.innerHTML = `
+      <div class="noise-visual custom-visual"></div>
+      <div class="noise-info">
+        <h3>${sound.name}</h3>
+        <p>${sound.description}</p>
+      </div>
+      <button class="noise-btn" onclick="toggleAudioSound('${id}')">
+        <svg width="13" height="13"><use href="#ic-play"/></svg> Play
+      </button>
+      <div class="volume-wrap">
+        <svg width="12" height="12" style="color:var(--text3)"><use href="#ic-volume"/></svg>
+        <input type="range" class="volume-slider" min="0" max="1" step="0.05" value="0.6"
+               oninput="setCustomVolume('${id}', this.value)">
+      </div>
+    `;
+    grid.appendChild(card);
+  });
 }
 
 async function deleteAdminSound(filename) {

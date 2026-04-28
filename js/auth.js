@@ -421,6 +421,13 @@ function updateSidebarUI() {
 // entirely to onAuthStateChange and do nothing else.
 let _isPasswordRecoveryFlow = false;
 
+// BUG FIX: Track whether the initial session load has already run.
+// This prevents onAuthStateChange from calling loadUserProfile() a
+// second time if it fires SIGNED_IN after DOMContentLoaded already
+// restored the session via getSession(). Without this guard, Google
+// OAuth users get a double-load race that can show the auth screen.
+let _initialSessionHandled = false;
+
 (function detectRecoveryFlow() {
   const hash = window.location.hash;
   if (hash && hash.includes('type=recovery')) {
@@ -441,33 +448,85 @@ window.addEventListener('DOMContentLoaded', async () => {
   const { data: { session } } = await db.auth.getSession();
   if (session) {
     currentUser = session.user;
+    _initialSessionHandled = true;
     await loadUserProfile();
   } else {
     showScreen('auth-screen');
   }
 });
 
-// ---- Auth State Change — handles Google OAuth return + password reset ----
+// ---- Auth State Change ----
+// Handles: Google OAuth redirect return, token refresh, password reset.
+//
+// BUG FIX (Google OAuth logout on refresh):
+//
+// Root cause: The previous handler only processed SIGNED_IN for non-email
+// providers, but it did NOT handle TOKEN_REFRESHED. When a Google OAuth
+// access token expires (~1 hour), Supabase silently refreshes it in the
+// background and fires TOKEN_REFRESHED. Because this event was ignored,
+// the in-memory `currentUser` stayed valid but any subsequent authenticated
+// fetch would get a 401. On the next hard refresh, getSession() in
+// DOMContentLoaded correctly restores the session — but a race condition
+// exists: if onAuthStateChange fires SIGNED_IN before DOMContentLoaded
+// finishes its async getSession() call (which can happen on slow
+// connections or after an OAuth redirect), loadUserProfile() gets called
+// twice. The second call finds `currentUser` unset and shows the auth
+// screen.
+//
+// Fix:
+//   1. Handle TOKEN_REFRESHED — update currentUser so tokens stay fresh.
+//   2. Use _initialSessionHandled to skip SIGNED_IN events that are
+//      redundant with what DOMContentLoaded already handled.
+//   3. Keep the email/password path unchanged (handled in the login button).
+
 db.auth.onAuthStateChange(async (event, session) => {
   if (event === 'PASSWORD_RECOVERY') {
     _isPasswordRecoveryFlow = true;
-    // Always show the reset screen — never log in automatically
     showScreen('reset-password-screen');
-    // Store session user so updateUser() works after submit
     if (session) currentUser = session.user;
+    return;
+  }
+
+  // BUG FIX: Keep currentUser up-to-date when Supabase silently refreshes
+  // a Google OAuth token. Without this, API calls made after token expiry
+  // use a stale token and fail with 401, making it appear the user is
+  // logged out even though getSession() would return a valid session.
+  if (event === 'TOKEN_REFRESHED' && session) {
+    currentUser = session.user;
     return;
   }
 
   if (event === 'SIGNED_IN' && session) {
     if (_isPasswordRecoveryFlow) return;
 
-    // Only handle Google OAuth here (email/password login is handled directly).
-    // Google OAuth sets app_metadata.provider = 'google'; email/password = 'email'.
+    // BUG FIX: If DOMContentLoaded already handled this session (e.g. the
+    // user refreshed the page and getSession() found a stored session),
+    // skip loading the profile again. This prevents the double-load race
+    // where the second call sees currentUser not yet assigned and shows
+    // the auth screen over a valid session.
+    //
+    // We reset _initialSessionHandled after consuming it once so that
+    // future SIGNED_IN events (e.g. the user logs out and back in) are
+    // processed normally.
+    if (_initialSessionHandled) {
+      _initialSessionHandled = false;
+      return;
+    }
+
+    // Only handle OAuth providers here (email/password login sets
+    // currentUser and calls loadUserProfile() directly in the login button
+    // handler, so handling it here too would cause a duplicate profile load).
     const provider = session.user?.app_metadata?.provider;
     if (provider && provider !== 'email') {
       currentUser = session.user;
       await loadUserProfile();
     }
+  }
+
+  if (event === 'SIGNED_OUT') {
+    currentUser = null;
+    currentProfile = null;
+    _initialSessionHandled = false;
   }
 });
 

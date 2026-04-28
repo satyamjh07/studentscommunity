@@ -301,10 +301,14 @@
   // ── Realtime ────────────────────────────────
   function _subscribeLeaderboard() {
     if (_lbChannel) return;
-    _lbChannel = db
+    let _lbDebounceTimer = null;
+_lbChannel = db
       .channel('lb-rt')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'study_sessions' },
-        function () { loadLeaderboard(); })
+        function () {
+          clearTimeout(_lbDebounceTimer);
+          _lbDebounceTimer = setTimeout(loadLeaderboard, 30000);
+        })
       .subscribe();
   }
   function _unsubscribeLeaderboard() {

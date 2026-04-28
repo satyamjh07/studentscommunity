@@ -74,10 +74,14 @@ async function loadDashboardData(options = {}) {
   const todayStart = new Date(now); todayStart.setHours(0,0,0,0);
   const weekStart = new Date(now); weekStart.setDate(now.getDate() - now.getDay() + 1); weekStart.setHours(0,0,0,0);
 
-  const { data: allSessions } = await db.from('study_sessions')
-    .select('*')
+  const threeMonthsAgo = new Date();
+threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+
+const { data: allSessions } = await db.from('study_sessions')
+    .select('start_time, duration_seconds')
     .eq('user_id', currentUser.id)
     .eq('status', 'complete')
+    .gte('start_time', threeMonthsAgo.toISOString())
     .order('start_time', { ascending: false });
 
   if (!allSessions) return;

@@ -62,7 +62,7 @@ async function loadPosts() {
   const { data: posts, error } = await db.from('posts')
     .select('*, profiles(id, name, avatar_url, class, target_year, bio, role)')
     .order('created_at', { ascending: false })
-    .limit(30);
+    .limit(10);
 
   if (error || !posts) {
     list.innerHTML = '<div class="empty-state">Failed to load posts</div>';
@@ -75,34 +75,20 @@ async function loadPosts() {
   }
 
   const postIds = posts.map(p => p.id);
-  const [{ data: voteCounts }, { data: myVotes }, { data: allComments }] = await Promise.all([
-    db.from('votes').select('post_id, value').in('post_id', postIds),
-    currentUser
-      ? db.from('votes').select('post_id, value').eq('user_id', currentUser.id).in('post_id', postIds)
-      : { data: [] },
-    db.from('comments')
-      .select('*, profiles(name, avatar_url, role)')
-      .in('post_id', postIds)
-      .order('created_at', { ascending: true })
-  ]);
+const [{ data: voteCounts }, { data: myVotes }] = await Promise.all([
+  db.from('votes').select('post_id, value').in('post_id', postIds),
+  currentUser
+    ? db.from('votes').select('post_id, value').eq('user_id', currentUser.id).in('post_id', postIds)
+    : { data: [] },
+]);
 
   const scoreMap = {};
   (voteCounts || []).forEach(v => { scoreMap[v.post_id] = (scoreMap[v.post_id] || 0) + v.value; });
   const myVoteMap = {};
   (myVotes || []).forEach(v => { myVoteMap[v.post_id] = v.value; });
 
-  const commentMap = {};
-  const commentCountMap = {};
-  (allComments || []).forEach(c => {
-    if (!commentMap[c.post_id]) commentMap[c.post_id] = [];
-    commentMap[c.post_id].push(c);
-    commentCountMap[c.post_id] = (commentCountMap[c.post_id] || 0) + 1;
-  });
-
   list.innerHTML = posts.map(post => {
-    const previewComments = (commentMap[post.id] || []).slice(-2);
-    const totalComments = commentCountMap[post.id] || 0;
-    return renderPost(post, scoreMap[post.id] || 0, myVoteMap[post.id] || 0, previewComments, totalComments);
+    return renderPost(post, scoreMap[post.id] || 0, myVoteMap[post.id] || 0, [], 0);
   }).join('');
 }
 
