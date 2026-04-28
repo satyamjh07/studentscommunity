@@ -60,7 +60,7 @@ async function loadPosts() {
  list.innerHTML = new Array(4).fill(0).map(renderPostSkeleton).join('');
 
   const { data: posts, error } = await db.from('posts')
-    .select('*, profiles(id, name, avatar_url, class, target_year, bio, role)')
+    .select('*, profiles(id, name, avatar_url, class, target_year, role)')
     .order('created_at', { ascending: false })
     .limit(10);
 
@@ -164,15 +164,56 @@ function renderPost(post, score, myVote, previewComments, totalComments) {
 // ── Voting (unchanged — reads are fine direct) ───
 async function castVote(postId, value) {
   if (!currentUser) return showToast('Sign in to vote');
+
+  // Find the post card in the DOM
+  const card = document.querySelector('.post-card[data-id="' + postId + '"]');
+
   const { data: existing } = await db.from('votes')
     .select('id, value').eq('post_id', postId).eq('user_id', currentUser.id).maybeSingle();
+
+  let newMyVote;
   if (existing) {
-    if (existing.value === value) await db.from('votes').delete().eq('id', existing.id);
-    else await db.from('votes').update({ value }).eq('id', existing.id);
+    if (existing.value === value) {
+      await db.from('votes').delete().eq('id', existing.id);
+      newMyVote = 0;
+    } else {
+      await db.from('votes').update({ value }).eq('id', existing.id);
+      newMyVote = value;
+    }
   } else {
     await db.from('votes').insert({ post_id: postId, user_id: currentUser.id, value });
+    newMyVote = value;
   }
-  loadPosts();
+
+  // Fetch only the score for this one post (tiny query)
+  const { data: votes } = await db.from('votes')
+    .select('value').eq('post_id', postId);
+  const newScore = (votes || []).reduce((a, v) => a + v.value, 0);
+
+  // Update only the vote buttons in this card, no full reload
+  if (card) {
+    const likeBtn    = card.querySelector('.emoji-vote-btn[onclick*=", 1"]');
+    const dislikeBtn = card.querySelector('.emoji-vote-btn[onclick*=", -1"]');
+
+    if (likeBtn) {
+      likeBtn.classList.toggle('emoji-vote-active', newMyVote === 1);
+      const existing = likeBtn.querySelector('.emoji-count');
+      if (existing) existing.remove();
+      if (newScore > 0) {
+        likeBtn.insertAdjacentHTML('beforeend',
+          '<span class="emoji-count score-pos">' + newScore + '</span>');
+      }
+    }
+    if (dislikeBtn) {
+      dislikeBtn.classList.toggle('emoji-vote-active', newMyVote === -1);
+      const existing = dislikeBtn.querySelector('.emoji-count');
+      if (existing) existing.remove();
+      if (newScore < 0) {
+        dislikeBtn.insertAdjacentHTML('beforeend',
+          '<span class="emoji-count score-neg">' + Math.abs(newScore) + '</span>');
+      }
+    }
+  }
 }
 
 // ── Post submit — via Edge Function ─────────────
@@ -724,7 +765,7 @@ async function openPopularPostModal(postId) {
   if (document.getElementById('popular-comment-input')) document.getElementById('popular-comment-input').value = '';
 
   const [{ data: post }, { data: comments }, { data: votes }] = await Promise.all([
-    db.from('posts').select('*, profiles(id, name, avatar_url, class, target_year, bio, role)').eq('id', postId).single(),
+    db.from('posts').select('*, profiles(id, name, avatar_url, class, target_year, role)').eq('id', postId).single(),
     db.from('comments').select('*, profiles(id, name, avatar_url, role)').eq('post_id', postId).order('created_at', { ascending: true }),
     db.from('votes').select('post_id, value').eq('post_id', postId)
   ]);
@@ -855,16 +896,40 @@ function renderPopularModalComments(comments, commentVoteMap) {
 
 async function castVoteInPopular(postId, value) {
   if (!currentUser) return showToast('Sign in to vote');
-  const { data: existing } = await db.from('votes').select('id, value').eq('post_id', postId).eq('user_id', currentUser.id).maybeSingle();
+
+  const { data: existing } = await db.from('votes')
+    .select('id, value').eq('post_id', postId).eq('user_id', currentUser.id).maybeSingle();
+
+  let newMyVote;
   if (existing) {
-    if (existing.value === value) await db.from('votes').delete().eq('id', existing.id);
-    else await db.from('votes').update({ value }).eq('id', existing.id);
+    if (existing.value === value) {
+      await db.from('votes').delete().eq('id', existing.id);
+      newMyVote = 0;
+    } else {
+      await db.from('votes').update({ value }).eq('id', existing.id);
+      newMyVote = value;
+    }
   } else {
     await db.from('votes').insert({ post_id: postId, user_id: currentUser.id, value });
+    newMyVote = value;
   }
-  // Refresh the modal vote row
-  openPopularPostModal(postId);
-  loadPosts();
+
+  // Fetch only the new score
+  const { data: votes } = await db.from('votes')
+    .select('value').eq('post_id', postId);
+  const newScore = (votes || []).reduce((a, v) => a + v.value, 0);
+
+  // Update only the vote row inside the popular modal
+  const voteRow = document.getElementById('popular-modal-vote-row');
+  if (voteRow) {
+    const likeBtn    = voteRow.querySelector('.emoji-vote-btn[onclick*=", 1"]');
+    const dislikeBtn = voteRow.querySelector('.emoji-vote-btn[onclick*=", -1"]');
+    const scoreSpan  = voteRow.querySelector('span[style*="font-weight:700"]');
+
+    if (likeBtn)    likeBtn.classList.toggle('emoji-vote-active', newMyVote === 1);
+    if (dislikeBtn) dislikeBtn.classList.toggle('emoji-vote-active', newMyVote === -1);
+    if (scoreSpan)  scoreSpan.textContent = (newScore > 0 ? '+' : '') + newScore;
+  }
 }
 
 function closePopularPostModal() {
