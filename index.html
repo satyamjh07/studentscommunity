@@ -10,6 +10,18 @@
       href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap"
       rel="stylesheet"
     />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"
+    />
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"
+    ></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+    ></script>
     <link rel="icon" type="image/png" href="logo2.png" />
     <link rel="stylesheet" href="css/themes.css" />
     <link rel="stylesheet" href="css/style.css" />
@@ -17,6 +29,7 @@
     <link rel="stylesheet" href="css/leaderboard.css" />
     <link rel="stylesheet" href="css/zeroday-theme.css" />
     <link rel="stylesheet" href="css/my-posts.css" />
+    <link rel="stylesheet" href="css/solver.css" />
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   </head>
   <body data-theme="dark" oncontextmenu="return false;">
@@ -1154,71 +1167,93 @@
             </div>
           </div>
           <div class="leaderboard-section">
- 
-  <!-- ── TOP 10 LEADERBOARD ── -->
-  <div class="lb-card">
-    <div class="lb-card-header">
-      <div class="lb-card-title">
-        <svg width="16" height="16"><use href="#ic-award"/></svg>
-        Leaderboard
-        <div class="lb-live-dot" title="Realtime"></div>
-        <span class="lb-live-label">Live</span>
-      </div>
- 
-      <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;">
-        <!-- Your rank -->
-        <div class="lb-my-rank-wrap">
-          Your rank: <span id="lb-my-rank">—</span>
-        </div>
- 
-        <!-- Daily / Weekly tabs -->
-        <div class="lb-tabs">
-          <button id="lb-tab-daily"  class="lb-tab-btn">Daily</button>
-          <button id="lb-tab-weekly" class="lb-tab-btn lb-tab-active">Weekly</button>
-        </div>
-      </div>
-    </div>
- 
-    <div id="leaderboard-list">
-      <!-- Rows injected by leaderboard.js -->
-    </div>
-  </div>
- 
-  <!-- ── PERSONAL MONTHLY STATS ── -->
-  <div class="ps-card">
-    <div class="ps-card-header">
-      <div class="ps-card-title">
-        <svg width="16" height="16"><use href="#ic-calendar"/></svg>
-        My Study Stats
-      </div>
- 
-      <!-- Month navigator -->
-      <div class="ps-month-nav">
-        <button class="ps-nav-btn" id="ps-prev-month" title="Previous month">&#8249;</button>
-        <span id="ps-month-label">—</span>
-        <button class="ps-nav-btn" id="ps-next-month" title="Next month" disabled>&#8250;</button>
-      </div>
-    </div>
- 
-    <!-- Summary: total month + this week -->
-    <div class="ps-summary">
-      <div class="ps-summary-item">
-        <span class="ps-summary-label">Month Total</span>
-        <span class="ps-summary-val accent" id="ps-total-hours">—</span>
-      </div>
-      <div class="ps-summary-item">
-        <span class="ps-summary-label">This Week</span>
-        <span class="ps-summary-val" id="ps-this-week-hours">—</span>
-      </div>
-    </div>
- 
-    <!-- Per-week breakdown -->
-    <div id="ps-week-grid">
-      <!-- Week rows injected by leaderboard.js -->
-    </div>
-  </div>
- 
-</div>
+            <!-- ── TOP 10 LEADERBOARD ── -->
+            <div class="lb-card">
+              <div class="lb-card-header">
+                <div class="lb-card-title">
+                  <svg width="16" height="16"><use href="#ic-award" /></svg>
+                  Leaderboard
+                  <div class="lb-live-dot" title="Realtime"></div>
+                  <span class="lb-live-label">Live</span>
+                </div>
+
+                <div
+                  style="
+                    display: flex;
+                    align-items: center;
+                    gap: 0.6rem;
+                    flex-wrap: wrap;
+                  "
+                >
+                  <!-- Your rank -->
+                  <div class="lb-my-rank-wrap">
+                    Your rank: <span id="lb-my-rank">—</span>
+                  </div>
+
+                  <!-- Daily / Weekly tabs -->
+                  <div class="lb-tabs">
+                    <button id="lb-tab-daily" class="lb-tab-btn">Daily</button>
+                    <button id="lb-tab-weekly" class="lb-tab-btn lb-tab-active">
+                      Weekly
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div id="leaderboard-list">
+                <!-- Rows injected by leaderboard.js -->
+              </div>
+            </div>
+
+            <!-- ── PERSONAL MONTHLY STATS ── -->
+            <div class="ps-card">
+              <div class="ps-card-header">
+                <div class="ps-card-title">
+                  <svg width="16" height="16"><use href="#ic-calendar" /></svg>
+                  My Study Stats
+                </div>
+
+                <!-- Month navigator -->
+                <div class="ps-month-nav">
+                  <button
+                    class="ps-nav-btn"
+                    id="ps-prev-month"
+                    title="Previous month"
+                  >
+                    &#8249;
+                  </button>
+                  <span id="ps-month-label">—</span>
+                  <button
+                    class="ps-nav-btn"
+                    id="ps-next-month"
+                    title="Next month"
+                    disabled
+                  >
+                    &#8250;
+                  </button>
+                </div>
+              </div>
+
+              <!-- Summary: total month + this week -->
+              <div class="ps-summary">
+                <div class="ps-summary-item">
+                  <span class="ps-summary-label">Month Total</span>
+                  <span class="ps-summary-val accent" id="ps-total-hours"
+                    >—</span
+                  >
+                </div>
+                <div class="ps-summary-item">
+                  <span class="ps-summary-label">This Week</span>
+                  <span class="ps-summary-val" id="ps-this-week-hours">—</span>
+                </div>
+              </div>
+
+              <!-- Per-week breakdown -->
+              <div id="ps-week-grid">
+                <!-- Week rows injected by leaderboard.js -->
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- TIMER -->
@@ -1799,6 +1834,9 @@
             </button>
             <button class="admin-tab-btn" data-tab="users">👥 Users</button>
             <button class="admin-tab-btn" data-tab="posts">📝 Posts</button>
+            <button class="admin-tab-btn" data-tab="questions">
+              🧪 Questions
+            </button>
           </div>
 
           <div class="admin-tab-pane active" id="admin-tab-reports">
@@ -1809,6 +1847,274 @@
           </div>
           <div class="admin-tab-pane" id="admin-tab-posts">
             <div id="admin-posts-list"></div>
+          </div>
+          <div class="admin-tab-pane" id="admin-tab-questions">
+            <div style="max-width: 680px">
+              <!-- Classification -->
+              <div
+                style="
+                  font-size: 0.7rem;
+                  font-weight: 700;
+                  text-transform: uppercase;
+                  letter-spacing: 0.1em;
+                  color: var(--accent);
+                  margin: 1.2rem 0 0.8rem;
+                  padding-bottom: 0.4rem;
+                  border-bottom: 1px solid var(--border);
+                "
+              >
+                Classification
+              </div>
+              <div
+                style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem"
+              >
+                <div class="form-group">
+                  <label>Subject *</label>
+                  <select id="q-subject">
+                    <option value="">Select subject</option>
+                    <option value="physics">Physics</option>
+                    <option value="chemistry">Chemistry</option>
+                    <option value="mathematics">Mathematics</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Exam Type *</label>
+                  <select id="q-exam-type">
+                    <option value="pyq">PYQ</option>
+                    <option value="booklet">Booklet</option>
+                    <option value="mock">Mock</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Chapter *</label>
+                  <input id="q-chapter" placeholder="e.g. Kinematics" />
+                </div>
+                <div class="form-group">
+                  <label>Topic</label>
+                  <input id="q-topic" placeholder="e.g. Projectile Motion" />
+                </div>
+                <div class="form-group">
+                  <label
+                    >Booklet ID
+                    <span style="color: var(--text3); font-size: 0.75rem"
+                      >(booklet type only)</span
+                    ></label
+                  >
+                  <input id="q-booklet-id" placeholder="e.g. chem-hatke" />
+                </div>
+                <div class="form-group">
+                  <label
+                    >Year
+                    <span style="color: var(--text3); font-size: 0.75rem"
+                      >(PYQ only)</span
+                    ></label
+                  >
+                  <input id="q-year" type="number" placeholder="e.g. 2024" />
+                </div>
+                <div class="form-group">
+                  <label>Shift</label>
+                  <input id="q-shift" placeholder="S1 / S2" />
+                </div>
+                <div class="form-group">
+                  <label>Difficulty *</label>
+                  <select id="q-difficulty">
+                    <option value="easy">Easy</option>
+                    <option value="medium">Medium</option>
+                    <option value="hard">Hard</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Type *</label>
+                  <select id="q-type">
+                    <option value="mcq">MCQ</option>
+                    <option value="integer">Integer / Numerical</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Question -->
+              <div
+                style="
+                  font-size: 0.7rem;
+                  font-weight: 700;
+                  text-transform: uppercase;
+                  letter-spacing: 0.1em;
+                  color: var(--accent);
+                  margin: 1.5rem 0 0.8rem;
+                  padding-bottom: 0.4rem;
+                  border-bottom: 1px solid var(--border);
+                "
+              >
+                Question
+              </div>
+              <div class="form-group">
+                <label
+                  >Question Text *
+                  <span style="color: var(--text3); font-size: 0.75rem"
+                    >(LaTeX: $…$ inline, $$…$$ block)</span
+                  ></label
+                >
+                <textarea
+                  id="q-text"
+                  rows="4"
+                  placeholder="Enter question text…"
+                  style="resize: vertical"
+                  oninput="_previewQuestion()"
+                ></textarea>
+                <div
+                  id="q-text-preview"
+                  style="
+                    margin-top: 0.6rem;
+                    padding: 0.8rem;
+                    background: var(--bg3);
+                    border: 1px solid var(--border);
+                    border-radius: 8px;
+                    min-height: 2rem;
+                    font-size: 0.9rem;
+                    display: none;
+                  "
+                ></div>
+              </div>
+              <div class="form-group">
+                <label
+                  >Question Image
+                  <span style="color: var(--text3); font-size: 0.75rem"
+                    >(optional)</span
+                  ></label
+                >
+                <input id="q-image-file" type="file" accept="image/*" />
+              </div>
+
+              <!-- MCQ Options -->
+              <div id="q-mcq-block">
+                <div
+                  style="
+                    font-size: 0.7rem;
+                    font-weight: 700;
+                    text-transform: uppercase;
+                    letter-spacing: 0.1em;
+                    color: var(--accent);
+                    margin: 1.5rem 0 0.8rem;
+                    padding-bottom: 0.4rem;
+                    border-bottom: 1px solid var(--border);
+                  "
+                >
+                  Options
+                </div>
+                <div
+                  style="
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 0.7rem;
+                    margin-bottom: 0.8rem;
+                  "
+                >
+                  <div class="form-group">
+                    <label>Option A</label
+                    ><input id="q-opt0" placeholder="Option A" />
+                  </div>
+                  <div class="form-group">
+                    <label>Option B</label
+                    ><input id="q-opt1" placeholder="Option B" />
+                  </div>
+                  <div class="form-group">
+                    <label>Option C</label
+                    ><input id="q-opt2" placeholder="Option C" />
+                  </div>
+                  <div class="form-group">
+                    <label>Option D</label
+                    ><input id="q-opt3" placeholder="Option D" />
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Correct Answer</label>
+                  <select id="q-correct-mcq">
+                    <option value="0">A is correct</option>
+                    <option value="1">B is correct</option>
+                    <option value="2">C is correct</option>
+                    <option value="3">D is correct</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Integer Answer -->
+              <div
+                id="q-integer-block"
+                style="display: none"
+                class="form-group"
+              >
+                <label
+                  >Correct Answer
+                  <span style="color: var(--text3); font-size: 0.75rem"
+                    >(numerical)</span
+                  ></label
+                >
+                <input
+                  id="q-correct-integer"
+                  type="number"
+                  step="any"
+                  placeholder="e.g. 42 or 3.14"
+                />
+              </div>
+
+              <!-- Explanation -->
+              <div
+                style="
+                  font-size: 0.7rem;
+                  font-weight: 700;
+                  text-transform: uppercase;
+                  letter-spacing: 0.1em;
+                  color: var(--accent);
+                  margin: 1.5rem 0 0.8rem;
+                  padding-bottom: 0.4rem;
+                  border-bottom: 1px solid var(--border);
+                "
+              >
+                Explanation
+              </div>
+              <div class="form-group">
+                <label
+                  >Explanation
+                  <span style="color: var(--text3); font-size: 0.75rem"
+                    >(optional, LaTeX supported)</span
+                  ></label
+                >
+                <textarea
+                  id="q-explanation"
+                  rows="3"
+                  placeholder="Solution / explanation…"
+                  style="resize: vertical"
+                ></textarea>
+              </div>
+              <div class="form-group">
+                <label
+                  >Explanation Image
+                  <span style="color: var(--text3); font-size: 0.75rem"
+                    >(optional)</span
+                  ></label
+                >
+                <input id="q-explanation-file" type="file" accept="image/*" />
+              </div>
+
+              <!-- Submit -->
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 1rem;
+                  margin-top: 1.5rem;
+                  flex-wrap: wrap;
+                "
+              >
+                <button class="btn-primary" id="q-submit-btn">
+                  Upload Question
+                </button>
+                <div
+                  id="q-status-msg"
+                  style="font-size: 0.9rem; min-height: 1.4em"
+                ></div>
+              </div>
+            </div>
           </div>
         </div>
       </main>
@@ -2162,5 +2468,7 @@
     <script src="js/cloudinary-community.js"></script>
     <script src="js/my-posts.js"></script>
     <script src="js/zeroday-notif-patch.js"></script>
+    <script src="js/solver.js"></script>
+    <script src="js/zeroday-solver-nav.js"></script>
   </body>
 </html>

@@ -5,326 +5,278 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>ZEROday — JEE Solver</title>
 
-  <!-- Same fonts as main app -->
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
   <link rel="icon" type="image/png" href="logo2.png"/>
-
-  <!-- Main app themes (gives us all CSS variables) -->
-  <link rel="stylesheet" href="css/themes.css"/>
-  <link rel="stylesheet" href="css/style.css"/>
 
   <!-- KaTeX for LaTeX rendering -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"/>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 
-  <!-- Solver-specific styles -->
-  <link rel="stylesheet" href="css/solver.css"/>
-
-  <!-- Supabase (same cdn tag as main app) -->
+  <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-</head>
-<body data-theme="dark" oncontextmenu="return false;">
 
-<!-- ═══════════════════════════════════════════
-     SIDEBAR  (mirrors main app exactly)
-═══════════════════════════════════════════ -->
-<nav class="sidebar" id="sidebar">
-  <div class="sidebar-brand">
-    <img src="logo2.png" width="35" height="35" alt=""/>
+  <link rel="stylesheet" href="css/solver-v2.css"/>
+</head>
+<body>
+
+<!-- ═══════════════════ SIDEBAR ═══════════════════ -->
+<aside class="zd-sidebar" id="sidebar">
+  <div class="zd-sidebar-brand">
+    <img src="logo2.png" width="28" height="28" alt="" onerror="this.style.display='none'"/>
     <span>ZEROday</span>
   </div>
 
-  <div class="sidebar-user" id="sidebar-user">
-    <div class="sidebar-avatar" id="sidebar-avatar-img">
-      <svg width="16" height="16" style="color:var(--text3)">
-        <use href="#ic-user"/>
-      </svg>
+  <div class="zd-sidebar-user" id="sidebar-user">
+    <div class="zd-avatar" id="sidebar-avatar-img">
+      <span class="material-symbols-outlined" style="font-size:15px;color:#849495">person</span>
     </div>
-    <div class="sidebar-user-info">
-      <div class="sidebar-name" id="sidebar-name">Loading...</div>
-      <div class="sidebar-class" id="sidebar-class"></div>
+    <div class="zd-user-info">
+      <div class="zd-user-name" id="sidebar-name">Loading…</div>
+      <div class="zd-user-class" id="sidebar-class"></div>
     </div>
   </div>
 
-  <ul class="nav-links">
-    <li>
-      <a href="index.html" class="nav-link">
-        <svg class="nav-svg" width="17" height="17"><use href="#ic-dashboard"/></svg>
-        Dashboard
-      </a>
-    </li>
-    <li>
-      <a href="#" class="nav-link active" data-section="solver">
-        <svg class="nav-svg" width="17" height="17"><use href="#ic-layers"/></svg>
-        JEE Solver
-      </a>
-    </li>
-  </ul>
+  <nav class="zd-nav">
+    <a href="index.html" class="zd-nav-link">
+      <span class="material-symbols-outlined">grid_view</span>
+      DASHBOARD
+    </a>
+    <a href="#" class="zd-nav-link active">
+      <span class="material-symbols-outlined">layers</span>
+      JEE SOLVER
+    </a>
+    <a href="analytics.html" class="zd-nav-link">
+      <span class="material-symbols-outlined">query_stats</span>
+      ANALYTICS
+    </a>
+    <a href="settings.html" class="zd-nav-link">
+      <span class="material-symbols-outlined">settings</span>
+      SETTINGS
+    </a>
+  </nav>
 
-  <button class="logout-btn" id="logout-btn">
-    <svg width="15" height="15"><use href="#ic-logout"/></svg> Sign Out
-  </button>
-</nav>
-
-<!-- Mobile Top Bar -->
-<div class="mobile-topbar">
-  <button class="hamburger" id="hamburger">
-    <svg width="21" height="21"><use href="#ic-menu"/></svg>
-  </button>
-  <div class="mobile-brand">
-    <svg width="14" height="14" style="color:var(--accent)"><use href="#ic-star"/></svg>
-    JEE Solver
-  </div>
-  <div class="mobile-avatar" id="mobile-avatar">
-    <svg width="14" height="14" style="color:var(--text3)"><use href="#ic-user"/></svg>
-  </div>
-</div>
-<div class="sidebar-overlay" id="sidebar-overlay"></div>
-
-<!-- ═══════════════════════════════════════════
-     MAIN CONTENT
-═══════════════════════════════════════════ -->
-<main class="main-content solver-main-content">
-
-  <!-- ── TOP BAR ── -->
-  <div class="solver-topbar">
-    <div>
-      <h2 class="solver-page-title">JEE Solver</h2>
-      <p class="solver-page-sub">PYQs &amp; Booklets — select a subject and chapter to begin</p>
-    </div>
-    <!-- Score pill -->
-    <div class="solver-score-pill" id="solver-score-pill">
-      <svg width="13" height="13" style="color:var(--accent)"><use href="#ic-zap"/></svg>
-      <span id="solver-score-val">0</span>
-      <span class="solver-score-label">pts</span>
-    </div>
-  </div>
-
-  <!-- ── MODE TABS: PYQs / Booklets ── -->
-  <div class="solver-mode-tabs">
-    <button class="solver-mode-tab active" id="tab-pyq" onclick="switchMode('pyq')">
-      📚 PYQ Solver
+  <div class="zd-sidebar-footer">
+    <button class="zd-mock-btn" onclick="window.location.href='mock.html'">
+      <span class="material-symbols-outlined" style="font-size:14px">bolt</span>
+      START_MOCK_TEST
     </button>
-    <button class="solver-mode-tab" id="tab-booklet" onclick="switchMode('booklet')">
-      📒 Booklets
+    <button class="zd-logout-btn" id="logout-btn">
+      <span class="material-symbols-outlined" style="font-size:14px">logout</span>
+      SIGN OUT
+    </button>
+  </div>
+</aside>
+
+<!-- ═══════════════════ MOBILE TOPBAR ═══════════════════ -->
+<header class="zd-mobile-header">
+  <button class="zd-hamburger" id="hamburger">
+    <span class="material-symbols-outlined">menu</span>
+  </button>
+  <div class="zd-mobile-brand">ZEROday</div>
+  <div class="zd-mobile-avatar" id="mobile-avatar">
+    <span class="material-symbols-outlined" style="font-size:14px">person</span>
+  </div>
+</header>
+<div class="zd-overlay" id="sidebar-overlay"></div>
+
+<!-- ═══════════════════ MAIN ═══════════════════ -->
+<main class="zd-main">
+
+  <!-- TOP BAR -->
+  <div class="zd-topbar">
+    <div>
+      <h1 class="zd-page-title">JEE_SOLVER</h1>
+      <p class="zd-page-sub">PYQs &amp; Booklets — select a subject and chapter to begin</p>
+    </div>
+    <div class="zd-score-pill" id="solver-score-pill">
+      <span class="material-symbols-outlined" style="font-size:13px;color:#00f0ff">bolt</span>
+      <span id="solver-score-val" style="font-family:'Space Grotesk';font-weight:700;color:#dbfcff">0</span>
+      <span style="font-size:0.7rem;color:#849495">pts</span>
+    </div>
+  </div>
+
+  <!-- MODE TABS -->
+  <div class="zd-tabs">
+    <button class="zd-tab active" id="tab-pyq" onclick="switchMode('pyq')">
+      <span class="material-symbols-outlined" style="font-size:15px">history_edu</span>
+      PYQ SOLVER
+    </button>
+    <button class="zd-tab" id="tab-booklet" onclick="switchMode('booklet')">
+      <span class="material-symbols-outlined" style="font-size:15px">menu_book</span>
+      BOOKLETS
     </button>
   </div>
 
   <!-- ═══ PYQ MODE ═══ -->
-  <div id="mode-pyq" class="solver-mode-panel">
-    <div class="solver-layout">
+  <div id="mode-pyq" class="zd-mode-panel">
+    <div class="zd-layout">
 
-      <!-- Left panel -->
-      <div class="solver-left">
-        <!-- Subject selector -->
-        <div class="solver-panel-card">
-          <div class="solver-panel-label">Subject</div>
-          <button class="solver-subject-btn active" data-subject="physics" onclick="selectSubject(this)">
-            <span class="solver-dot" style="background:var(--blue)"></span>Physics
+      <!-- LEFT PANEL -->
+      <div class="zd-left">
+        <div class="zd-card">
+          <div class="zd-section-label">SUBJECT</div>
+          <button class="zd-subject-btn active" data-subject="physics" onclick="selectSubject(this)">
+            <span class="zd-dot" style="background:#00f0ff"></span>PHYSICS
           </button>
-          <button class="solver-subject-btn" data-subject="chemistry" onclick="selectSubject(this)">
-            <span class="solver-dot" style="background:var(--green)"></span>Chemistry
+          <button class="zd-subject-btn" data-subject="chemistry" onclick="selectSubject(this)">
+            <span class="zd-dot" style="background:#cf5cff"></span>CHEMISTRY
           </button>
-          <button class="solver-subject-btn" data-subject="mathematics" onclick="selectSubject(this)">
-            <span class="solver-dot" style="background:var(--purple)"></span>Mathematics
+          <button class="zd-subject-btn" data-subject="mathematics" onclick="selectSubject(this)">
+            <span class="zd-dot" style="background:#ecb2ff"></span>MATHEMATICS
           </button>
 
-          <div class="solver-divider"></div>
-          <div class="solver-panel-label">Chapter</div>
-          <div id="pyq-chapter-list" class="solver-chapter-list">
-            <div class="solver-loading">Select a subject</div>
+          <div class="zd-divider"></div>
+          <div class="zd-section-label">CHAPTER</div>
+          <div id="pyq-chapter-list" class="zd-chapter-list">
+            <div class="zd-loading">Select a subject</div>
           </div>
         </div>
       </div>
 
-      <!-- Right: solver -->
-      <div class="solver-right">
-        <!-- Q navigator -->
-        <div class="solver-panel-card solver-qnav-card">
-          <div class="solver-qnav-header">
-            <span class="solver-qnav-title" id="qnav-title">Questions</span>
-            <div class="solver-qnav-legend">
-              <span class="legend-pip" style="background:var(--green)"></span>Correct
-              <span class="legend-pip" style="background:var(--red)"></span>Wrong
-              <span class="legend-pip" style="background:var(--orange)"></span>Skipped
-              <span class="legend-pip" style="background:var(--surface2, #2a2a35)"></span>Unseen
+      <!-- RIGHT PANEL -->
+      <div class="zd-right">
+
+        <!-- Q NAVIGATOR -->
+        <div class="zd-card zd-qnav-card">
+          <div class="zd-qnav-header">
+            <span class="zd-qnav-title" id="qnav-title">QUESTIONS</span>
+            <div class="zd-qnav-legend">
+              <span class="zd-pip" style="background:#27ae60"></span>Correct
+              <span class="zd-pip" style="background:#e74c3c"></span>Wrong
+              <span class="zd-pip" style="background:#f39c12"></span>Skipped
+              <span class="zd-pip" style="background:#2a2a2a"></span>Unseen
             </div>
           </div>
-          <div class="solver-qnav-grid" id="q-nav-grid"></div>
+          <div class="zd-qnav-grid" id="q-nav-grid"></div>
         </div>
 
-        <!-- Question card -->
-        <div class="solver-panel-card solver-q-card" id="q-card">
-          <!-- Empty state -->
-          <div id="empty-state-q" class="solver-empty-state">
-            <svg width="48" height="48" style="color:var(--text3);margin-bottom:1rem"><use href="#ic-layers"/></svg>
-            <h3>Select a chapter to begin</h3>
+        <!-- QUESTION CARD -->
+        <div class="zd-card zd-q-card" id="q-card">
+          <div id="empty-state-q" class="zd-empty-state">
+            <span class="material-symbols-outlined" style="font-size:48px;color:#353534;margin-bottom:1rem">layers</span>
+            <h3>SELECT A CHAPTER TO BEGIN</h3>
             <p>Choose a subject and chapter from the left panel</p>
           </div>
 
-          <!-- Question content -->
           <div id="q-content" class="hidden">
-            <!-- Meta badges -->
-            <div class="solver-q-meta" id="q-meta"></div>
+            <div class="zd-q-meta" id="q-meta"></div>
+            <div class="zd-q-text" id="q-text"></div>
+            <img id="q-image" class="zd-q-image hidden" alt="Question image"/>
+            <div class="zd-options-grid" id="options-grid"></div>
 
-            <!-- Question text -->
-            <div class="solver-q-text" id="q-text"></div>
-
-            <!-- Question image -->
-            <img id="q-image" class="solver-q-image hidden" alt="Question image"/>
-
-            <!-- MCQ options -->
-            <div class="solver-options-grid" id="options-grid"></div>
-
-            <!-- Integer input -->
-            <div id="integer-wrap" class="solver-integer-box hidden">
-              <label>Enter your numerical answer:</label>
-              <div class="solver-integer-row">
-                <input type="number" step="any" class="solver-integer-input" id="integer-input"/>
-                <button class="solver-btn solver-btn-check" id="btn-check-int">Check</button>
+            <div id="integer-wrap" class="zd-integer-box hidden">
+              <label>ENTER YOUR NUMERICAL ANSWER:</label>
+              <div class="zd-integer-row">
+                <input type="number" step="any" class="zd-integer-input" id="integer-input"/>
+                <button class="zd-btn zd-btn-check" id="btn-check-int">CHECK</button>
               </div>
-              <div class="solver-integer-feedback" id="integer-feedback"></div>
+              <div class="zd-integer-feedback" id="integer-feedback"></div>
             </div>
 
-            <!-- Explanation -->
-            <div class="solver-explanation" id="explanation-box">
-              <div class="solver-explanation-label">✦ Solution</div>
-              <div class="solver-explanation-text" id="explanation-text"></div>
+            <div class="zd-explanation" id="explanation-box">
+              <div class="zd-explanation-label">
+                <span class="material-symbols-outlined" style="font-size:12px">auto_awesome</span>
+                SOLUTION
+              </div>
+              <div class="zd-explanation-text" id="explanation-text"></div>
             </div>
 
-            <!-- Actions -->
-            <div class="solver-q-actions">
-              <button class="solver-btn solver-btn-ghost" id="btn-skip">Skip</button>
-              <button class="solver-btn solver-btn-primary" id="btn-next" disabled>Next →</button>
-              <span class="solver-q-progress" id="q-progress">1 / 1</span>
+            <div class="zd-q-actions">
+              <button class="zd-btn zd-btn-ghost" id="btn-skip">SKIP</button>
+              <button class="zd-btn zd-btn-primary" id="btn-next" disabled>NEXT →</button>
+              <span class="zd-q-progress" id="q-progress">1 / 1</span>
             </div>
           </div>
         </div>
-      </div>
-    </div>
-  </div>
+
+      </div><!-- /zd-right -->
+    </div><!-- /zd-layout -->
+  </div><!-- /mode-pyq -->
 
   <!-- ═══ BOOKLET MODE ═══ -->
-  <div id="mode-booklet" class="solver-mode-panel hidden">
+  <div id="mode-booklet" class="zd-mode-panel hidden">
     <div id="booklet-content"></div>
   </div>
 
 </main>
 
-<!-- ═══════════════════════════════════════════
-     SVG SPRITE (copy essential icons from index.html)
-═══════════════════════════════════════════ -->
-<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
-  <symbol id="ic-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-  </symbol>
-  <symbol id="ic-dashboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-    <rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/>
-    <rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>
-  </symbol>
-  <symbol id="ic-layers" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-    <polygon points="12 2 2 7 12 12 22 7 12 2"/>
-    <polyline points="2 17 12 22 22 17"/>
-    <polyline points="2 12 12 17 22 12"/>
-  </symbol>
-  <symbol id="ic-logout" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-    <polyline points="16 17 21 12 16 7"/>
-    <line x1="21" y1="12" x2="9" y2="12"/>
-  </symbol>
-  <symbol id="ic-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-    <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
-  </symbol>
-  <symbol id="ic-star" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-  </symbol>
-  <symbol id="ic-zap" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-  </symbol>
-</svg>
+<!-- MOBILE BOTTOM NAV -->
+<nav class="zd-bottom-nav">
+  <a href="index.html" class="zd-bnav-item">
+    <span class="material-symbols-outlined">grid_view</span>
+    <span>HOME</span>
+  </a>
+  <a href="#" class="zd-bnav-item active">
+    <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">layers</span>
+    <span>SOLVER</span>
+  </a>
+  <a href="analytics.html" class="zd-bnav-item">
+    <span class="material-symbols-outlined">insights</span>
+    <span>STATS</span>
+  </a>
+  <a href="profile.html" class="zd-bnav-item">
+    <span class="material-symbols-outlined">person</span>
+    <span>PROFILE</span>
+  </a>
+</nav>
 
-<!-- ═══════════════════════════════════════════
-     SCRIPTS
-     Load order: config → auth → solver
-═══════════════════════════════════════════ -->
+<!-- ═══════════════════ SCRIPTS ═══════════════════ -->
 <script src="js/config.js"></script>
 <script>
-// ── Minimal auth guard for solver page ───────────────────────
-// Reuses db + currentUser from config.js
-// Redirects to index.html if not signed in
-
 (function initSolverAuth() {
-  // Apply saved theme immediately to avoid flash
-  var savedTheme = localStorage.getItem('zd_theme') || 'dark';
-  document.body.setAttribute('data-theme', savedTheme);
-
   db.auth.getSession().then(function(result) {
     var session = result.data && result.data.session;
-    if (!session) {
-      window.location.href = 'index.html';
-      return;
-    }
+    if (!session) { window.location.href = 'index.html'; return; }
     currentUser = session.user;
 
-    // Load profile for sidebar
     db.from('profiles').select('*').eq('id', currentUser.id).single()
       .then(function(r) {
         if (!r.data) return;
         currentProfile = r.data;
 
-        // Apply theme
-        if (r.data.theme) document.body.setAttribute('data-theme', r.data.theme);
-
-        // Populate sidebar
         var nameEl   = document.getElementById('sidebar-name');
         var classEl  = document.getElementById('sidebar-class');
         var avatarEl = document.getElementById('sidebar-avatar-img');
         var mobAv    = document.getElementById('mobile-avatar');
 
         if (nameEl)  nameEl.textContent  = r.data.name || '';
-        if (classEl) classEl.textContent = (r.data.class || '') + (r.data.target_year ? ' · Target ' + r.data.target_year : '');
+        if (classEl) classEl.textContent = (r.data.class || '') + (r.data.target_year ? ' · ' + r.data.target_year : '');
 
         var avHtml = r.data.avatar_url
-          ? '<img src="' + r.data.avatar_url + '" alt="av" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
-          : '<svg width="16" height="16" style="color:var(--text3)"><use href="#ic-user"/></svg>';
-        if (avatarEl) avatarEl.innerHTML = avHtml;
-        if (mobAv)    mobAv.innerHTML    = r.data.avatar_url
           ? '<img src="' + r.data.avatar_url + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
-          : '👤';
+          : '<span class="material-symbols-outlined" style="font-size:15px;color:#849495">person</span>';
+        if (avatarEl) avatarEl.innerHTML = avHtml;
+        if (mobAv) mobAv.innerHTML = r.data.avatar_url
+          ? '<img src="' + r.data.avatar_url + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
+          : '<span class="material-symbols-outlined" style="font-size:14px">person</span>';
       });
   });
 
-  // Sign out
   document.addEventListener('DOMContentLoaded', function() {
     var logoutBtn = document.getElementById('logout-btn');
-    if (logoutBtn) {
-      logoutBtn.addEventListener('click', function() {
-        db.auth.signOut().then(function() { window.location.href = 'index.html'; });
-      });
-    }
+    if (logoutBtn) logoutBtn.addEventListener('click', function() {
+      db.auth.signOut().then(function() { window.location.href = 'index.html'; });
+    });
 
-    // Mobile sidebar toggle
     var hamburger = document.getElementById('hamburger');
     var sidebarEl = document.getElementById('sidebar');
     var overlay   = document.getElementById('sidebar-overlay');
-    if (hamburger) {
-      hamburger.addEventListener('click', function() {
-        sidebarEl.classList.toggle('open');
-        overlay.classList.toggle('visible');
-      });
-    }
-    if (overlay) {
-      overlay.addEventListener('click', function() {
-        sidebarEl.classList.remove('open');
-        overlay.classList.remove('visible');
-      });
-    }
+    if (hamburger) hamburger.addEventListener('click', function() {
+      sidebarEl.classList.toggle('open');
+      overlay.classList.toggle('visible');
+    });
+    if (overlay) overlay.addEventListener('click', function() {
+      sidebarEl.classList.remove('open');
+      overlay.classList.remove('visible');
+    });
   });
 })();
 </script>
+<script src="js/analyticsService.js"></script>
 <script src="js/solver.js"></script>
 </body>
 </html>
