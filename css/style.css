@@ -2332,7 +2332,14 @@ body.modal-open {
 }
 .admin-tab-pane.active {
   display: block;
+  width: 100%;
+  min-height: 200px;
   animation: fadeSlide 0.2s ease;
+}
+.admin-tabs-content {
+  display: block;
+  width: 100%;
+  min-height: 200px;
 }
 
 /* Reports */
@@ -3432,4 +3439,36 @@ body.modal-open {
   gap: 6px;
   flex-wrap: wrap;
   margin-top: 6px;
+}
+#admin-booklets-list {
+  color: var(--text);
+  padding: 0.5rem 0;
+}
+/* ── Booklets tab fix ── */
+#admin-tab-booklets {
+  color: var(--text);
+}
+#admin-tab-booklets input,
+#admin-tab-booklets select,
+#admin-tab-booklets textarea {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius-sm);
+  padding: 0.55rem 0.8rem;
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 0.9rem;
+}
+#admin-tab-booklets label {
+  color: var(--text2);
+  font-size: 0.85rem;
+  display: block;
+  margin-bottom: 0.3rem;
+}
+#admin-tab-booklets .loading-text,
+#admin-booklets-list {
+  color: var(--text2);
+  font-size: 0.875rem;
+  padding: 0.5rem 0;
 }
