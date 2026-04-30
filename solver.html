@@ -20,6 +20,58 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <link rel="stylesheet" href="css/solver-v2.css"/>
+  <style>
+    /* ── Overflow fix ── */
+    .zd-layout,
+    .zd-right,
+    .zd-q-card,
+    .zd-card {
+      min-width: 0;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+
+    /* Force the question text to wrap within its card — never overflow */
+    .zd-q-text {
+      display: block;
+      width: 100%;
+      max-width: 100%;
+      overflow: hidden;           /* clip anything that still tries to escape */
+      overflow-wrap: anywhere;    /* wrap at ANY point if needed, including mid-word as last resort */
+      word-break: normal;         /* prefer natural word boundaries */
+      white-space: normal;
+      box-sizing: border-box;
+    }
+
+    /* All inline elements inside must inherit wrapping */
+    .zd-q-text *:not(.katex):not(.katex *) {
+      max-width: 100%;
+      overflow-wrap: anywhere;
+      word-break: normal;
+      white-space: normal;
+      box-sizing: border-box;
+    }
+
+    /* Options text wrapping */
+    .solver-option-btn {
+      white-space: normal;
+      word-break: normal;
+      overflow-wrap: anywhere;
+      text-align: left;
+    }
+
+    /* KaTeX: scroll horizontally within card, never expand it */
+    .katex-display {
+      overflow-x: auto;
+      overflow-y: hidden;
+      max-width: 100%;
+    }
+
+    /* Remove any horizontal scroll on the card itself */
+    .zd-q-card {
+      overflow-x: hidden;
+    }
+  </style>
 </head>
 <body>
 
@@ -278,5 +330,36 @@
 </script>
 <script src="js/analyticsService.js"></script>
 <script src="js/solver.js"></script>
+<script>
+/* ── Text wrapping patch ─────────────────────────────────────────
+   Patches loadQuestion() to sanitize &nbsp; / \u00A0 from DB text
+   before render — these non-breaking spaces block line wrapping.
+   ─────────────────────────────────────────────────────────────── */
+(function patchLoadQuestion() {
+  var _orig = window.loadQuestion;
+  if (typeof _orig !== 'function') return;
+  window.loadQuestion = function () {
+    if (qState && qState.questions && qState.questions[qState.index]) {
+      var q = qState.questions[qState.index];
+      if (q.text) {
+        q.text = q.text
+          .replace(/\u00A0/g, ' ')
+          .replace(/&nbsp;/gi, ' ');
+      }
+      if (Array.isArray(q.options)) {
+        q.options = q.options.map(function(opt) {
+          if (opt && opt.text) {
+            opt.text = opt.text
+              .replace(/\u00A0/g, ' ')
+              .replace(/&nbsp;/gi, ' ');
+          }
+          return opt;
+        });
+      }
+    }
+    return _orig.apply(this, arguments);
+  };
+})();
+</script>
 </body>
 </html>

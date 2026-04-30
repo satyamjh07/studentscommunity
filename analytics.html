@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ZEROday | Performance Analytics</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body {
+            background-color: #0A0A0A;
+            color: #e5e2e1;
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glow-blue {
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.15);
+        }
+        .glow-purple {
+            box-shadow: 0 0 20px rgba(207, 92, 255, 0.15);
+        }
+        .border-gradient-blue {
+            border: 1px solid rgba(0, 240, 255, 0.2);
+        }
+        .bg-surface-gradient {
+            background: linear-gradient(180deg, #141414 0%, #0A0A0A 100%);
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-secondary": "#520071",
+                      "primary": "#dbfcff",
+                      "error": "#ffb4ab",
+                      "primary-fixed": "#7df4ff",
+                      "surface-container-low": "#1c1b1b",
+                      "secondary-container": "#cf5cff",
+                      "on-error": "#690005",
+                      "secondary-fixed": "#f8d8ff",
+                      "on-error-container": "#ffdad6",
+                      "tertiary-fixed": "#e2e2e2",
+                      "surface-variant": "#353534",
+                      "surface-dim": "#131313",
+                      "surface-container-high": "#2a2a2a",
+                      "on-tertiary-fixed-variant": "#454747",
+                      "on-primary-fixed": "#002022",
+                      "primary-fixed-dim": "#00dbe9",
+                      "on-secondary-fixed": "#320047",
+                      "surface-tint": "#00dbe9",
+                      "tertiary-container": "#d9d9d9",
+                      "surface": "#131313",
+                      "secondary": "#ecb2ff",
+                      "secondary-fixed-dim": "#ecb2ff",
+                      "inverse-primary": "#006970",
+                      "on-secondary-fixed-variant": "#74009f",
+                      "on-surface": "#e5e2e1",
+                      "on-tertiary-fixed": "#1a1c1c",
+                      "surface-container-highest": "#353534",
+                      "inverse-surface": "#e5e2e1",
+                      "on-primary-fixed-variant": "#004f54",
+                      "on-primary-container": "#006970",
+                      "on-primary": "#00363a",
+                      "primary-container": "#00f0ff",
+                      "tertiary": "#f5f5f5",
+                      "surface-container": "#201f1f",
+                      "surface-bright": "#3a3939",
+                      "on-tertiary": "#2f3131",
+                      "on-secondary-container": "#480063",
+                      "tertiary-fixed-dim": "#c6c6c7",
+                      "background": "#131313",
+                      "on-background": "#e5e2e1",
+                      "error-container": "#93000a",
+                      "surface-container-lowest": "#0e0e0e",
+                      "inverse-on-surface": "#313030",
+                      "on-tertiary-container": "#5d5f5f",
+                      "on-surface-variant": "#b9cacb",
+                      "outline-variant": "#3b494b",
+                      "outline": "#849495"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "margin-desktop": "40px",
+                      "stack-xl": "64px",
+                      "margin-mobile": "16px",
+                      "unit": "4px",
+                      "stack-lg": "32px",
+                      "gutter": "24px",
+                      "stack-md": "16px",
+                      "stack-sm": "8px",
+                      "container-max": "1280px"
+              },
+              "fontFamily": {
+                      "h1": ["Space Grotesk"],
+                      "body-lg": ["Inter"],
+                      "display": ["Space Grotesk"],
+                      "code": ["Inter"],
+                      "body-md": ["Inter"],
+                      "h2": ["Space Grotesk"],
+                      "label-caps": ["Space Grotesk"]
+              },
+              "fontSize": {
+                      "h1": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "body-lg": ["18px", {"lineHeight": "1.6", "letterSpacing": "0", "fontWeight": "400"}],
+                      "display": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.04em", "fontWeight": "700"}],
+                      "code": ["14px", {"lineHeight": "1.5", "letterSpacing": "0", "fontWeight": "500"}],
+                      "body-md": ["16px", {"lineHeight": "1.6", "letterSpacing": "0", "fontWeight": "400"}],
+                      "h2": ["24px", {"lineHeight": "1.3", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                      "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.1em", "fontWeight": "600"}]
+              }
+            },
+          },
+        }
+      </script>
+</head>
+<body class="bg-background overflow-x-hidden">
+<!-- SideNavBar (Shared Component) -->
+<aside class="hidden md:flex flex-col h-screen fixed left-0 top-0 p-4 bg-[#141414] w-64 border-r border-[#1F1F1F] shadow-[10px_0_30px_rgba(0,240,255,0.03)] z-50">
+<div class="text-xl font-black text-[#00F0FF] mb-8 font-['Space_Grotesk'] tracking-widest px-4">ZEROday</div>
+<div class="mb-4 px-4 flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-[#1F1F1F] border border-[#00F0FF]/20 flex items-center justify-center overflow-hidden">
+<img alt="Elite Student Profile" class="w-full h-full object-cover" data-alt="Stylized digital avatar of a high-performance student with tech accessories and neon accents" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBhgdZD-_ReGKZh7gbUuBeBs6XoD4NFBrxtiFYX4OitamTsWgkRrnOSCMatL7A3evbv46OkdYAtdyGOHvz3FGwIUqUQS8EEmDBAgevoBOgnf8zXW_r3gqkmkSXryzsSleFU9T07jsW0Jf_1Dt6r9XVtAnoSl3jKAK-_1LE45RU-U_mSxQBI_eo7Y8bjhneqvh0IuLPSTLUWniOGTISG0EArGMRUOJMIR52hHypGV_ckKeByakHDEvkfh7GiOcH00RbSHzD8D34C6Zns"/>
+</div>
+<div class="flex flex-col">
+<span class="font-['Space_Grotesk'] text-sm font-bold text-white tracking-tighter">ZEROday</span>
+<span class="font-mono text-[10px] text-[#00F0FF]/60 font-bold">RANK_ONE_MINDSET</span>
+</div>
+</div>
+<nav class="flex-1 mt-4">
+<a class="text-gray-400 hover:text-white px-4 py-3 mb-2 flex items-center gap-3 transition-all font-mono text-xs font-bold hover:bg-[#1F1F1F] active:translate-x-1 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="grid_view">grid_view</span>
+                DASHBOARD
+            </a>
+<a class="text-gray-400 hover:text-white px-4 py-3 mb-2 flex items-center gap-3 transition-all font-mono text-xs font-bold hover:bg-[#1F1F1F] active:translate-x-1 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="fitness_center">fitness_center</span>
+                PRACTICE
+            </a>
+<a class="bg-[#00F0FF] text-black rounded-lg px-4 py-3 mb-2 flex items-center gap-3 font-mono text-xs font-bold active:translate-x-1 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="query_stats" style="font-variation-settings: 'FILL' 1;">query_stats</span>
+                ANALYTICS
+            </a>
+<a class="text-gray-400 hover:text-white px-4 py-3 mb-2 flex items-center gap-3 transition-all font-mono text-xs font-bold hover:bg-[#1F1F1F] active:translate-x-1 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+                SETTINGS
+            </a>
+</nav>
+<div class="mt-auto">
+<button class="w-full py-4 bg-[#00F0FF] text-black font-['Space_Grotesk'] font-black text-xs tracking-widest rounded-xl mb-4 active:scale-95 transition-transform">
+                START_MOCK_TEST
+            </button>
+<a class="text-gray-400 hover:text-white px-4 py-3 flex items-center gap-3 transition-all font-mono text-xs font-bold hover:bg-[#1F1F1F]" href="#">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+                SUPPORT
+            </a>
+</div>
+</aside>
+<!-- TopAppBar (Shared Component Mobile/Web) -->
+<header class="flex justify-between items-center w-full px-6 py-4 sticky top-0 z-40 bg-[#0A0A0A]/80 backdrop-blur-md md:ml-64 md:w-[calc(100%-16rem)] border-b border-[#1F1F1F]">
+<div class="text-2xl font-black text-[#00F0FF] tracking-widest font-['Space_Grotesk'] uppercase md:hidden">ZEROday</div>
+<div class="hidden md:flex flex-col">
+<h1 class="font-h1 text-h1 text-primary">PERFORMANCE_ANALYTICS</h1>
+<p class="font-code text-xs text-outline tracking-widest uppercase">System status: Optimizing</p>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-[#00F0FF] hover:text-[#00F0FF] transition-colors active:scale-95 duration-100">
+<span class="material-symbols-outlined" data-icon="local_fire_department">local_fire_department</span>
+</button>
+<button class="text-[#00F0FF] hover:text-[#00F0FF] transition-colors active:scale-95 duration-100">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+</button>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="md:ml-64 p-6 lg:p-10 pb-32">
+<div class="max-w-container-max mx-auto space-y-gutter">
+<!-- Hero Stats Bento Grid -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+<!-- Accuracy Gauge Physics -->
+<div class="bg-[#141414] rounded-[24px] p-6 border-t border-[#1F1F1F] flex flex-col items-center justify-center text-center glow-blue">
+<div class="relative w-32 h-32 mb-4">
+<svg class="w-full h-full transform -rotate-90">
+<circle class="text-[#1F1F1F]" cx="64" cy="64" fill="transparent" r="58" stroke="currentColor" stroke-width="8"></circle>
+<circle class="text-[#00F0FF]" cx="64" cy="64" fill="transparent" r="58" stroke="currentColor" stroke-dasharray="364.4" stroke-dashoffset="72.8" stroke-width="8"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="font-display text-h1 text-primary">80%</span>
+</div>
+</div>
+<h3 class="font-label-caps text-label-caps text-outline uppercase tracking-widest">Physics_Accuracy</h3>
+<div class="mt-2 text-primary font-code text-xs">+5% from last week</div>
+</div>
+<!-- Accuracy Gauge Chemistry -->
+<div class="bg-[#141414] rounded-[24px] p-6 border-t border-[#1F1F1F] flex flex-col items-center justify-center text-center">
+<div class="relative w-32 h-32 mb-4">
+<svg class="w-full h-full transform -rotate-90">
+<circle class="text-[#1F1F1F]" cx="64" cy="64" fill="transparent" r="58" stroke="currentColor" stroke-width="8"></circle>
+<circle class="text-[#cf5cff]" cx="64" cy="64" fill="transparent" r="58" stroke="currentColor" stroke-dasharray="364.4" stroke-dashoffset="145.7" stroke-width="8"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="font-display text-h1 text-white">60%</span>
+</div>
+</div>
+<h3 class="font-label-caps text-label-caps text-outline uppercase tracking-widest">Chem_Accuracy</h3>
+<div class="mt-2 text-error font-code text-xs">-2% critical attention</div>
+</div>
+<!-- Accuracy Gauge Math -->
+<div class="bg-[#141414] rounded-[24px] p-6 border-t border-[#1F1F1F] flex flex-col items-center justify-center text-center glow-blue">
+<div class="relative w-32 h-32 mb-4">
+<svg class="w-full h-full transform -rotate-90">
+<circle class="text-[#1F1F1F]" cx="64" cy="64" fill="transparent" r="58" stroke="currentColor" stroke-width="8"></circle>
+<circle class="text-[#00F0FF]" cx="64" cy="64" fill="transparent" r="58" stroke="currentColor" stroke-dasharray="364.4" stroke-dashoffset="18.2" stroke-width="8"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="font-display text-h1 text-primary">95%</span>
+</div>
+</div>
+<h3 class="font-label-caps text-label-caps text-outline uppercase tracking-widest">Math_Accuracy</h3>
+<div class="mt-2 text-primary font-code text-xs">Peak performance detected</div>
+</div>
+</div>
+<!-- Performance Graph & Weak Topics -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
+<!-- Recent Performance Line Graph -->
+<div class="lg:col-span-2 bg-[#141414] rounded-[24px] p-8 border-t border-[#1F1F1F]">
+<div class="flex justify-between items-end mb-8">
+<div>
+<h2 class="font-h2 text-h2 text-white uppercase tracking-tighter">PERFORMANCE_VECTOR</h2>
+<p class="font-body-md text-outline">Accuracy trends over the last 14 sessions</p>
+</div>
+<div class="flex gap-4">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-[#00F0FF]"></div>
+<span class="font-label-caps text-[10px] text-outline">ACCURACY</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-[#cf5cff]"></div>
+<span class="font-label-caps text-[10px] text-outline">TIME_COST</span>
+</div>
+</div>
+</div>
+<div class="relative h-64 w-full bg-[#0f0f0f] rounded-xl overflow-hidden border border-[#1f1f1f]">
+<img alt="Performance Graph" class="w-full h-full object-cover opacity-60" data-alt="Digital line graph showing fluctuating performance metrics with neon cyan and magenta paths on a dark grid backdrop" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBENDf0c93CrifrmxDA2U7Em8n0z_ibSZKIFzdA5MQYhJ705hidJR88ZyNY9W7KNvIYGUzJgQ6pRzrMvbIzvm0ARGHRofMETDWz2IU_6-3BDFEFwMoGn2W6B5SvLNH7nVpGknPzELOEyeQG41DO2zEjpDfb8CJ0ZeQScvSzRVpDtFama4zyH46-ma4nljLkde3dZJHt-QQY7vyul8AgZA9tqQ50NRykwNDaU8SCVrSlU8Ub5w0utjJ4jEZEtS736pUwVcnVNfvLKTui"/>
+<div class="absolute inset-0 flex items-end justify-between px-6 pb-2">
+<span class="font-code text-[10px] text-outline">MON</span>
+<span class="font-code text-[10px] text-outline">TUE</span>
+<span class="font-code text-[10px] text-outline">WED</span>
+<span class="font-code text-[10px] text-outline">THU</span>
+<span class="font-code text-[10px] text-outline">FRI</span>
+<span class="font-code text-[10px] text-outline">SAT</span>
+<span class="font-code text-[10px] text-outline">SUN</span>
+</div>
+</div>
+</div>
+<!-- Weak Topics Bar Chart -->
+<div class="bg-[#141414] rounded-[24px] p-8 border-t border-[#1F1F1F]">
+<h2 class="font-h2 text-h2 text-white uppercase tracking-tighter mb-2">SYSTEM_WEAKNESS</h2>
+<p class="font-body-md text-outline mb-8">Priority topics for immediate review</p>
+<div class="space-y-6">
+<div class="space-y-2">
+<div class="flex justify-between text-xs font-code">
+<span class="text-white">ELECTROSTATICS</span>
+<span class="text-error">CRITICAL</span>
+</div>
+<div class="h-2 w-full bg-[#0f0f0f] rounded-full overflow-hidden">
+<div class="h-full bg-error rounded-full" style="width: 85%;"></div>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between text-xs font-code">
+<span class="text-white">THERMODYNAMICS</span>
+<span class="text-secondary-container">MEDIUM</span>
+</div>
+<div class="h-2 w-full bg-[#0f0f0f] rounded-full overflow-hidden">
+<div class="h-full bg-[#cf5cff] rounded-full" style="width: 60%;"></div>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between text-xs font-code">
+<span class="text-white">COORDINATE GEOMETRY</span>
+<span class="text-secondary-container">MEDIUM</span>
+</div>
+<div class="h-2 w-full bg-[#0f0f0f] rounded-full overflow-hidden">
+<div class="h-full bg-[#cf5cff] rounded-full" style="width: 45%;"></div>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between text-xs font-code">
+<span class="text-white">ORGANIC SYNTHESIS</span>
+<span class="text-outline">LOW</span>
+</div>
+<div class="h-2 w-full bg-[#0f0f0f] rounded-full overflow-hidden">
+<div class="h-full bg-outline rounded-full" style="width: 30%;"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Subject Breakdown Detail Table -->
+<div class="bg-[#141414] rounded-[24px] overflow-hidden border-t border-[#1F1F1F]">
+<div class="p-8 flex justify-between items-center">
+<div>
+<h2 class="font-h2 text-h2 text-white uppercase tracking-tighter">RESOURCE_ALLOCATION</h2>
+<p class="font-body-md text-outline">Detailed time and effort metrics per subject</p>
+</div>
+<button class="bg-[#1F1F1F] text-[#00F0FF] font-label-caps px-4 py-2 rounded-lg border border-[#00F0FF]/20 hover:bg-[#00F0FF]/10 transition-colors">
+                        EXPORT_REPORT
+                    </button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left font-body-md">
+<thead>
+<tr class="bg-[#0f0f0f] border-y border-[#1F1F1F]">
+<th class="px-8 py-4 font-label-caps text-outline tracking-widest">SUBJECT</th>
+<th class="px-8 py-4 font-label-caps text-outline tracking-widest text-center">TIME_SPENT</th>
+<th class="px-8 py-4 font-label-caps text-outline tracking-widest text-center">AVG_TIME/QUES</th>
+<th class="px-8 py-4 font-label-caps text-outline tracking-widest text-center">CORRECT_RATIO</th>
+<th class="px-8 py-4 font-label-caps text-outline tracking-widest text-right">TREND</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-[#1F1F1F]">
+<tr class="hover:bg-[#1F1F1F]/50 transition-colors">
+<td class="px-8 py-6">
+<div class="flex items-center gap-3">
+<div class="w-1 h-8 bg-[#00F0FF]"></div>
+<div>
+<div class="text-white font-bold">PHYSICS</div>
+<div class="text-[10px] font-code text-outline">MODERN_PHYSICS_FOCUS</div>
+</div>
+</div>
+</td>
+<td class="px-8 py-6 text-center font-code text-primary">12h 45m</td>
+<td class="px-8 py-6 text-center font-code">2.4m</td>
+<td class="px-8 py-6 text-center">
+<span class="bg-[#00F0FF]/10 text-[#00F0FF] text-[10px] font-bold px-3 py-1 rounded-full">EXCELLENT</span>
+</td>
+<td class="px-8 py-6 text-right">
+<span class="material-symbols-outlined text-[#00F0FF]" data-icon="trending_up">trending_up</span>
+</td>
+</tr>
+<tr class="hover:bg-[#1F1F1F]/50 transition-colors">
+<td class="px-8 py-6">
+<div class="flex items-center gap-3">
+<div class="w-1 h-8 bg-[#cf5cff]"></div>
+<div>
+<div class="text-white font-bold">CHEMISTRY</div>
+<div class="text-[10px] font-code text-outline">ORGANIC_QUAL_ANALYSIS</div>
+</div>
+</div>
+</td>
+<td class="px-8 py-6 text-center font-code text-[#cf5cff]">08h 12m</td>
+<td class="px-8 py-6 text-center font-code">1.8m</td>
+<td class="px-8 py-6 text-center">
+<span class="bg-error/10 text-error text-[10px] font-bold px-3 py-1 rounded-full">REQUIRES_DRILL</span>
+</td>
+<td class="px-8 py-6 text-right">
+<span class="material-symbols-outlined text-error" data-icon="trending_down">trending_down</span>
+</td>
+</tr>
+<tr class="hover:bg-[#1F1F1F]/50 transition-colors">
+<td class="px-8 py-6">
+<div class="flex items-center gap-3">
+<div class="w-1 h-8 bg-[#00F0FF]"></div>
+<div>
+<div class="text-white font-bold">MATHEMATICS</div>
+<div class="text-[10px] font-code text-outline">INTEGRAL_CALCULUS</div>
+</div>
+</div>
+</td>
+<td class="px-8 py-6 text-center font-code text-primary">15h 30m</td>
+<td class="px-8 py-6 text-center font-code">3.1m</td>
+<td class="px-8 py-6 text-center">
+<span class="bg-[#00F0FF]/10 text-[#00F0FF] text-[10px] font-bold px-3 py-1 rounded-full">OPTIMIZED</span>
+</td>
+<td class="px-8 py-6 text-right">
+<span class="material-symbols-outlined text-[#00F0FF]" data-icon="trending_flat">trending_flat</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Shared Component Mobile Only) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-3 bg-[#141414] md:hidden border-t border-[#1F1F1F] rounded-t-2xl shadow-[0_-8px_32px_rgba(0,0,0,0.5)]">
+<a class="flex flex-col items-center justify-center text-gray-500 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-['Space_Grotesk'] text-[10px] font-bold tracking-tighter">HOME</span>
+</a>
+<a class="flex flex-col items-center justify-center text-gray-500 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="layers">layers</span>
+<span class="font-['Space_Grotesk'] text-[10px] font-bold tracking-tighter">MODES</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#00F0FF] bg-[#00F0FF]/10 rounded-xl px-4 py-1 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="insights" style="font-variation-settings: 'FILL' 1;">insights</span>
+<span class="font-['Space_Grotesk'] text-[10px] font-bold tracking-tighter">STATS</span>
+</a>
+<a class="flex flex-col items-center justify-center text-gray-500 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-['Space_Grotesk'] text-[10px] font-bold tracking-tighter">PROFILE</span>
+</a>
+</nav>
+</body></html>
