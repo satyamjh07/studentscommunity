@@ -55,7 +55,8 @@ document.addEventListener("DOMContentLoaded", function () {
     buildChapterList("physics");
   }, 400);
 
-  document.getElementById("btn-next").addEventListener("click", function () {
+   var btnNext = document.getElementById("btn-next");
+  if (btnNext) btnNext.addEventListener("click", function () {
     if (qState.index < qState.questions.length - 1) {
       qState.index++;
     } else {
@@ -66,7 +67,9 @@ document.addEventListener("DOMContentLoaded", function () {
     updateQNav();
   });
 
-  document.getElementById("btn-skip").addEventListener("click", function () {
+
+  var btnSkip = document.getElementById("btn-skip");
+  if (btnSkip) btnSkip.addEventListener("click", function () {
     if (qState.statuses[qState.index] === "unseen")
       qState.statuses[qState.index] = "skipped";
     updateQNav();
@@ -80,25 +83,24 @@ document.addEventListener("DOMContentLoaded", function () {
     updateQNav();
   });
 
-  document
-    .getElementById("btn-check-int")
-    .addEventListener("click", function () {
-      if (qState.answered || qState.mode !== "pyq") return;
-      var val = document.getElementById("integer-input").value.trim();
-      if (!val) return;
-      qState.answered = true;
-      var q = qState.questions[qState.index];
-      var isCorrect = Number(val) === Number(q.answer);
-      document
-        .getElementById("integer-input")
-        .classList.add(isCorrect ? "correct" : "wrong");
-      var fb = document.getElementById("integer-feedback");
-      fb.className = "zd-integer-feedback " + (isCorrect ? "correct" : "wrong");
-      fb.textContent = isCorrect
-        ? "✓ Correct!"
-        : "✗ Wrong. Answer: " + q.answer;
-      finalize(isCorrect, q);
-    });
+  var btnCheckInt = document.getElementById("btn-check-int");
+  if (btnCheckInt) btnCheckInt.addEventListener("click", function () {
+    if (qState.answered || qState.mode !== "pyq") return;
+    var val = document.getElementById("integer-input").value.trim();
+    if (!val) return;
+    qState.answered = true;
+    var q = qState.questions[qState.index];
+    var isCorrect = Number(val) === Number(q.answer);
+    document
+      .getElementById("integer-input")
+      .classList.add(isCorrect ? "correct" : "wrong");
+    var fb = document.getElementById("integer-feedback");
+    fb.className = "zd-integer-feedback " + (isCorrect ? "correct" : "wrong");
+    fb.textContent = isCorrect
+      ? "✓ Correct!"
+      : "✗ Wrong. Answer: " + q.answer;
+    finalize(isCorrect, q);
+  });
 });
 
 // ═══════════════════════════════════════════════════════
@@ -137,6 +139,7 @@ function selectSubject(btn) {
 
 async function buildChapterList(subject) {
   var el = document.getElementById("pyq-chapter-list");
+  if (!el) return;
   el.innerHTML = '<div class="zd-loading">Loading…</div>';
 
   var cacheKey = "chapters_" + subject;

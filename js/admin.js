@@ -44,6 +44,7 @@ document.addEventListener("DOMContentLoaded", () => {
       document
         .getElementById("admin-tab-" + btn.dataset.tab)
         .classList.add("active");
+      if (btn.dataset.tab === "booklets") adminLoadBooklets();  // ← ADD THIS LINE
     });
   });
 });
@@ -449,6 +450,36 @@ document.addEventListener("DOMContentLoaded", function () {
   if (qSubmitBtn) {
     qSubmitBtn.addEventListener("click", _submitQuestion);
   }
+
+  // ── Subject change → reset chapter/topic comboboxes ──
+  var qSubjectEl = document.getElementById("q-subject");
+  if (qSubjectEl) {
+    qSubjectEl.addEventListener("change", function () {
+      _comboData.chapter = null;
+      _comboData.topic   = null;
+      var chEl = document.getElementById("q-chapter");
+      var tpEl = document.getElementById("q-topic");
+      if (chEl) chEl.value = "";
+      if (tpEl) tpEl.value = "";
+      adminComboClose("chapter-combobox");
+      adminComboClose("topic-combobox");
+    });
+  }
+
+  // ── Close dropdowns on outside click ─────────────────
+  document.addEventListener("click", function (e) {
+    if (!e.target.closest(".admin-combobox")) {
+      adminComboClose("chapter-combobox");
+      adminComboClose("topic-combobox");
+    }
+  });
+
+  // ── Load booklets when booklets tab clicked ───────────
+  document.querySelectorAll(".admin-tab-btn").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      if (btn.dataset.tab === "booklets") adminLoadBooklets();
+    });
+  });
 });
 
 async function _uploadQuestionImage(inputId, folder) {
@@ -623,3 +654,174 @@ function _previewQuestion() {
     });
   }
 }
+
+
+// ════════════════════════════════════════════════════════
+// COMBOBOX — smart chapter / topic selector
+// ════════════════════════════════════════════════════════
+var _comboData = { chapter: null, topic: null };
+
+async function _getComboOptions(field) {
+  if (_comboData[field]) return _comboData[field];
+  var subject = (document.getElementById("q-subject") || {}).value;
+  if (!subject) return [];
+  var col = field === "chapter" ? "chapter" : "topic";
+  var query = db.from("questions").select(col).eq("subject", subject);
+  if (field === "topic") {
+    var ch = (document.getElementById("q-chapter") || {}).value.trim();
+    if (ch) query = query.eq("chapter", ch);
+  }
+  var { data } = await query;
+  if (!data) return [];
+  var unique = Array.from(new Set(data.map(function (r) { return r[col]; }).filter(Boolean))).sort();
+  _comboData[field] = unique;
+  return unique;
+}
+
+async function adminComboOpen(comboId) {
+  var field   = comboId.replace("-combobox", "");
+  var listEl  = document.getElementById(comboId + "-list");
+  var inputEl = document.getElementById("q-" + field);
+  if (!listEl || !inputEl) return;
+  listEl.classList.add("open");
+  var opts = await _getComboOptions(field);
+  _renderComboList(comboId, opts, inputEl.value);
+}
+
+function adminComboClose(comboId) {
+  var listEl = document.getElementById(comboId + "-list");
+  if (listEl) listEl.classList.remove("open");
+}
+
+async function adminComboFilter(comboId) {
+  var field   = comboId.replace("-combobox", "");
+  var inputEl = document.getElementById("q-" + field);
+  var listEl  = document.getElementById(comboId + "-list");
+  if (!listEl || !inputEl) return;
+  if (field === "chapter") _comboData.topic = null;
+  listEl.classList.add("open");
+  var opts = await _getComboOptions(field);
+  _renderComboList(comboId, opts, inputEl.value);
+}
+
+function _renderComboList(comboId, options, filterText) {
+  var field   = comboId.replace("-combobox", "");
+  var listEl  = document.getElementById(comboId + "-list");
+  var q       = (filterText || "").toLowerCase().trim();
+  var filtered = options.filter(function (o) { return !q || o.toLowerCase().includes(q); });
+  var html = filtered.map(function (o) {
+    return '<div class="admin-combo-option" onclick="adminComboSelect(\'' +
+      comboId + "\', " + JSON.stringify(o) + ')">' + escHtml(o) + "</div>";
+  }).join("");
+  var exactMatch = options.some(function (o) { return o.toLowerCase() === q; });
+  if (q && !exactMatch) {
+    html += '<div class="admin-combo-option new-entry" onclick="adminComboSelect(\'' +
+      comboId + "\', " + JSON.stringify(filterText) + ')">✚ Use &ldquo;' + escHtml(filterText) + '&rdquo; (new)</div>';
+  }
+  if (!html) html = '<div class="admin-combo-option" style="opacity:0.5;cursor:default">No matches — type to create new</div>';
+  listEl.innerHTML = html;
+}
+
+function adminComboSelect(comboId, value) {
+  var field   = comboId.replace("-combobox", "");
+  var inputEl = document.getElementById("q-" + field);
+  if (inputEl) inputEl.value = value;
+  adminComboClose(comboId);
+  if (field === "chapter") _comboData.topic = null;
+}
+
+// ════════════════════════════════════════════════════════
+// BOOKLET MANAGER
+// ════════════════════════════════════════════════════════
+async function adminLoadBooklets() {
+  var listEl = document.getElementById("admin-booklets-list");
+  if (!listEl) return;
+  listEl.innerHTML = '<div class="loading-text">Loading…</div>';
+  var { data, error } = await db.from("booklets").select("*").order("created_at", { ascending: false });
+  if (error) {
+    listEl.innerHTML = '<div style="color:var(--red);font-size:0.85rem">Error: ' + escHtml(error.message) + "</div>";
+    return;
+  }
+  if (!data || !data.length) {
+    listEl.innerHTML = '<div style="color:var(--text3);font-size:0.85rem;padding:0.8rem 0">No booklets yet. Create one above.</div>';
+    return;
+  }
+  listEl.innerHTML = data.map(function (b) {
+    return (
+      '<div class="bk-card">' +
+        '<div class="bk-card-info">' +
+          '<div class="bk-card-id">' + escHtml(b.id) + '</div>' +
+          '<div class="bk-card-title">' + escHtml(b.title || "Untitled") + '</div>' +
+          '<div class="bk-card-meta">' +
+            escHtml((b.subject || "").toUpperCase()) +
+            (b.folder ? " · 📁 " + escHtml(b.folder) : "") +
+            (b.description ? " · " + escHtml(b.description.substring(0, 60)) + (b.description.length > 60 ? "…" : "") : "") +
+          '</div>' +
+        '</div>' +
+        '<button class="bk-delete-btn" onclick="adminDeleteBooklet(' + JSON.stringify(b.id) + ')">🗑️ Delete</button>' +
+      '</div>'
+    );
+  }).join("");
+}
+
+async function adminCreateBooklet() {
+  var btn      = document.getElementById("bk-create-btn");
+  var statusEl = document.getElementById("bk-status-msg");
+  var id       = (document.getElementById("bk-id").value || "").trim();
+  var title    = (document.getElementById("bk-title").value || "").trim();
+  var subject  = document.getElementById("bk-subject").value;
+  var folder   = (document.getElementById("bk-folder").value || "").trim();
+  var desc     = (document.getElementById("bk-description").value || "").trim();
+
+  if (!id)      { statusEl.style.color = "var(--red)"; statusEl.textContent = "❌ Booklet ID is required."; return; }
+  if (!title)   { statusEl.style.color = "var(--red)"; statusEl.textContent = "❌ Title is required."; return; }
+  if (!subject) { statusEl.style.color = "var(--red)"; statusEl.textContent = "❌ Subject is required."; return; }
+
+  var safeId = id.toLowerCase().replace(/[^a-z0-9-]/g, "-");
+  if (safeId !== id) {
+    statusEl.style.color = "var(--red)";
+    statusEl.textContent = '❌ ID must be lowercase letters, numbers, hyphens only. Suggested: "' + safeId + '"';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = "Creating…";
+  statusEl.textContent = "";
+
+  var { error } = await db.from("booklets").insert({
+    id: id, title: title, subject: subject,
+    folder: folder || null, description: desc || null,
+    created_by: currentUser ? currentUser.id : null,
+  });
+
+  btn.disabled = false;
+  btn.textContent = "📚 Create Booklet";
+
+  if (error) {
+    statusEl.style.color = "var(--red)";
+    statusEl.textContent = "❌ " + (error.code === "23505" ? 'A booklet with ID "' + id + '" already exists.' : error.message);
+    return;
+  }
+
+  statusEl.style.color = "var(--green)";
+  statusEl.textContent = '✅ Booklet "' + title + '" created!';
+  ["bk-id","bk-title","bk-folder","bk-description"].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=""; });
+  document.getElementById("bk-subject").value = "";
+  adminLoadBooklets();
+  setTimeout(function () { if (statusEl.textContent.includes("✅")) statusEl.textContent = ""; }, 5000);
+}
+
+async function adminDeleteBooklet(bookletId) {
+  showConfirm(
+    "Delete Booklet",
+    'Delete booklet "' + bookletId + '"? This does NOT delete the questions inside it.',
+    "🗑️",
+    async function () {
+      var { error } = await db.from("booklets").delete().eq("id", bookletId);
+      if (error) { showToast("Error: " + error.message); return; }
+      showToast("Booklet deleted.");
+      adminLoadBooklets();
+    }
+  );
+}
+
