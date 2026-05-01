@@ -803,16 +803,18 @@ async function adminLoadBooklets() {
     return;
   }
   listEl.innerHTML = data.map(function (b) {
+    var tagsHtml = (b.tags && b.tags.length)
+      ? b.tags.map(function(t){ return '<span style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:0.1rem 0.4rem;font-size:0.7rem;color:var(--text2)">' + escHtml(t) + '</span>'; }).join(" ")
+      : "";
     return (
       '<div class="bk-card">' +
         '<div class="bk-card-info">' +
-          '<div class="bk-card-id">' + escHtml(b.id) + '</div>' +
-          '<div class="bk-card-title">' + escHtml(b.title || "Untitled") + '</div>' +
+          '<div class="bk-card-id">' + escHtml(b.id) + (b.is_live ? ' <span style="color:var(--green);font-size:0.7rem">● LIVE</span>' : ' <span style="color:var(--text3);font-size:0.7rem">● DRAFT</span>') + '</div>' +
+          '<div class="bk-card-title">' + (b.icon ? escHtml(b.icon) + ' ' : '') + escHtml(b.title || "Untitled") + '</div>' +
           '<div class="bk-card-meta">' +
-            escHtml((b.subject || "").toUpperCase()) +
-            (b.folder ? " · 📁 " + escHtml(b.folder) : "") +
-            (b.description ? " · " + escHtml(b.description.substring(0, 60)) + (b.description.length > 60 ? "…" : "") : "") +
+            (b.description ? escHtml(b.description.substring(0, 60)) + (b.description.length > 60 ? "…" : "") : "") +
           '</div>' +
+          (tagsHtml ? '<div style="display:flex;gap:0.3rem;flex-wrap:wrap;margin-top:0.4rem">' + tagsHtml + '</div>' : '') +
         '</div>' +
         '<button class="bk-delete-btn" onclick="adminDeleteBooklet(' + JSON.stringify(b.id) + ')">🗑️ Delete</button>' +
       '</div>'
@@ -825,13 +827,13 @@ async function adminCreateBooklet() {
   var statusEl = document.getElementById("bk-status-msg");
   var id       = (document.getElementById("bk-id").value || "").trim();
   var title    = (document.getElementById("bk-title").value || "").trim();
-  var subject  = document.getElementById("bk-subject").value;
-  var folder   = (document.getElementById("bk-folder").value || "").trim();
+  var icon     = (document.getElementById("bk-icon").value || "").trim();
+  var tagsRaw  = (document.getElementById("bk-tags").value || "").trim();
   var desc     = (document.getElementById("bk-description").value || "").trim();
+  var isLive   = document.getElementById("bk-is-live").checked;
 
-  if (!id)      { statusEl.style.color = "var(--red)"; statusEl.textContent = "❌ Booklet ID is required."; return; }
-  if (!title)   { statusEl.style.color = "var(--red)"; statusEl.textContent = "❌ Title is required."; return; }
-  if (!subject) { statusEl.style.color = "var(--red)"; statusEl.textContent = "❌ Subject is required."; return; }
+  if (!id)    { statusEl.style.color = "var(--red)"; statusEl.textContent = "❌ Booklet ID is required."; return; }
+  if (!title) { statusEl.style.color = "var(--red)"; statusEl.textContent = "❌ Title is required."; return; }
 
   var safeId = id.toLowerCase().replace(/[^a-z0-9-]/g, "-");
   if (safeId !== id) {
@@ -840,13 +842,20 @@ async function adminCreateBooklet() {
     return;
   }
 
+  // Convert comma-separated tags string into an array
+  var tagsArray = tagsRaw ? tagsRaw.split(",").map(function(t){ return t.trim(); }).filter(Boolean) : null;
+
   btn.disabled = true;
   btn.textContent = "Creating…";
   statusEl.textContent = "";
 
   var { error } = await db.from("booklets").insert({
-    id: id, title: title, subject: subject,
-    folder: folder || null, description: desc || null,
+    id: id,
+    title: title,
+    icon: icon || null,
+    tags: tagsArray,
+    description: desc || null,
+    is_live: isLive,
     created_by: currentUser ? currentUser.id : null,
   });
 
@@ -861,8 +870,8 @@ async function adminCreateBooklet() {
 
   statusEl.style.color = "var(--green)";
   statusEl.textContent = '✅ Booklet "' + title + '" created!';
-  ["bk-id","bk-title","bk-folder","bk-description"].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=""; });
-  document.getElementById("bk-subject").value = "";
+  ["bk-id","bk-title","bk-icon","bk-tags","bk-description"].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=""; });
+  var liveEl = document.getElementById("bk-is-live"); if(liveEl) liveEl.checked = false;
   adminLoadBooklets();
   setTimeout(function () { if (statusEl.textContent.includes("✅")) statusEl.textContent = ""; }, 5000);
 }
