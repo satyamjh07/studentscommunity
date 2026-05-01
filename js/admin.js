@@ -403,31 +403,29 @@ async function adminDirectDeletePost(postId) {
 }
 
 // ════════════════════════════════════════════════════════
-// QUESTION UPLOAD — integrated from adminService.js
-// Uses global: db, currentUser, uploadImageToCloudinary
+// _wrapLatex — FIXED
+// Only auto-wraps text that is PURELY a LaTeX expression
+// (no surrounding natural-language words).
+// Mixed text like "Find $x$ where..." is returned as-is —
+// KaTeX auto-render handles the inline $...$ correctly.
 // ════════════════════════════════════════════════════════
-// Auto-wraps bare LaTeX in $$ if not already wrapped
-// e.g.  \frac{1}{n}  →  $$\frac{1}{n}$$
-// e.g.  $$\frac{1}{n}$$  →  $$\frac{1}{n}$$  (unchanged)
-// e.g.  "Normal text"  →  "Normal text"  (unchanged)
 function _wrapLatex(text) {
   if (!text) return text;
   var trimmed = text.trim();
 
-  // Already wrapped in $$ ... $$ — leave as-is
-  if (trimmed.startsWith("$$") && trimmed.endsWith("$$")) return trimmed;
+  // Already has $ delimiters anywhere — trust the author, return as-is
+  if (/\$/.test(trimmed)) return trimmed;
 
-  // Already wrapped in $ ... $ — leave as-is
-  if (trimmed.startsWith("$") && trimmed.endsWith("$")) return trimmed;
+  // No natural-language words — looks like a bare math expression
+  // e.g.  \frac{1}{2} + \sqrt{3}
+  var hasWords = /[a-zA-Z]{4,}/.test(trimmed.replace(/\\[a-zA-Z]+/g, ''));
+  var hasLatex = /\\[a-zA-Z]+|[\^_]\{/.test(trimmed);
 
-  // Contains LaTeX commands — auto-wrap in $$
-  var latexPattern =
-    /\\[a-zA-Z]+|\\{|\\}|\^|_\{|\\frac|\\sqrt|\\begin|\\end|\\text/;
-  if (latexPattern.test(trimmed)) {
-    return "$$" + trimmed + "$$";
+  if (hasLatex && !hasWords) {
+    return '$$' + trimmed + '$$';
   }
 
-  // Plain text — return as-is
+  // Mixed text or plain text — return unchanged
   return trimmed;
 }
 document.addEventListener("DOMContentLoaded", function () {
@@ -536,25 +534,61 @@ async function _submitQuestion() {
   btn.textContent = "Uploading images…";
   statusEl.textContent = "";
 
-  // ── Upload images (parallel) ──────────────────────────
   var folder = "questions/" + subject + "/" + chapter;
-  var results = await Promise.all([
-    _uploadQuestionImage("q-image-file", folder),
-    _uploadQuestionImage("q-explanation-file", folder + "/explanations"),
-  ]);
-  var question_image_url = results[0];
-  var explanation_image_url = results[1];
+
+  // ── Resolve question image (file or URL) ──────────────
+  var question_image_url = null;
+  var qImgFileWrap = document.getElementById('q-img-file-wrap');
+  var qImgFileVisible = qImgFileWrap && qImgFileWrap.style.display !== 'none';
+  if (qImgFileVisible) {
+    question_image_url = await _uploadQuestionImage("q-image-file", folder);
+  } else {
+    var urlEl = document.getElementById('q-image-url');
+    question_image_url = (urlEl && urlEl.value.trim()) || null;
+  }
+
+  // ── Resolve explanation image (file or URL) ────────────
+  var explanation_image_url = null;
+  var expFileWrap = document.getElementById('q-exp-file-wrap');
+  var expFileVisible = expFileWrap && expFileWrap.style.display !== 'none';
+  if (expFileVisible) {
+    explanation_image_url = await _uploadQuestionImage("q-explanation-file", folder + "/explanations");
+  } else {
+    var expUrlEl = document.getElementById('q-explanation-url');
+    explanation_image_url = (expUrlEl && expUrlEl.value.trim()) || null;
+  }
 
   btn.textContent = "Saving to database…";
 
-  // ── Build options / answer ────────────────────────────
+  // ── Build options / answer ──────────────────────────
   var correct_answer,
     options = null;
   if (qType === "mcq") {
-    options = [0, 1, 2, 3].map(function (i) {
-      var raw = document.getElementById("q-opt" + i).value.trim();
-      return { text: _wrapLatex(raw) };
-    });
+    options = await Promise.all([0, 1, 2, 3].map(async function (i) {
+      var raw     = (document.getElementById("q-opt" + i) || {}).value || '';
+      var optText = _wrapLatex(raw.trim());
+      var optImage = null;
+      var fileWrap = document.getElementById('opt-file-wrap-' + i);
+      var urlWrap  = document.getElementById('opt-url-wrap-'  + i);
+      if (fileWrap && fileWrap.style.display !== 'none') {
+        var fi = document.getElementById('opt-img-file-' + i);
+        if (fi && fi.files && fi.files[0]) {
+          try {
+            optImage = await uploadImageToCloudinary(fi.files[0], {
+              maxSizeMB: 2, folder: folder + '/options'
+            });
+          } catch (e) {
+            showToast('Option ' + ['A','B','C','D'][i] + ' image failed: ' + e.message);
+          }
+        }
+      } else if (urlWrap && urlWrap.style.display !== 'none') {
+        var ui = document.getElementById('opt-img-url-' + i);
+        optImage = (ui && ui.value.trim()) || null;
+      }
+      var obj = { text: optText };
+      if (optImage) obj.image = optImage;
+      return obj;
+    }));
     correct_answer = document.getElementById("q-correct-mcq").value;
   } else {
     correct_answer = document.getElementById("q-correct-integer").value.trim();
@@ -623,10 +657,21 @@ async function _submitQuestion() {
   document.getElementById("q-mcq-block").style.display = "block";
   document.getElementById("q-integer-block").style.display = "none";
 
-  // Clear file inputs
-  ["q-image-file", "q-explanation-file"].forEach(function (id) {
-    var el = document.getElementById(id);
-    if (el) el.value = "";
+  // Clear question & explanation image inputs, reset to file mode
+  var _qif = document.getElementById('q-image-file'); if (_qif) _qif.value = '';
+  var _qiu = document.getElementById('q-image-url');  if (_qiu) _qiu.value = '';
+  var _qip = document.getElementById('q-img-url-preview'); if (_qip) { _qip.src=''; _qip.style.display='none'; }
+  if (typeof _qImgTab === 'function') _qImgTab('file');
+  var _eif = document.getElementById('q-explanation-file'); if (_eif) _eif.value = '';
+  var _eiu = document.getElementById('q-explanation-url');  if (_eiu) _eiu.value = '';
+  var _eip = document.getElementById('q-exp-url-preview');  if (_eip) { _eip.src=''; _eip.style.display='none'; }
+  if (typeof _expImgTab === 'function') _expImgTab('file');
+  [0,1,2,3].forEach(function(i) {
+    var fi = document.getElementById('opt-img-file-' + i); if (fi) fi.value = '';
+    var fp = document.getElementById('opt-file-preview-' + i); if (fp) { fp.src=''; fp.style.display='none'; }
+    var ui = document.getElementById('opt-img-url-' + i);  if (ui) ui.value = '';
+    var up = document.getElementById('opt-url-preview-'  + i); if (up) { up.src=''; up.style.display='none'; }
+    if (typeof _optImgTab === 'function') _optImgTab(i, 'file');
   });
 
   // Auto-clear success message after 5s
@@ -634,21 +679,30 @@ async function _submitQuestion() {
     if (statusEl.textContent.includes("✅")) statusEl.textContent = "";
   }, 5000);
 }
+// _previewQuestion — FIXED
+// ════════════════════════════════════════════════════════
 function _previewQuestion() {
-  var raw     = document.getElementById('q-text').value.trim();
+  var raw     = (document.getElementById('q-text') || {}).value || '';
   var preview = document.getElementById('q-text-preview');
+  if (!preview) return;
+
+  raw = raw.trim();
   if (!raw) { preview.style.display = 'none'; return; }
 
   preview.style.display = 'block';
-  preview.innerHTML = _wrapLatex(raw);
 
-  // Render KaTeX if available (KaTeX is already loaded in index.html via solver.html,
-  // but if not, the raw $$ text will show — still useful)
+  // Do NOT pre-process through _wrapLatex for mixed text —
+  // just set the innerHTML directly and let KaTeX auto-render
+  // handle inline $...$ and block $$...$$ delimiters.
+  preview.innerHTML = raw;
+
   if (window.renderMathInElement) {
     renderMathInElement(preview, {
       delimiters: [
         { left: '$$', right: '$$', display: true  },
         { left: '$',  right: '$',  display: false },
+        { left: '\\(', right: '\\)', display: false },
+        { left: '\\[', right: '\\]', display: true  },
       ],
       throwOnError: false,
     });
@@ -709,13 +763,15 @@ function _renderComboList(comboId, options, filterText) {
   var listEl  = document.getElementById(comboId + "-list");
   var q       = (filterText || "").toLowerCase().trim();
   var filtered = options.filter(function (o) { return !q || o.toLowerCase().includes(q); });
+  // Use onmousedown instead of onclick so selection fires BEFORE the input blur
+  // event closes the dropdown, preventing the "click does nothing" bug.
   var html = filtered.map(function (o) {
-    return '<div class="admin-combo-option" onclick="adminComboSelect(\'' +
+    return '<div class="admin-combo-option" onmousedown="event.preventDefault();adminComboSelect(\'' +
       comboId + "\', " + JSON.stringify(o) + ')">' + escHtml(o) + "</div>";
   }).join("");
   var exactMatch = options.some(function (o) { return o.toLowerCase() === q; });
   if (q && !exactMatch) {
-    html += '<div class="admin-combo-option new-entry" onclick="adminComboSelect(\'' +
+    html += '<div class="admin-combo-option new-entry" onmousedown="event.preventDefault();adminComboSelect(\'' +
       comboId + "\', " + JSON.stringify(filterText) + ')">✚ Use &ldquo;' + escHtml(filterText) + '&rdquo; (new)</div>';
   }
   if (!html) html = '<div class="admin-combo-option" style="opacity:0.5;cursor:default">No matches — type to create new</div>';
