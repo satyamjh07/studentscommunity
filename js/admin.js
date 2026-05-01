@@ -632,12 +632,10 @@ async function _submitQuestion() {
   statusEl.textContent = "✅ Question uploaded successfully!";
 
   // ── Reset form ────────────────────────────────────────
-  var resetIds = [
-    "q-chapter",
-    "q-topic",
-    "q-year",
-    "q-shift",
-    "q-booklet-id",
+  var stayInChapter = _getSICState();
+
+  // Fields that are ALWAYS cleared (question-specific content)
+  var alwaysResetIds = [
     "q-text",
     "q-explanation",
     "q-opt0",
@@ -645,17 +643,33 @@ async function _submitQuestion() {
     "q-opt2",
     "q-opt3",
     "q-correct-integer",
+    "q-shift",
+    "q-booklet-id",
   ];
-  resetIds.forEach(function (id) {
+  alwaysResetIds.forEach(function (id) {
     var el = document.getElementById(id);
     if (el) el.value = "";
   });
-  document.getElementById("q-subject").value = "";
-  document.getElementById("q-exam-type").value = "pyq";
-  document.getElementById("q-difficulty").value = "easy";
+
+  // Always reset question type to MCQ and show the right block
   document.getElementById("q-type").value = "mcq";
   document.getElementById("q-mcq-block").style.display = "block";
   document.getElementById("q-integer-block").style.display = "none";
+
+  if (!stayInChapter) {
+    // Full reset — clear all classification fields too
+    document.getElementById("q-chapter").value = "";
+    document.getElementById("q-topic").value = "";
+    document.getElementById("q-year").value = "";
+    document.getElementById("q-subject").value = "";
+    document.getElementById("q-exam-type").value = "pyq";
+    document.getElementById("q-difficulty").value = "easy";
+    _comboData.chapter = null;
+    _comboData.topic   = null;
+  }
+  // When stayInChapter is ON: subject, chapter, topic, exam-type, difficulty,
+  // and year are intentionally left as-is so the next question in the same
+  // chapter can be uploaded without re-entering them.
 
   // Clear question & explanation image inputs, reset to file mode
   var _qif = document.getElementById('q-image-file'); if (_qif) _qif.value = '';
@@ -890,3 +904,49 @@ async function adminDeleteBooklet(bookletId) {
   );
 }
 
+// ════════════════════════════════════════════════════════
+// STAY-IN-CHAPTER MODE
+// Persists subject / chapter / topic / exam-type /
+// difficulty / year across question uploads so admins
+// don't re-enter the same classification fields 20-30×
+// per chapter session.
+// ════════════════════════════════════════════════════════
+var _SIC_KEY = "zd_admin_stay_in_chapter";
+
+function _getSICState() {
+  try { return localStorage.getItem(_SIC_KEY) === "1"; } catch (e) { return false; }
+}
+
+function _setSICState(on) {
+  try { localStorage.setItem(_SIC_KEY, on ? "1" : "0"); } catch (e) {}
+}
+
+function _applySICVisuals(on) {
+  var track    = document.getElementById("sic-track");
+  var thumb    = document.getElementById("sic-thumb");
+  var sublabel = document.getElementById("sic-sublabel");
+  if (!track) return;
+  track.style.background        = on ? "var(--accent)" : "var(--border)";
+  if (thumb) thumb.style.transform = on ? "translateX(16px)" : "translateX(0)";
+  if (sublabel) {
+    sublabel.textContent = on
+      ? "ON — classification fields stay pre-filled"
+      : "OFF — form resets fully after each upload";
+    sublabel.style.color = on ? "var(--accent)" : "var(--text3)";
+  }
+}
+
+window.toggleStayInChapter = function () {
+  var newState = !_getSICState();
+  _setSICState(newState);
+  _applySICVisuals(newState);
+  showToast(newState
+    ? "📌 Stay in chapter ON — classification fields will persist"
+    : "🔄 Stay in chapter OFF — form will reset fully after upload"
+  );
+};
+
+// Initialise toggle visuals on DOM ready
+document.addEventListener("DOMContentLoaded", function () {
+  _applySICVisuals(_getSICState());
+});
