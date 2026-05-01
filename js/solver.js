@@ -458,16 +458,12 @@ function finalize(isCorrect, q) {
       .catch(function () {});
   }
 
-  if (q.explanation) {
+if (q.explanation) {
     $("explanation-text").innerHTML = _formatText(q.explanation);
-    if (q.explanation_image_url) {
-      $("explanation-text").innerHTML +=
-        '<img src="' +
-        _esc(q.explanation_image_url) +
-        '" style="max-width:100%;border-radius:8px;margin-top:0.8rem" onerror="this.style.display=\'none\'"/>';
-    }
+    if (q.explanation_image_url) { ... }
     $("explanation-box").classList.add("show");
-    renderMath($("explanation-box"));
+ renderMath($("explanation-text"));   // ← ADD this line
+    renderMath($("explanation-box"));    // ← keep existing
   }
   $("btn-next").disabled = false;
 
@@ -898,9 +894,34 @@ function _esc(str) {
     .replace(/"/g, "&quot;");
 }
 
+// REPLACE the existing _formatText function with this:
 function _formatText(text) {
   if (!text) return "";
-  return String(text)
+  var s = String(text);
+
+  // If the text looks like raw LaTeX (contains \frac, \text, \textbf etc.)
+  // wrap it entirely so KaTeX renders it as display math.
+  // We detect "raw LaTeX" by the presence of common LaTeX commands outside $ delimiters.
+  var hasRawLatex = /\\(?:textbf|textit|frac|text|sin|cos|sqrt|times|approx|circ)\{/.test(s);
+  
+  if (hasRawLatex) {
+    // Convert \\ line-breaks to a real newline + display-math restart
+    // Split on paragraph breaks (\n\n or \\\\) and wrap each chunk
+    var paras = s
+      .split(/\n{2,}/)          // split on blank lines
+      .map(function(para) {
+        return para.trim();
+      })
+      .filter(Boolean)
+      .map(function(para) {
+        // Wrap each paragraph in display math
+        return "\\[" + para + "\\]";
+      });
+    return paras.join("\n");
+  }
+
+  // Otherwise: standard markdown-lite + newlines
+  return s
     .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
     .replace(/\n/g, "<br>");
 }
