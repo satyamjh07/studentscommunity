@@ -905,15 +905,26 @@ function _formatText(text) {
     .replace(/\n/g, "<br>");
 }
 
+// REPLACE the existing renderMath function with this:
 function renderMath(el) {
-  if (!el || !window.renderMathInElement) return;
-  setTimeout(function () {
+  if (!el) return;
+  function doRender() {
+    if (!window.renderMathInElement) return;
     renderMathInElement(el, {
       delimiters: [
         { left: "$$", right: "$$", display: true },
-        { left: "$", right: "$", display: false },
+        { left: "$",  right: "$",  display: false },
+        { left: "\\[", right: "\\]", display: true },
+        { left: "\\(", right: "\\)", display: false },
       ],
       throwOnError: false,
     });
-  }, 30);
+  }
+  if (window.renderMathInElement) {
+    doRender();
+  } else {
+    // KaTeX not yet loaded (it's deferred) — wait for it
+    document.addEventListener("DOMContentLoaded", doRender);
+    window.addEventListener("load", doRender);
+  }
 }
