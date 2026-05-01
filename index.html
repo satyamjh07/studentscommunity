@@ -2134,21 +2134,20 @@
                   <input id="bk-title" placeholder="e.g. Chemistry Hatke" />
                 </div>
                 <div class="form-group">
-                  <label>Subject *</label>
-                  <select id="bk-subject">
-                    <option value="">Select subject</option>
-                    <option value="physics">Physics</option>
-                    <option value="chemistry">Chemistry</option>
-                    <option value="mathematics">Mathematics</option>
-                  </select>
+                  <label>Icon <span style="color:var(--text3);font-size:0.75rem">(emoji or URL)</span></label>
+                  <input id="bk-icon" placeholder="e.g. 📚 or https://…" />
                 </div>
                 <div class="form-group">
-                  <label>Folder <span style="color:var(--text3);font-size:0.75rem">(storage path)</span></label>
-                  <input id="bk-folder" placeholder="e.g. chem/hatke" />
+                  <label>Tags <span style="color:var(--text3);font-size:0.75rem">(comma-separated)</span></label>
+                  <input id="bk-tags" placeholder="e.g. jee, chemistry, organic" />
                 </div>
                 <div class="form-group" style="grid-column:1/-1">
                   <label>Description <span style="color:var(--text3);font-size:0.75rem">(optional)</span></label>
                   <textarea id="bk-description" rows="2" placeholder="Short description of this booklet…" style="resize:vertical"></textarea>
+                </div>
+                <div class="form-group" style="grid-column:1/-1;display:flex;align-items:center;gap:0.6rem">
+                  <input type="checkbox" id="bk-is-live" style="width:auto;accent-color:var(--accent)" />
+                  <label for="bk-is-live" style="margin:0;cursor:pointer">Mark as Live <span style="color:var(--text3);font-size:0.75rem">(visible to students immediately)</span></label>
                 </div>
               </div>
 
