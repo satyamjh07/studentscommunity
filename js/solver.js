@@ -458,13 +458,19 @@ function finalize(isCorrect, q) {
       .catch(function () {});
   }
 
-if (q.explanation) {
+  if (q.explanation) {
     $("explanation-text").innerHTML = _formatText(q.explanation);
-    if (q.explanation_image_url) { ... }
+    if (q.explanation_image_url) {
+      $("explanation-text").innerHTML +=
+        '<img src="' +
+        _esc(q.explanation_image_url) +
+        '" style="max-width:100%;border-radius:8px;margin-top:0.8rem" onerror="this.style.display=\'none\'"/>';
+    }
     $("explanation-box").classList.add("show");
- renderMath($("explanation-text"));   // ← ADD this line
-    renderMath($("explanation-box"));    // ← keep existing
+    renderMath($("explanation-text"));
+    renderMath($("explanation-box"));
   }
+
   $("btn-next").disabled = false;
 
   if (qState.mode === "booklet") updateBookletStats();
