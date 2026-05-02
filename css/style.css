@@ -1784,12 +1784,9 @@ body {
 }
 
 /* ---- Body scroll lock when any modal is open ---- */
+/* ---- Body scroll lock when any modal is open ---- */
 body.modal-open {
   overflow: hidden;
-  /* On iOS, position:fixed is needed to truly stop scroll */
-  position: fixed;
-  width: 100%;
-  max-width: 540px;
 }
 .modal-header {
   display: flex;
