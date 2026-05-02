@@ -429,8 +429,9 @@ async function openComments(postId, event) {
   if (event) event.stopPropagation();
   activePostId = postId;
   const modal = document.getElementById("comment-modal");
-  modal.style.display = "flex";
-  document.getElementById("comment-input").value = "";
+ modal.style.display = "flex";
+const commentInput = document.getElementById("comment-input");
+if (commentInput) commentInput.value = "";
   document.getElementById("modal-post-content").innerHTML =
     '<div class="loading-text">Loading...</div>';
   document.getElementById("comments-list").innerHTML =
@@ -503,7 +504,7 @@ async function openComments(postId, event) {
       voteRow.style.display = 'flex';
     }
   }
-  renderCommentsInModal(comments || [], await _fetchCommentVoteMap(comments || []));
+  let voteMap = {}; try { voteMap = await _fetchCommentVoteMap(comments || []); } catch(e) { console.warn('comment votes fetch failed', e); } renderCommentsInModal(comments || [], voteMap);
 }
 
 function renderCommentsInModal(comments, commentVoteMap) {
