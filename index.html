@@ -2532,16 +2532,14 @@
       (function () {
         let _scrollY = 0;
 
-        function lockScroll() {
-          _scrollY = window.scrollY;
-          document.body.style.top = -_scrollY + "px";
-          document.body.classList.add("modal-open");
-        }
-        function unlockScroll() {
-          document.body.classList.remove("modal-open");
-          document.body.style.top = "";
-          window.scrollTo(0, _scrollY);
-        }
+function lockScroll() {
+  _scrollY = window.scrollY;
+  document.body.classList.add("modal-open");
+}
+function unlockScroll() {
+  document.body.classList.remove("modal-open");
+  window.scrollTo(0, _scrollY);
+}
 
         // Watch all .modal-overlay elements for display changes
         document.addEventListener("DOMContentLoaded", function () {
