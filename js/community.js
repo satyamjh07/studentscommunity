@@ -139,7 +139,9 @@ function renderPost(post, score, myVote, previewComments, totalComments) {
           '</div>' +
         '</div>' +
       '</div>' +
-      '<div class="post-content">' + escHtml(post.content) + '</div>' +
+    '<div class="post-content">' + escHtml(post.content) + '</div>' +
+      (function(){ var _imgs = _extractPostImages(post); return (_imgs.length && typeof _buildImageGrid === 'function') ? _buildImageGrid(_imgs) : ''; })() +
+      '<div class="post-actions-row">' +
       '<div class="post-actions-row">' +
         '<div class="emoji-vote-group">' +
           '<button class="emoji-vote-btn ' + likeActive + '" onclick="castVote(\'' + post.id + '\', 1)" title="Like">' +
@@ -426,10 +428,12 @@ function timeAgo(dateStr) {
 // REDDIT-STYLE COMMENTS MODAL
 // ============================================================
 async function openComments(postId, event) {
-  if (event) event.stopPropagation();
+  if (event) { event.stopPropagation(); event.preventDefault(); }
   activePostId = postId;
   const modal = document.getElementById("comment-modal");
- modal.style.display = "flex";
+  if (!modal) return;
+  modal.style.display = "flex";
+  document.body.style.overflow = "hidden";
 const commentInput = document.getElementById("comment-input");
 if (commentInput) commentInput.value = "";
   document.getElementById("modal-post-content").innerHTML =
@@ -581,6 +585,7 @@ function renderCommentsInModal(comments, commentVoteMap) {
 
 function closeCommentModal() {
   document.getElementById("comment-modal").style.display = "none";
+  document.body.style.overflow = "";
   const voteRow = document.getElementById("modal-vote-row");
   if (voteRow) { voteRow.style.display = "none"; voteRow.innerHTML = ""; }
   activePostId = null;
