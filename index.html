@@ -2525,43 +2525,21 @@
           closeCommentModal();
       }
 
-      // ── Modal scroll lock ────────────────────────────────────────
-      // Prevents the background from scrolling when any modal is open.
-      // Works by watching modal-overlay visibility changes automatically,
-      // so community.js doesn't need to be touched.
-      (function () {
-        let _scrollY = 0;
-
-function lockScroll() {
-  _scrollY = window.scrollY;
-  document.body.classList.add("modal-open");
-}
-function unlockScroll() {
-  document.body.classList.remove("modal-open");
-  window.scrollTo(0, _scrollY);
-}
-
-        // Watch all .modal-overlay elements for display changes
-        document.addEventListener("DOMContentLoaded", function () {
-          const overlays = document.querySelectorAll(".modal-overlay");
-          const observer = new MutationObserver(function () {
-            const anyOpen = Array.from(overlays).some(function (el) {
-              return el.style.display !== "none" && el.style.display !== "";
-            });
-            if (anyOpen) {
-              lockScroll();
-            } else {
-              unlockScroll();
-            }
-          });
-          overlays.forEach(function (el) {
-            observer.observe(el, {
-              attributes: true,
-              attributeFilter: ["style"],
-            });
-          });
-        });
-      })();
+// ── Modal scroll lock — simplified, no layout side effects ──
+(function () {
+  document.addEventListener("DOMContentLoaded", function () {
+    const overlays = document.querySelectorAll(".modal-overlay");
+    const observer = new MutationObserver(function () {
+      const anyOpen = Array.from(overlays).some(function (el) {
+        return el.style.display === "flex";
+      });
+      document.body.style.overflow = anyOpen ? "hidden" : "";
+    });
+    overlays.forEach(function (el) {
+      observer.observe(el, { attributes: true, attributeFilter: ["style"] });
+    });
+  });
+})();
     </script>
 
     <script src="js/config.js"></script>
