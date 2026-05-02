@@ -1708,13 +1708,17 @@ body {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.65);
-  display: flex;
+  display: none;
   align-items: center;
   justify-content: center;
   z-index: 1000;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   animation: overlayIn 0.2s ease;
+}
+.modal-overlay[style*="display: flex"],
+.modal-overlay[style*="display:flex"] {
+  display: flex;
 }
 @keyframes overlayIn {
   from {
