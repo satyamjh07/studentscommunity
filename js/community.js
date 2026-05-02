@@ -118,7 +118,7 @@ function renderPost(post, score, myVote, previewComments, totalComments) {
             '<span class="comment-preview-content">' + escHtml(c.content) + '</span>' +
           '</div></div>';
       }).join('') +
-      (totalComments > 2 ? '<button class="view-more-comments-btn" onclick="openComments(\'' + post.id + '\', event)">View all ' + totalComments + ' comments →</button>' : '') +
+      (totalComments > 2 ? '<button class="view-more-comments-btn" onclick="openComments(\'' + post.id + '\', event); return false;">View all ' + totalComments + ' comments →</button>' : '') +
     '</div>';
   }
 
@@ -151,7 +151,7 @@ function renderPost(post, score, myVote, previewComments, totalComments) {
   ' <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 20l8-8h-6V4h-4v8H4z"/></svg>' + dislikeCount +
 '</button>' +
         '</div>' +
-        '<button class="post-action-btn" onclick="openComments(\'' + post.id + '\', event)">' +
+        '<button class="post-action-btn" onclick="openComments(\'' + post.id + '\', event); return false;">' +
           '<svg width="13" height="13"><use href="#ic-chat"/></svg> ' +
           (totalComments > 0 ? totalComments + ' ' : '') + 'Comments' +
         '</button>' +
