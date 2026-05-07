@@ -139,6 +139,7 @@ function renderPost(post, score, myVote, previewComments, totalComments) {
           '</div>' +
         '</div>' +
       '</div>' +
+    (post.title ? '<div class="post-title" style="font-size:1rem;font-weight:700;color:var(--text);margin-bottom:0.25rem">' + escHtml(post.title) + '</div>' : '') +
     '<div class="post-content">' + escHtml(post.content) + '</div>' +
       (function(){ var _imgs = _extractPostImages(post); return (_imgs.length && typeof _buildImageGrid === 'function') ? _buildImageGrid(_imgs) : ''; })() +
       '<div class="post-actions-row">' +
@@ -243,7 +244,7 @@ document.getElementById('post-btn').addEventListener('click', async () => {
 // ── Comment submit — via Edge Function ─────────
 async function submitComment(postId) {
   if (!currentUser) return showToast('Sign in to comment');
-  // Support both modal comment inputs (popular modal is the active one)
+  // Use popular-modal input (since openComments now delegates there)
   const input = document.getElementById('popular-comment-input') || document.getElementById('comment-input');
   const content = (input ? input.value : '').trim();
   const pendingUrl = window._popularCommentImageUrl || window._commentImageUrl || null;
@@ -261,7 +262,7 @@ async function submitComment(postId) {
     if (input) input.value = '';
     _clearPopularCommentImage();
     _clearCommentImage();
-    // Refresh comments in popular modal (the unified modal)
+    // Refresh comments in modal
     const activeId = popularPostActiveId || activePostId;
     if (activeId) {
       const { data: comments } = await db.from('comments')
@@ -310,54 +311,79 @@ function modDeleteComment(commentId) {
   });
 }
 
-// ── Mute modal (unchanged) ───────────────────
-let muteTargetUserId = null;
-let muteTargetUserName = null;
-
+// ── Mute modal — DOM-injected ─────────────────
 function openMuteModal(userId, userName) {
   if (!canModerate()) return;
-  muteTargetUserId = userId;
-  muteTargetUserName = userName;
-  document.getElementById('mute-user-name').textContent = userName;
-  document.getElementById('mute-modal').style.display = 'flex';
+
+  const existing = document.getElementById('_injected_mute');
+  if (existing) existing.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = '_injected_mute';
+  overlay.style.cssText = [
+    'position:fixed', 'inset:0', 'z-index:999999',
+    'display:flex', 'align-items:center', 'justify-content:center',
+    'background:rgba(0,0,0,0.7)', 'backdrop-filter:blur(4px)',
+    'padding:1rem'
+  ].join(';');
+
+  overlay.innerHTML =
+    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;' +
+    'padding:1.75rem 1.5rem;max-width:360px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.5)">' +
+      '<div style="font-size:1.6rem;margin-bottom:0.5rem">🔇</div>' +
+      '<h3 style="margin:0 0 0.4rem;font-size:1.05rem;color:var(--text)">Mute User</h3>' +
+      '<p style="font-size:0.88rem;color:var(--text2);margin:0 0 1rem;line-height:1.5">' +
+        'Mute <strong>' + escHtml(userName) + '</strong> from posting or commenting for:' +
+      '</p>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:1rem">' +
+        '<button class="_mute_opt" data-min="10"  style="padding:0.55rem;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);cursor:pointer;font-size:0.88rem">10 minutes</button>' +
+        '<button class="_mute_opt" data-min="120" style="padding:0.55rem;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);cursor:pointer;font-size:0.88rem">2 hours</button>' +
+        '<button class="_mute_opt" data-min="240" style="padding:0.55rem;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);cursor:pointer;font-size:0.88rem">4 hours</button>' +
+        '<button class="_mute_opt" data-min="360" style="padding:0.55rem;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);cursor:pointer;font-size:0.88rem">6 hours</button>' +
+      '</div>' +
+      '<button id="_mute_cancel" style="width:100%;padding:0.6rem;border-radius:10px;border:1px solid var(--border);' +
+        'background:var(--bg3);color:var(--text);font-size:0.9rem;cursor:pointer">Cancel</button>' +
+    '</div>';
+
+  document.body.appendChild(overlay);
+
+  function close() { overlay.remove(); }
+
+  document.getElementById('_mute_cancel').addEventListener('click', close);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+
+  overlay.querySelectorAll('._mute_opt').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const minutes = parseInt(btn.dataset.min);
+      const muteUntil = new Date(Date.now() + minutes * 60 * 1000).toISOString();
+      const label = minutes < 60 ? minutes + ' minutes' : (minutes / 60) + ' hour(s)';
+
+      btn.disabled = true; btn.textContent = 'Applying...';
+
+      const { error } = await db.from('profiles').update({ muted_until: muteUntil }).eq('id', userId);
+      if (error) { showToast('Error: ' + error.message); btn.disabled = false; return; }
+
+      const { data: verify } = await db.from('profiles').select('muted_until').eq('id', userId).single();
+      if (!verify || !verify.muted_until || new Date(verify.muted_until) <= new Date()) {
+        showToast('❌ Mute failed — check RLS policies.'); btn.disabled = false; return;
+      }
+
+      const muteEndFormatted = new Date(muteUntil).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+      await db.from('notifications').insert({
+        title: '🔇 You have been muted',
+        message: 'You have been muted for ' + label + ' by a moderator. You will be able to post again after ' + muteEndFormatted + '.',
+        user_id: userId,
+      });
+
+      close();
+      showToast('🔇 ' + userName + ' muted for ' + label);
+    });
+  });
 }
 
 function closeMuteModal() {
-  document.getElementById('mute-modal').style.display = 'none';
-  muteTargetUserId = null;
-  muteTargetUserName = null;
-}
-
-async function applyMute(minutes) {
-  if (!muteTargetUserId || !canModerate()) return;
-  const muteUntil = new Date(Date.now() + minutes * 60 * 1000).toISOString();
-  const label = minutes < 60 ? minutes + ' minutes' : (minutes / 60) + ' hour(s)';
-  const targetId = muteTargetUserId;
-  const targetName = muteTargetUserName;
-
-  const { error } = await db.from('profiles')
-    .update({ muted_until: muteUntil })
-    .eq('id', targetId);
-
-  if (error) { showToast('Error applying mute: ' + error.message); return; }
-
-  const { data: verify } = await db.from('profiles')
-    .select('muted_until').eq('id', targetId).single();
-
-  if (!verify || !verify.muted_until || new Date(verify.muted_until) <= new Date()) {
-    showToast('❌ Mute failed — check RLS policies.');
-    return;
-  }
-
-  const muteEndFormatted = new Date(muteUntil).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-  await db.from('notifications').insert({
-    title: '🔇 You have been muted',
-    message: 'You have been muted for ' + label + ' by a moderator. You will be able to post again after ' + muteEndFormatted + '.',
-    user_id: targetId
-  });
-
-  closeMuteModal();
-  showToast('🔇 ' + targetName + ' muted for ' + label);
+  const el = document.getElementById('_injected_mute');
+  if (el) el.remove();
 }
 
 // ── Profile modal (unchanged) ─────────────────
@@ -432,16 +458,17 @@ function timeAgo(dateStr) {
 
 // ============================================================
 // REDDIT-STYLE COMMENTS MODAL
-// openComments() now delegates to openPopularPostModal() so
-// both code-paths share one modal, fixing the scroll-lock bug
-// and the ghost-modal-on-admin-panel issue.
+// openComments() now delegates to the popular-post-modal so
+// both "Comments" buttons and popular-post clicks use the same
+// single, fully-working modal.  The old comment-modal in the
+// HTML is left in place but is never shown.
 // ============================================================
 async function openComments(postId, event) {
   if (event) { event.stopPropagation(); event.preventDefault(); }
-  // Keep activePostId in sync so legacy helpers still work
+  // Track activePostId so submitComment() still works
   activePostId = postId;
-  // Delegate entirely to the popular-post modal (the working one)
-  return openPopularPostModal(postId);
+  // Delegate to the popular-post modal (the one that works correctly)
+  await openPopularPostModal(postId);
 }
 
 function renderCommentsInModal(comments, commentVoteMap) {
@@ -517,79 +544,117 @@ function renderCommentsInModal(comments, commentVoteMap) {
 }
 
 function closeCommentModal() {
-  // Close the old modal if it somehow got opened
-  const oldModal = document.getElementById("comment-modal");
-  if (oldModal) oldModal.style.display = "none";
-  // Also close the popular modal (which now handles all comment views)
-  closePopularPostModal();
+  // Close the old modal if somehow visible
+  const old = document.getElementById("comment-modal");
+  if (old) old.style.display = "none";
   document.body.style.overflow = "";
-  const voteRow = document.getElementById("modal-vote-row");
-  if (voteRow) { voteRow.style.display = "none"; voteRow.innerHTML = ""; }
   activePostId = null;
   activePostData = null;
+  // Also close the popular-post-modal (which now handles all comment views)
+  closePopularPostModal();
 }
 
 // ============================================================
-// REPORT MODAL
+// REPORT MODAL — DOM-injected, immune to z-index/stacking context bugs
 // ============================================================
-let reportTarget = { type: null, postId: null, commentId: null };
-
 function openReportModal(type, postId, commentId) {
-  if (!currentUser) return showToast("Sign in to report");
-  reportTarget = { type, postId, commentId };
-  document.getElementById("report-reason").value = "";
-  document.getElementById("report-modal").style.display = "flex";
-}
+  if (!currentUser) return showToast('Sign in to report');
 
-function closeReportModal() {
-  document.getElementById("report-modal").style.display = "none";
-}
+  const existing = document.getElementById('_injected_report');
+  if (existing) existing.remove();
 
-document.addEventListener("DOMContentLoaded", () => {
-  const submitBtn = document.getElementById("submit-report-btn");
-  if (submitBtn) {
-    submitBtn.addEventListener("click", async () => {
-      const reason = document.getElementById("report-reason").value;
-      if (!reason) return showToast("Please select a reason");
-      submitBtn.disabled = true;
+  const overlay = document.createElement('div');
+  overlay.id = '_injected_report';
+  overlay.style.cssText = [
+    'position:fixed', 'inset:0', 'z-index:999999',
+    'display:flex', 'align-items:center', 'justify-content:center',
+    'background:rgba(0,0,0,0.7)', 'backdrop-filter:blur(4px)',
+    'padding:1rem'
+  ].join(';');
 
-      // Insert the report
-      const { error } = await db.from("reports").insert({
+  overlay.innerHTML =
+    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;' +
+    'padding:1.75rem 1.5rem;max-width:400px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.5)">' +
+      '<div style="font-size:1.6rem;margin-bottom:0.5rem">🚩</div>' +
+      '<h3 style="margin:0 0 0.4rem;font-size:1.05rem;color:var(--text)">Report Content</h3>' +
+      '<p style="font-size:0.84rem;color:var(--text2);margin:0 0 1rem;line-height:1.5">' +
+        'Help us keep ZEROday safe. Select a reason below.' +
+      '</p>' +
+      '<select id="_report_reason" style="width:100%;background:var(--bg3);border:1px solid var(--border);' +
+        'color:var(--text);padding:0.6rem 0.8rem;border-radius:10px;font-size:0.9rem;margin-bottom:1.25rem">' +
+        '<option value="">Select a reason...</option>' +
+        '<option value="Abusive or hateful content">Abusive or hateful content</option>' +
+        '<option value="Racism or discrimination">Racism or discrimination</option>' +
+        '<option value="Spam or self-promotion">Spam or self-promotion</option>' +
+        '<option value="Illegal content">Illegal content</option>' +
+        '<option value="Harassment or bullying">Harassment or bullying</option>' +
+        '<option value="Misinformation">Misinformation</option>' +
+        '<option value="Other">Other</option>' +
+      '</select>' +
+      '<div style="display:flex;gap:0.75rem;justify-content:center">' +
+        '<button id="_report_cancel" style="flex:1;padding:0.6rem 1rem;border-radius:10px;border:1px solid var(--border);' +
+          'background:var(--bg3);color:var(--text);font-size:0.9rem;cursor:pointer">Cancel</button>' +
+        '<button id="_report_submit" style="flex:1;padding:0.6rem 1rem;border-radius:10px;border:none;' +
+          'background:var(--accent,#7c3aed);color:#fff;font-size:0.9rem;font-weight:600;cursor:pointer">Submit Report</button>' +
+      '</div>' +
+    '</div>';
+
+  document.body.appendChild(overlay);
+
+  function close() { overlay.remove(); }
+
+  document.getElementById('_report_cancel').addEventListener('click', close);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+
+  document.getElementById('_report_submit').addEventListener('click', async () => {
+    const reason = document.getElementById('_report_reason').value;
+    if (!reason) return showToast('Please select a reason');
+
+    const submitBtn = document.getElementById('_report_submit');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting...';
+
+    try {
+      const { error } = await db.from('reports').insert({
         reporter_id: currentUser.id,
         reason,
-        post_id: reportTarget.postId || null,
-        comment_id: reportTarget.commentId || null,
+        post_id: postId || null,
+        comment_id: commentId || null,
       });
 
       if (error) {
         submitBtn.disabled = false;
-        return showToast("Error: " + error.message);
+        submitBtn.textContent = 'Submit Report';
+        return showToast('Error: ' + error.message);
       }
 
-      // Notify admins — find all admins and send them a notification
-      const { data: admins } = await db
-        .from("profiles")
-        .select("id")
-        .eq("role", "admin");
-
+      const { data: admins } = await db.from('profiles').select('id').eq('role', 'admin');
       if (admins && admins.length > 0) {
-        const reporterName = currentProfile ? currentProfile.name : "Someone";
-        const targetLabel = reportTarget.postId ? "a post" : "a comment";
-        const notifRows = admins.map((a) => ({
-          title: "🚩 New Report",
-          message:
-            reporterName + " reported " + targetLabel + ': "' + reason + '"',
-          user_id: a.id,
-        }));
-        await db.from("notifications").insert(notifRows);
+        const reporterName = currentProfile ? currentProfile.name : 'Someone';
+        const targetLabel = postId ? 'a post' : 'a comment';
+        await db.from('notifications').insert(
+          admins.map(a => ({
+            title: '🚩 New Report',
+            message: reporterName + ' reported ' + targetLabel + ': "' + reason + '"',
+            user_id: a.id,
+          }))
+        );
       }
 
+      close();
+      showToast('✅ Report submitted. Thank you!');
+    } catch (err) {
       submitBtn.disabled = false;
-      closeReportModal();
-      showToast("✅ Report submitted. Thank you!");
-    });
-  }
-});
+      submitBtn.textContent = 'Submit Report';
+      showToast('Error: ' + err.message);
+    }
+  });
+}
+
+function closeReportModal() {
+  const el = document.getElementById('_injected_report');
+  if (el) el.remove();
+}
 
 document.addEventListener('DOMContentLoaded', () => {
   // Comment submit button
@@ -698,10 +763,11 @@ async function loadPopularPosts() {
 
 async function openPopularPostModal(postId) {
   popularPostActiveId = postId;
-  activePostId = postId; // keep both IDs in sync
+  activePostId = postId; // keep activePostId in sync for submitComment / castCommentVote
   const modal = document.getElementById('popular-post-modal');
   if (!modal) return;
   modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden'; // lock scroll
 
   document.getElementById('popular-modal-post-content').innerHTML = '<div class="loading-text">Loading...</div>';
   document.getElementById('popular-comments-list').innerHTML = '<div class="loading-text">Loading comments...</div>';
@@ -879,6 +945,7 @@ async function castVoteInPopular(postId, value) {
 function closePopularPostModal() {
   const modal = document.getElementById('popular-post-modal');
   if (modal) modal.style.display = 'none';
+  document.body.style.overflow = ''; // restore scroll
   popularPostActiveId = null;
   activePostId = null;
   activePostData = null;
@@ -1016,15 +1083,20 @@ async function castCommentVote(commentId, value, context) {
     await db.from('comment_votes').insert({ comment_id: commentId, user_id: currentUser.id, value });
   }
 
-  // Both 'modal' and 'popular' contexts now use the popular modal
-  const postId = popularPostActiveId || activePostId;
+  // Refresh only the affected comment's vote display (optimistic re-render)
+  const postId = context === 'popular' ? popularPostActiveId : activePostId;
   if (!postId) return;
 
   const { data: comments } = await db.from('comments')
     .select('*, profiles(id, name, avatar_url, role)')
     .eq('post_id', postId).order('created_at', { ascending: true });
   const voteMap = await _fetchCommentVoteMap(comments || []);
-  renderPopularModalComments(comments || [], voteMap);
+
+  if (context === 'popular' || context === 'modal') {
+    renderPopularModalComments(comments || [], voteMap);
+  } else {
+    renderPopularModalComments(comments || [], voteMap);
+  }
 }
 
 // ============================================================
