@@ -1,26 +1,45 @@
 // ============================================
-// CUSTOM CONFIRM MODAL (replaces browser confirm())
+// CUSTOM CONFIRM MODAL (DOM-injected — immune to z-index/stacking context bugs)
 // ============================================
-let _confirmCallback = null;
-
 function showConfirm(title, message, onConfirm, icon) {
-  document.getElementById('confirm-title').textContent = title;
-  document.getElementById('confirm-message').textContent = message;
-  document.getElementById('confirm-icon').textContent = icon || '⚠️';
-  _confirmCallback = onConfirm;
-  document.getElementById('confirm-modal').style.display = 'flex';
-}
+  // Remove any existing injected confirm dialog
+  const existing = document.getElementById('_injected_confirm');
+  if (existing) existing.remove();
 
-document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('confirm-ok-btn').addEventListener('click', () => {
-    document.getElementById('confirm-modal').style.display = 'none';
-    if (_confirmCallback) { _confirmCallback(); _confirmCallback = null; }
+  const overlay = document.createElement('div');
+  overlay.id = '_injected_confirm';
+  overlay.style.cssText = [
+    'position:fixed', 'inset:0', 'z-index:999999',
+    'display:flex', 'align-items:center', 'justify-content:center',
+    'background:rgba(0,0,0,0.7)', 'backdrop-filter:blur(4px)',
+    'padding:1rem'
+  ].join(';');
+
+  overlay.innerHTML =
+    '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;' +
+    'padding:1.75rem 1.5rem;max-width:380px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.5)">' +
+      '<div style="font-size:2rem;margin-bottom:0.75rem">' + (icon || '⚠️') + '</div>' +
+      '<h3 style="margin:0 0 0.5rem;font-size:1.1rem;color:var(--text)">' + title + '</h3>' +
+      '<p style="font-size:0.88rem;color:var(--text2);margin:0 0 1.25rem;line-height:1.5">' + message + '</p>' +
+      '<div style="display:flex;gap:0.75rem;justify-content:center">' +
+        '<button id="_confirm_cancel" style="flex:1;padding:0.6rem 1rem;border-radius:10px;border:1px solid var(--border);' +
+          'background:var(--bg3);color:var(--text);font-size:0.9rem;cursor:pointer">Cancel</button>' +
+        '<button id="_confirm_ok" style="flex:1;padding:0.6rem 1rem;border-radius:10px;border:none;' +
+          'background:var(--red,#e53e3e);color:#fff;font-size:0.9rem;font-weight:600;cursor:pointer">Confirm</button>' +
+      '</div>' +
+    '</div>';
+
+  document.body.appendChild(overlay);
+
+  function close() { overlay.remove(); }
+
+  document.getElementById('_confirm_ok').addEventListener('click', () => {
+    close();
+    if (onConfirm) onConfirm();
   });
-  document.getElementById('confirm-cancel-btn').addEventListener('click', () => {
-    document.getElementById('confirm-modal').style.display = 'none';
-    _confirmCallback = null;
-  });
-});
+  document.getElementById('_confirm_cancel').addEventListener('click', close);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+}
 
 // ============================================
 // STUDY AURA — AUTH (v3 — Google + PW toggle + Forgot PW + Email confirm)
