@@ -243,14 +243,15 @@ document.getElementById('post-btn').addEventListener('click', async () => {
 // ── Comment submit — via Edge Function ─────────
 async function submitComment(postId) {
   if (!currentUser) return showToast('Sign in to comment');
-  const input = document.getElementById('comment-input');
+  // Support both modal comment inputs (popular modal is the active one)
+  const input = document.getElementById('popular-comment-input') || document.getElementById('comment-input');
   const content = (input ? input.value : '').trim();
-  const pendingUrl = window._commentImageUrl || null;
+  const pendingUrl = window._popularCommentImageUrl || window._commentImageUrl || null;
 
   if (!content && !pendingUrl) return showToast('Write a comment or add an image first!');
-  if (window._commentImageUploading) return showToast('Image still uploading, please wait...');
+  if (window._popularCommentImageUploading || window._commentImageUploading) return showToast('Image still uploading, please wait...');
 
-  const btn = document.getElementById('comment-submit-btn');
+  const btn = document.getElementById('popular-submit-comment-btn') || document.getElementById('comment-submit-btn');
   if (btn) { btn.disabled = true; btn.textContent = 'Posting...'; }
 
   try {
@@ -258,13 +259,16 @@ async function submitComment(postId) {
     if (pendingUrl) payload.image_url = pendingUrl;
     await callEdge('add-comment', payload);
     if (input) input.value = '';
+    _clearPopularCommentImage();
     _clearCommentImage();
-    // Refresh comments in modal
-    if (activePostId) {
+    // Refresh comments in popular modal (the unified modal)
+    const activeId = popularPostActiveId || activePostId;
+    if (activeId) {
       const { data: comments } = await db.from('comments')
         .select('*, profiles(id, name, avatar_url, role)')
-        .eq('post_id', activePostId).order('created_at', { ascending: true });
-      renderCommentsInModal(comments || [], await _fetchCommentVoteMap(comments || []));
+        .eq('post_id', activeId).order('created_at', { ascending: true });
+      const voteMap = await _fetchCommentVoteMap(comments || []);
+      renderPopularModalComments(comments || [], voteMap);
     }
     loadPosts();
   } catch (err) {
@@ -294,11 +298,13 @@ function modDeleteComment(commentId) {
     const { error } = await db.from('comments').delete().eq('id', commentId);
     if (error) return showToast('Error: ' + error.message);
     showToast('✅ Comment deleted');
-    if (activePostId) {
+    const activeId = popularPostActiveId || activePostId;
+    if (activeId) {
       const { data: comments } = await db.from('comments')
         .select('*, profiles(id, name, avatar_url, role)')
-        .eq('post_id', activePostId).order('created_at', { ascending: true });
-      renderCommentsInModal(comments || []);
+        .eq('post_id', activeId).order('created_at', { ascending: true });
+      const voteMap = await _fetchCommentVoteMap(comments || []);
+      renderPopularModalComments(comments || [], voteMap);
     }
     loadPosts();
   });
@@ -426,89 +432,16 @@ function timeAgo(dateStr) {
 
 // ============================================================
 // REDDIT-STYLE COMMENTS MODAL
+// openComments() now delegates to openPopularPostModal() so
+// both code-paths share one modal, fixing the scroll-lock bug
+// and the ghost-modal-on-admin-panel issue.
 // ============================================================
 async function openComments(postId, event) {
   if (event) { event.stopPropagation(); event.preventDefault(); }
+  // Keep activePostId in sync so legacy helpers still work
   activePostId = postId;
-  const modal = document.getElementById("comment-modal");
-  if (!modal) return;
-  modal.style.display = "flex";
-  document.body.style.overflow = "hidden";
-const commentInput = document.getElementById("comment-input");
-if (commentInput) commentInput.value = "";
-  document.getElementById("modal-post-content").innerHTML =
-    '<div class="loading-text">Loading...</div>';
-  document.getElementById("comments-list").innerHTML =
-    '<div class="loading-text">Loading comments...</div>';
-  const voteRow = document.getElementById("modal-vote-row");
-  if (voteRow) { voteRow.style.display = "none"; voteRow.innerHTML = ""; }
-
-  const [{ data: post }, { data: comments }, { data: allVotes }, { data: myVoteData }] = await Promise.all([
-    db.from("posts").select("*, profiles(id, name, avatar_url, class, target_year, bio, role)").eq("id", postId).single(),
-    db.from("comments").select("*, profiles(id, name, avatar_url, role)").eq("post_id", postId).order("created_at", { ascending: true }),
-    db.from("votes").select("value").eq("post_id", postId),
-    currentUser
-      ? db.from("votes").select("value").eq("post_id", postId).eq("user_id", currentUser.id).maybeSingle()
-      : Promise.resolve({ data: null }),
-  ]);
-
-  if (post) {
-    activePostData = post;
-    const p = post.profiles || {};
-    const av = p.avatar_url
-      ? '<img src="' + escHtml(p.avatar_url) + '" alt="' + escHtml(p.name || "User") + '">'
-      : '<svg width="16" height="16" style="color:var(--text3)"><use href="#ic-user"/></svg>';
-
-    // Build images HTML using _buildImageGrid if available
-    let imagesHtml = '';
-    const imgs = _extractPostImages(post);
-    if (imgs.length && typeof _buildImageGrid === 'function') {
-      imagesHtml = _buildImageGrid(imgs);
-    }
-
-    const titleHtml = post.title
-      ? '<div class="modal-post-title">' + escHtml(post.title) + '</div>'
-      : '';
-
-    document.getElementById("modal-post-content").innerHTML =
-      '<div class="modal-post">' +
-        '<div class="modal-post-header">' +
-          '<button class="post-avatar-btn" onclick="openProfileModal(\'' + (post.user_id || '') + '\')" title="View profile">' +
-            '<div class="post-avatar small">' + av + '</div>' +
-          '</button>' +
-          '<div>' +
-            '<button class="post-author-link" onclick="openProfileModal(\'' + (post.user_id || '') + '\')">' +
-              escHtml(p.name || "Anonymous") + roleBadge(p.role) +
-            '</button>' +
-            '<span class="post-time"> · ' + timeAgo(post.created_at) + '</span>' +
-          '</div>' +
-        '</div>' +
-        titleHtml +
-        '<div class="modal-post-text">' + escHtml(post.content) + '</div>' +
-        imagesHtml +
-      '</div>';
-
-    // ── Vote + Report row ─────────────────────────────────
-    const totalScore = (allVotes || []).reduce((a, v) => a + v.value, 0);
-    const myVote = myVoteData ? myVoteData.value : 0;
-    const likeActive    = myVote === 1  ? 'emoji-vote-active' : '';
-    const dislikeActive = myVote === -1 ? 'emoji-vote-active' : '';
-    if (voteRow) {
-      voteRow.innerHTML =
-        '<div class="emoji-vote-group">' +
-          '<button class="emoji-vote-btn ' + likeActive + '" onclick="castVote(\'' + postId + '\', 1)">' +
-            '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l-8 8h6v8h4v-8h6z"/></svg>' +
-          '</button>' +
-          '<span style="font-size:0.85rem;font-weight:700;color:var(--accent);min-width:28px;text-align:center">' + (totalScore > 0 ? '+' : '') + totalScore + '</span>' +
-          '<button class="emoji-vote-btn ' + dislikeActive + '" onclick="castVote(\'' + postId + '\', -1)">' +
-            '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 20l8-8h-6V4h-4v8H4z"/></svg>' +
-          '</button>' +
-        '</div>' +
-        '<button class="post-report-btn" style="margin-left:auto" onclick="openReportModal(\'post\', \'' + postId + '\', null)">🚩 Report</button>';
-      voteRow.style.display = 'flex';
-    }
-  }
-  let voteMap = {}; try { voteMap = await _fetchCommentVoteMap(comments || []); } catch(e) { console.warn('comment votes fetch failed', e); } renderCommentsInModal(comments || [], voteMap);
+  // Delegate entirely to the popular-post modal (the working one)
+  return openPopularPostModal(postId);
 }
 
 function renderCommentsInModal(comments, commentVoteMap) {
@@ -584,7 +517,11 @@ function renderCommentsInModal(comments, commentVoteMap) {
 }
 
 function closeCommentModal() {
-  document.getElementById("comment-modal").style.display = "none";
+  // Close the old modal if it somehow got opened
+  const oldModal = document.getElementById("comment-modal");
+  if (oldModal) oldModal.style.display = "none";
+  // Also close the popular modal (which now handles all comment views)
+  closePopularPostModal();
   document.body.style.overflow = "";
   const voteRow = document.getElementById("modal-vote-row");
   if (voteRow) { voteRow.style.display = "none"; voteRow.innerHTML = ""; }
@@ -761,6 +698,7 @@ async function loadPopularPosts() {
 
 async function openPopularPostModal(postId) {
   popularPostActiveId = postId;
+  activePostId = postId; // keep both IDs in sync
   const modal = document.getElementById('popular-post-modal');
   if (!modal) return;
   modal.style.display = 'flex';
@@ -942,6 +880,8 @@ function closePopularPostModal() {
   const modal = document.getElementById('popular-post-modal');
   if (modal) modal.style.display = 'none';
   popularPostActiveId = null;
+  activePostId = null;
+  activePostData = null;
 }
 
 function handlePopularModalClick(e) {
@@ -1076,20 +1016,15 @@ async function castCommentVote(commentId, value, context) {
     await db.from('comment_votes').insert({ comment_id: commentId, user_id: currentUser.id, value });
   }
 
-  // Refresh only the affected comment's vote display (optimistic re-render)
-  const postId = context === 'popular' ? popularPostActiveId : activePostId;
+  // Both 'modal' and 'popular' contexts now use the popular modal
+  const postId = popularPostActiveId || activePostId;
   if (!postId) return;
 
   const { data: comments } = await db.from('comments')
     .select('*, profiles(id, name, avatar_url, role)')
     .eq('post_id', postId).order('created_at', { ascending: true });
   const voteMap = await _fetchCommentVoteMap(comments || []);
-
-  if (context === 'popular') {
-    renderPopularModalComments(comments || [], voteMap);
-  } else {
-    renderCommentsInModal(comments || [], voteMap);
-  }
+  renderPopularModalComments(comments || [], voteMap);
 }
 
 // ============================================================
