@@ -1,0 +1,212 @@
+/* ═══════════════════════════════════════════════════════════
+   ZEROday — BOTTOM NAV PATCH  v2  (rewrite)
+   Exact selectors matched to your actual HTML/CSS.
+   Link AFTER zeroday-theme.css and style.css.
+   ═══════════════════════════════════════════════════════════ */
+
+/* ─────────────────────────────────────────────────────────
+   DESKTOP + TABLET  (601px and up)
+   ───────────────────────────────────────────────────────── */
+@media (min-width: 601px) {
+
+  /* ── 1. Reposition sidebar to bottom bar ──────────────── */
+  .sidebar {
+    top: unset !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    width: 100vw !important;
+    height: 68px !important;
+    flex-direction: row !important;
+    align-items: stretch !important;
+    padding: 0 !important;
+    border-right: none !important;
+    border-top: 1px solid var(--border) !important;
+    background: var(--bg2) !important;
+    box-shadow: 0 -8px 32px rgba(0,0,0,0.45) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    z-index: 500 !important;
+    overflow: visible !important;
+  }
+
+  /* ── 2. Main content — remove left offset, add bottom gap  */
+  .main-content {
+    margin-left: 0 !important;
+    max-width: 100vw !important;
+    padding-bottom: 84px !important;
+  }
+
+  /* ── 3. Hide logo / brand in bottom bar ────────────────── */
+  .sidebar-brand {
+    display: none !important;
+  }
+
+  /* ── 4. Hide user profile card in bottom bar ───────────── */
+  .sidebar-user {
+    display: none !important;
+  }
+
+  /* ── 5. Hide logout button in bottom bar ──────────────── */
+  .logout-btn {
+    display: none !important;
+  }
+
+  /* ── 6. Nav links list — horizontal, full width ─────────── */
+  .nav-links {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: stretch !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    gap: 0 !important;
+    width: 100% !important;
+    height: 68px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scrollbar-width: none !important;
+    margin: 0 !important;
+  }
+
+  .nav-links::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  /* ── 7. Each list item ──────────────────────────────────── */
+  .nav-links li {
+    display: flex !important;
+    flex: 1 1 0 !important;
+    min-width: 56px !important;
+    max-width: 110px !important;
+    align-items: stretch !important;
+    justify-content: center !important;
+    list-style: none !important;
+    position: relative !important;
+  }
+
+  /* ── 8. Nav link — icon + label stacked vertically ──────── */
+  .nav-link {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 5px !important;
+    padding: 8px 6px 6px !important;
+    width: 100% !important;
+    height: 100% !important;
+    border-radius: 0 !important;
+    overflow: hidden !important;
+    font-size: 0.58rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.07em !important;
+    text-transform: uppercase !important;
+    white-space: nowrap !important;
+    color: var(--text3) !important;
+    text-decoration: none !important;
+    border-left: none !important;
+    background: transparent !important;
+    transition: color 0.18s, background 0.18s !important;
+    position: relative !important;
+  }
+
+  /* Repurpose the ::before pseudo as a TOP active bar */
+  .nav-link::before {
+    left: 15% !important;
+    right: 15% !important;
+    top: 0 !important;
+    bottom: unset !important;
+    width: auto !important;
+    height: 2px !important;
+    border-radius: 0 0 3px 3px !important;
+    transform: scaleY(1) !important;
+    background: var(--accent-grad) !important;
+    opacity: 0 !important;
+    transition: opacity 0.18s !important;
+  }
+
+  .nav-link.active::before {
+    opacity: 1 !important;
+    box-shadow: 0 0 10px var(--accent-glow) !important;
+  }
+
+  /* Active state */
+  .nav-link.active {
+    color: var(--accent) !important;
+    background: var(--accent-glow) !important;
+    font-weight: 700 !important;
+  }
+
+  /* Hover */
+  .nav-link:hover:not(.active) {
+    color: var(--text) !important;
+    background: rgba(255,255,255,0.04) !important;
+  }
+
+  /* ── 9. Icons ───────────────────────────────────────────── */
+  .nav-link svg,
+  .nav-link .nav-svg {
+    width: 20px !important;
+    height: 20px !important;
+    flex-shrink: 0 !important;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  }
+
+  .nav-link:hover svg,
+  .nav-link:hover .nav-svg {
+    transform: translateY(-2px) scale(1.12) !important;
+  }
+
+  .nav-link.active svg,
+  .nav-link.active .nav-svg {
+    color: var(--accent) !important;
+    filter: drop-shadow(0 0 5px var(--accent-glow)) !important;
+  }
+
+  /* ── 10. Admin link keeps red ───────────────────────────── */
+  .nav-link-admin {
+    color: var(--red) !important;
+    opacity: 0.75 !important;
+  }
+  .nav-link-admin:hover {
+    background: rgba(255,59,92,0.07) !important;
+    opacity: 1 !important;
+    color: var(--red) !important;
+  }
+
+  /* ── 11. Notification badge ─────────────────────────────── */
+  #notif-badge,
+  .notif-badge {
+    position: absolute !important;
+    top: 6px !important;
+    left: 50% !important;
+    transform: translateX(4px) !important;
+    right: unset !important;
+  }
+
+  /* ── 12. Solver "New" badge ─────────────────────────────── */
+  .solver-nav-badge {
+    position: absolute !important;
+    top: 5px !important;
+    left: 50% !important;
+    transform: translateX(2px) !important;
+    font-size: 0.45rem !important;
+    padding: 1px 3px !important;
+    right: unset !important;
+  }
+
+  /* ── 13. Overlay + hamburger — off on desktop ───────────── */
+  #sidebar-overlay,
+  .sidebar-overlay {
+    display: none !important;
+  }
+
+  #hamburger,
+  .hamburger-btn {
+    display: none !important;
+  }
+
+  /* ── 14. Layout fixes for sub-pages ────────────────────── */
+  .community-layout,
+  .settings-layout {
+    margin-left: 0 !important;
+  }
+}
