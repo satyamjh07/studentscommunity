@@ -19,7 +19,19 @@
   <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+  <!-- Theme system — must load before solver-v2.css so variables are defined -->
+  <link rel="stylesheet" href="css/themes.css"/>
   <link rel="stylesheet" href="css/solver-v2.css"/>
+
+  <!-- ── Flash prevention: apply saved theme BEFORE first paint ── -->
+  <script>
+    (function() {
+      // Try localStorage first (instant, no network round-trip)
+      var t = localStorage.getItem('zd_theme');
+      // Apply immediately to both <html> and <body> (body may not exist yet, handled below)
+      document.documentElement.setAttribute('data-theme', t || 'dark');
+    })();
+  </script>
   <style>
     /* ── Overflow fix ── */
     .zd-layout,
@@ -95,15 +107,25 @@
   <nav class="zd-nav">
     <a href="index.html" class="zd-nav-link">
       <span class="material-symbols-outlined">grid_view</span>
-      DASHBOARD
+      HOME
     </a>
-    <a href="#" class="zd-nav-link active">
+    <a href="#" class="zd-nav-link active" style="position:relative;">
+      <span class="solver-nav-badge" style="
+        position:absolute;top:6px;left:50%;transform:translateX(6px);
+        background:#00f0ff;color:#000;font-family:'Space Grotesk',sans-serif;
+        font-size:0.42rem;font-weight:900;letter-spacing:0.08em;
+        padding:1px 4px;border-radius:3px;line-height:1.4;pointer-events:none;
+      ">NEW</span>
       <span class="material-symbols-outlined">layers</span>
-      JEE SOLVER
+      SOLVER
     </a>
-    <a href="analytics.html" class="zd-nav-link">
-      <span class="material-symbols-outlined">query_stats</span>
-      ANALYTICS
+    <a href="index.html#community" class="zd-nav-link">
+      <span class="material-symbols-outlined">group</span>
+      SOCIAL
+    </a>
+    <a href="index.html#whitenoise" class="zd-nav-link">
+      <span class="material-symbols-outlined">music_note</span>
+      NOISE
     </a>
     <a href="settings.html" class="zd-nav-link">
       <span class="material-symbols-outlined">settings</span>
@@ -262,17 +284,27 @@
     <span class="material-symbols-outlined">grid_view</span>
     <span>HOME</span>
   </a>
-  <a href="#" class="zd-bnav-item active">
+  <a href="#" class="zd-bnav-item active" style="position:relative;">
+    <span style="
+      position:absolute;top:4px;left:50%;transform:translateX(4px);
+      background:#00f0ff;color:#000;font-family:'Space Grotesk',sans-serif;
+      font-size:0.42rem;font-weight:900;letter-spacing:0.08em;
+      padding:1px 4px;border-radius:3px;line-height:1.4;pointer-events:none;
+    ">NEW</span>
     <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">layers</span>
     <span>SOLVER</span>
   </a>
-  <a href="analytics.html" class="zd-bnav-item">
-    <span class="material-symbols-outlined">insights</span>
-    <span>STATS</span>
+  <a href="index.html#community" class="zd-bnav-item">
+    <span class="material-symbols-outlined">group</span>
+    <span>SOCIAL</span>
   </a>
-  <a href="profile.html" class="zd-bnav-item">
-    <span class="material-symbols-outlined">person</span>
-    <span>PROFILE</span>
+  <a href="index.html#whitenoise" class="zd-bnav-item">
+    <span class="material-symbols-outlined">music_note</span>
+    <span>NOISE</span>
+  </a>
+  <a href="settings.html" class="zd-bnav-item">
+    <span class="material-symbols-outlined">settings</span>
+    <span>SETTINGS</span>
   </a>
 </nav>
 
@@ -297,6 +329,12 @@
 
         if (nameEl)  nameEl.textContent  = r.data.name || '';
         if (classEl) classEl.textContent = (r.data.class || '') + (r.data.target_year ? ' · ' + r.data.target_year : '');
+
+        // ── Apply user theme from profile ──────────────────────────
+        var theme = r.data.theme || localStorage.getItem('zd_theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', theme);
+        document.body.setAttribute('data-theme', theme);
+        localStorage.setItem('zd_theme', theme); // cache for next visit (flash-free)
 
         var avHtml = r.data.avatar_url
           ? '<img src="' + r.data.avatar_url + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
