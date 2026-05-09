@@ -56,7 +56,7 @@
     }
 
     // Legacy sidebar fallback
-    var settingsLi = navLinks.querySelector('[data-page="timer"]');
+    var settingsLi = navLinks.querySelector('[data-page="community"]');
     settingsLi = settingsLi ? settingsLi.closest('li') : null;
     if (settingsLi) navLinks.insertBefore(li, settingsLi);
     else navLinks.appendChild(li);

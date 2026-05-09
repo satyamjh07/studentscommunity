@@ -6,6 +6,14 @@
 // Expose Supabase URL for Edge Function calls in other files
 window.SUPABASE_URL = SUPABASE_URL;
 
+// ── Utility: format seconds as "Xh Ym" or "Ym" ──────────────
+function formatDuration(seconds) {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m`;
+}
+
 // ── Aura score cache — avoid hitting the Edge Function on every dashboard visit ──
 let _auraCacheScore = null;
 let _auraCacheLevel = null;
@@ -27,7 +35,6 @@ function goToPage(pageId) {
   closeMobileSidebar();
 
   if (pageId === 'dashboard') loadDashboardData();
-  if (pageId === 'timer') onTimerPageOpen();
   if (pageId === 'community') { loadPosts(); loadPopularPosts(); }
   if (pageId === 'whitenoise') onWhitenoisePageOpen();
   if (pageId === 'admin') loadAdminPanel();
@@ -60,58 +67,223 @@ function closeMobileSidebar() {
   document.getElementById('sidebar-overlay').classList.remove('visible');
 }
 
-// ── Dashboard Data ───────────────────────────
-async function loadDashboardData(options = {}) {
+// ── Dashboard / Analytics Data ────────────────────────
+async function loadDashboardData() {
   if (!currentUser) return;
-  const { skipAura = false } = options;
 
+  // ── Greeting ────────────────────────────────────────
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-  document.getElementById('dashboard-greeting').textContent =
+  const el = document.getElementById('dashboard-greeting');
+  if (el) el.textContent =
     greeting + ', ' + (currentProfile && currentProfile.name ? currentProfile.name.split(' ')[0] : 'friend') + '! 🚀';
 
   const now = new Date();
   const todayStart = new Date(now); todayStart.setHours(0,0,0,0);
-  const weekStart = new Date(now); weekStart.setDate(now.getDate() - now.getDay() + 1); weekStart.setHours(0,0,0,0);
+  const weekStart  = new Date(now); weekStart.setDate(now.getDate() - now.getDay() + 1); weekStart.setHours(0,0,0,0);
+  const threeMonthsAgo = new Date(); threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
 
-  const threeMonthsAgo = new Date();
-threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-
-const { data: allSessions } = await db.from('study_sessions')
+  // ── Fetch study sessions (last 3 months) ────────────
+  const { data: allSessions } = await db.from('study_sessions')
     .select('start_time, duration_seconds')
     .eq('user_id', currentUser.id)
     .eq('status', 'complete')
     .gte('start_time', threeMonthsAgo.toISOString())
     .order('start_time', { ascending: false });
 
-  if (!allSessions) return;
+  const sessions = allSessions || [];
 
-  const todaySessions = allSessions.filter(s => new Date(s.start_time) >= todayStart);
-  const todaySeconds = todaySessions.reduce((a, s) => a + (s.duration_seconds || 0), 0);
-  document.getElementById('today-time').textContent = formatDuration(todaySeconds) || '0m';
+  // ── KPI: Today time ──────────────────────────────────
+  const todaySecs = sessions
+    .filter(s => new Date(s.start_time) >= todayStart)
+    .reduce((a, s) => a + (s.duration_seconds || 0), 0);
 
-  const weekSessions = allSessions.filter(s => new Date(s.start_time) >= weekStart);
-  const weekSeconds = weekSessions.reduce((a, s) => a + (s.duration_seconds || 0), 0);
-  document.getElementById('week-time').textContent = formatDuration(weekSeconds) || '0h';
+  const todayLabelEl = document.getElementById('today-time-label');
+  if (todayLabelEl) todayLabelEl.textContent = 'Today: ' + (formatDuration(todaySecs) || '0m');
+  // legacy id still used by leaderboard.js
+  const todayTimeEl = document.getElementById('today-time');
+  if (todayTimeEl) todayTimeEl.textContent = formatDuration(todaySecs) || '0m';
 
-  document.getElementById('total-sessions').textContent = allSessions.length;
+  // ── KPI: This week ───────────────────────────────────
+  const weekSecs = sessions
+    .filter(s => new Date(s.start_time) >= weekStart)
+    .reduce((a, s) => a + (s.duration_seconds || 0), 0);
+  const weekEl = document.getElementById('week-time');
+  if (weekEl) weekEl.textContent = formatDuration(weekSecs) || '0h';
 
+  // ── KPI: Total sessions ──────────────────────────────
+  const totalEl = document.getElementById('total-sessions');
+  if (totalEl) totalEl.textContent = sessions.length;
+
+  const todaySessCount = sessions.filter(s => new Date(s.start_time) >= todayStart).length;
+  const todaySessEl = document.getElementById('today-sessions-label');
+  if (todaySessEl) todaySessEl.textContent = 'Today: ' + todaySessCount + ' session' + (todaySessCount !== 1 ? 's' : '');
+
+  // ── KPI: Streak ──────────────────────────────────────
   let streak = 0;
   const today = new Date(); today.setHours(0,0,0,0);
   let checkDate = new Date(today);
-  const studyDates = new Set(allSessions.map(s => {
+  const studyDates = new Set(sessions.map(s => {
     const d = new Date(s.start_time); d.setHours(0,0,0,0); return d.getTime();
   }));
   while (studyDates.has(checkDate.getTime())) {
     streak++;
     checkDate.setDate(checkDate.getDate() - 1);
   }
-  document.getElementById('streak-count').textContent = streak;
+  const streakEl = document.getElementById('streak-count');
+  if (streakEl) streakEl.textContent = streak;
 
-  buildWeeklyBars(allSessions);
+  // Compute best streak from the data
+  let bestStreak = streak;
+  let tempStreak = 0;
+  const sortedDates = [...studyDates].sort((a,b) => a - b);
+  for (let i = 0; i < sortedDates.length; i++) {
+    if (i === 0 || sortedDates[i] - sortedDates[i-1] === 86400000) {
+      tempStreak++;
+      if (tempStreak > bestStreak) bestStreak = tempStreak;
+    } else {
+      tempStreak = 1;
+    }
+  }
 
-  // ── Aura Score — fetch from Edge Function (cached, skip after timer stop) ─
-  if (!skipAura) loadAuraScore();
+  const streakBestLabel = document.getElementById('streak-best-label');
+  if (streakBestLabel) streakBestLabel.textContent = 'Best: ' + bestStreak + ' days';
+
+  // ── Streak pips (last 7 days) ─────────────────────
+  const pipsEl = document.getElementById('streak-pips');
+  if (pipsEl) {
+    const days = ['M','T','W','T','F','S','S'];
+    const todayDow = (today.getDay() + 6) % 7; // 0=Mon
+    let html = '';
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(today); d.setDate(today.getDate() - i);
+      const isToday = i === 0;
+      const done = studyDates.has(d.getTime());
+      const dow = (d.getDay() + 6) % 7;
+      let cls = isToday ? (done ? 'today' : 'today') : (done ? 'done' : 'missed');
+      let icon = isToday ? '★' : (done ? '✓' : '×');
+      html += `<div class="an-streak-day">
+        <div class="an-streak-day-name">${days[dow]}</div>
+        <div class="an-streak-pip ${cls}">${icon}</div>
+      </div>`;
+    }
+    pipsEl.innerHTML = html;
+  }
+
+  const streakBigEl = document.getElementById('streak-count-big');
+  if (streakBigEl) streakBigEl.textContent = streak;
+
+  const streakMsgEl = document.getElementById('streak-msg');
+  if (streakMsgEl) {
+    const left = bestStreak - streak;
+    streakMsgEl.textContent = left > 0
+      ? `${left} more day${left !== 1 ? 's' : ''} to beat your best!`
+      : streak > 0 ? 'You\'re at your personal best! 🔥' : 'Start your streak today!';
+  }
+
+  const streakBestBig = document.getElementById('streak-best-big');
+  if (streakBestBig) streakBestBig.textContent = bestStreak + ' days';
+
+  // ── Weekly bars ───────────────────────────────────
+  buildWeeklyBars(sessions);
+
+  // ── Subject accuracy from user_attempts ──────────
+  _loadSubjectAccuracy();
+
+  // ── Chapter lists from analyticsService ──────────
+  _loadChapterLists();
+
+  // ── Aura Score ────────────────────────────────────
+  loadAuraScore();
+}
+
+// ── Subject accuracy gauges ────────────────────────────
+async function _loadSubjectAccuracy() {
+  if (!currentUser) return;
+  const { data, error } = await db
+    .from('user_attempts')
+    .select('is_correct, questions!inner(subject)')
+    .eq('user_id', currentUser.id);
+
+  if (error || !data) return;
+
+  const subjects = { physics: {t:0,c:0}, chemistry: {t:0,c:0}, mathematics: {t:0,c:0} };
+  data.forEach(row => {
+    const s = (row.questions?.subject || '').toLowerCase();
+    if (subjects[s]) {
+      subjects[s].t++;
+      if (row.is_correct) subjects[s].c++;
+    }
+  });
+
+  const colors = { physics: 'var(--accent,#00f0ff)', chemistry: 'var(--purple,#b06aff)', mathematics: 'var(--green,#00e5a0)' };
+  const circumference = 263.9;
+
+  Object.entries(subjects).forEach(([subj, {t, c}]) => {
+    const pct = t > 0 ? Math.round(c / t * 100) : 0;
+    const pctEl  = document.getElementById(`gauge-${subj}-pct`);
+    const arcEl  = document.getElementById(`gauge-${subj}-arc`);
+    const trendEl= document.getElementById(`gauge-${subj}-trend`);
+    const pbBarEl= document.getElementById(`pb-bar-${subj}`);
+    const pbPctEl= document.getElementById(`pb-pct-${subj}`);
+
+    if (pctEl)   pctEl.textContent = t > 0 ? pct + '%' : '—';
+    if (arcEl)   setTimeout(() => { arcEl.style.strokeDashoffset = circumference - (circumference * pct / 100); }, 100);
+    if (trendEl) {
+      trendEl.textContent = t > 0 ? `${c}/${t} correct` : 'No attempts yet';
+      trendEl.className = 'an-gauge-trend';
+    }
+    if (pbBarEl) setTimeout(() => { pbBarEl.style.width = pct + '%'; }, 100);
+    if (pbPctEl) pbPctEl.textContent = pct + '%';
+  });
+}
+
+// ── Chapter top/weak lists ─────────────────────────────
+async function _loadChapterLists() {
+  if (!currentUser) return;
+
+  let report;
+  try { report = await getWeaknessReport(currentUser.id); } catch(e) { return; }
+  if (!report || !report.length) {
+    const topEl  = document.getElementById('top-chapters-list');
+    const weakEl = document.getElementById('weak-chapters-list');
+    if (topEl)  topEl.innerHTML  = '<div class="an-empty-state">Solve some questions to see stats!</div>';
+    if (weakEl) weakEl.innerHTML = '<div class="an-empty-state">Solve some questions to see stats!</div>';
+    return;
+  }
+
+  // Sort strongest first for top-chapters
+  const sorted = [...report].sort((a,b) => b.accuracy - a.accuracy);
+  const top5   = sorted.slice(0, 5);
+  const weak5  = [...report].slice(0, 5); // already sorted weakest first
+
+  function _chapterRow(item, rank, isWeak) {
+    const color  = isWeak
+      ? (item.accuracy < 40 ? 'var(--red,#ff4d6a)' : item.accuracy < 55 ? 'var(--orange,#ff9340)' : 'var(--yellow,#ffd060)')
+      : (item.accuracy >= 90 ? 'var(--green,#00e5a0)' : 'var(--accent,#00f0ff)');
+    const badgeCls = isWeak
+      ? (item.accuracy < 40 ? 'an-badge-crit' : item.accuracy < 55 ? 'an-badge-med' : 'an-badge-good')
+      : (item.accuracy >= 90 ? 'an-badge-top' : 'an-badge-good');
+    const badgeTxt = isWeak
+      ? (item.accuracy < 40 ? 'Critical' : item.accuracy < 55 ? 'Medium' : 'Fair')
+      : (item.accuracy >= 90 ? '🔥 Hot' : 'Strong');
+    const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
+    return `<div class="an-chapter-row">
+      <div class="an-chapter-rank ${isWeak ? 'weak' : 'top'}">${rank}</div>
+      <div style="flex:1;min-width:0">
+        <div class="an-chapter-name">${cap(item.chapter)}</div>
+        <div class="an-chapter-sub">${cap(item.subject)} · ${item.total} attempts</div>
+      </div>
+      <div class="an-chapter-bar-wrap"><div class="an-chapter-bar" style="width:${item.accuracy}%;background:${color}"></div></div>
+      <div class="an-chapter-score" style="color:${color}">${item.accuracy}%</div>
+      <span class="an-badge-pill ${badgeCls}">${badgeTxt}</span>
+    </div>`;
+  }
+
+  const topEl  = document.getElementById('top-chapters-list');
+  const weakEl = document.getElementById('weak-chapters-list');
+  if (topEl)  topEl.innerHTML  = top5.map((c, i) => _chapterRow(c, i+1, false)).join('');
+  if (weakEl) weakEl.innerHTML = weak5.map((c, i) => _chapterRow(c, i+1, true)).join('');
 }
 
 // ── Aura Score ───────────────────────────────

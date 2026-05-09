@@ -10,7 +10,6 @@
 
   var SHORT = {
     'Dashboard':     'Home',
-    'Timer':         'Timer',
     'Community':     'Social',
     'Notifications': 'Alerts',
     'White Noise':   'Noise',

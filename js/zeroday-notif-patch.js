@@ -1,462 +1,742 @@
-// ============================================================
-// ZERODAY — NOTIFICATION NAVBAR PATCH v1.1 (FIXED)
-// Fixes:
-//   1. Desktop bell had no click listener → panel never opened
-//   2. Duplicate id="notif-badge" caused DOM conflicts
-//   3. Mobile close / bell toggle unreliable after async innerHTML rebuild
-//   4. Mobile panel z-index lower than topbar on some browsers
-// ============================================================
+/* ═══════════════════════════════════════════════════════════════
+   ZEROday — NOTIFICATION BELL + PANEL  (v3 · Standalone)
+   Drop ONE <script src="zd-notifications.js"></script> at end of
+   <body>. No other changes needed. Replaces zeroday-notif-patch.js.
+   ═══════════════════════════════════════════════════════════════ */
 
-(function ZDNotifPatch() {
+(function ZDNotifications() {
   'use strict';
 
-  // ── Wait for DOM ────────────────────────────────────────
-  document.addEventListener('DOMContentLoaded', function () {
-    _injectBellUI();
-    _patchSidebarNav();
-    _initPanelLogic();
-  });
+  /* ── CSS injected directly — no external file needed ─────── */
+  var CSS = [
+    /* ── Bell button wrapper ──────────────────────────────── */
+    '#zd-bell-wrap{',
+      'position:fixed;',
+      'top:16px;',
+      'right:20px;',
+      'z-index:99999;',        /* always on top */
+    '}',
+    /* Hide on mobile — they have the bottom-nav removed Alerts */
+    '@media(max-width:600px){#zd-bell-wrap{display:none;}}',
 
-  // ── 1. Inject bell button into the topbar ───────────────
-  function _injectBellUI() {
-    // Mobile topbar
-    var topbar = document.querySelector('.mobile-topbar');
-    if (topbar) {
-      var bellWrap = document.createElement('div');
-      bellWrap.className = 'notif-bell-wrap';
-      bellWrap.style.position = 'relative';
-      // FIX: use unique id "notif-badge-mobile" to avoid duplicate-id conflict
-      //      with the sidebar's existing id="notif-badge"
-      bellWrap.innerHTML = _bellButtonHTML('notif-bell-btn', 'notif-badge-mobile');
+    /* ── Bell button ──────────────────────────────────────── */
+    '#zd-bell-btn{',
+      'position:relative;',
+      'width:44px;height:44px;',
+      'border-radius:14px;',
+      'border:1.5px solid var(--border-hover);',
+      'background:var(--card);',
+      'color:var(--text2);',
+      'cursor:pointer;',
+      'display:flex;align-items:center;justify-content:center;',
+      'transition:all 0.22s cubic-bezier(0.34,1.56,0.64,1);',
+      'box-shadow:0 4px 24px rgba(0,0,0,0.18),0 1px 0 rgba(255,255,255,0.04) inset;',
+    '}',
+    '#zd-bell-btn:hover{',
+      'background:var(--bg3);',
+      'border-color:var(--accent);',
+      'color:var(--accent);',
+      'transform:translateY(-2px) scale(1.05);',
+      'box-shadow:0 8px 32px var(--accent-glow),0 0 0 1px var(--accent);',
+    '}',
+    '#zd-bell-btn:active{transform:scale(0.96);}',
 
-      var mobileAvatar = topbar.querySelector('.mobile-avatar');
-      if (mobileAvatar) {
-        topbar.insertBefore(bellWrap, mobileAvatar);
-      } else {
-        topbar.appendChild(bellWrap);
-      }
-    }
+    /* ── Unread badge on the bell ─────────────────────────── */
+    '#zd-bell-badge{',
+      'position:absolute;',
+      'top:-5px;right:-5px;',
+      'min-width:20px;height:20px;',
+      'padding:0 5px;',
+      'border-radius:99px;',
+      'background:var(--red);',
+      'color:#fff;',
+      'font-size:0.6rem;font-weight:800;',
+      'font-family:"Space Grotesk",sans-serif;',
+      'display:none;align-items:center;justify-content:center;',
+      'border:2px solid var(--bg);',
+      'animation:zd-badge-pop 0.3s cubic-bezier(0.34,1.56,0.64,1);',
+    '}',
+    '@keyframes zd-badge-pop{from{transform:scale(0)}to{transform:scale(1)}}',
 
-    // Desktop: fixed top-right bell (visible only on wide screens)
-    _injectDesktopBell();
+    /* ── Backdrop ─────────────────────────────────────────── */
+    '#zd-notif-backdrop{',
+      'display:none;',
+      'position:fixed;inset:0;',
+      'z-index:99997;',
+      'background:rgba(0,0,0,0.35);',
+      'backdrop-filter:blur(4px);',
+      '-webkit-backdrop-filter:blur(4px);',
+      'animation:zd-fade-in 0.18s ease;',
+    '}',
+    '#zd-notif-backdrop.open{display:block;}',
+    '@keyframes zd-fade-in{from{opacity:0}to{opacity:1}}',
+
+    /* ── Panel ────────────────────────────────────────────── */
+    '#zd-notif-panel{',
+      'position:fixed;',
+      'top:70px;right:20px;',
+      'width:400px;',
+      'max-height:calc(100vh - 90px);',
+      'z-index:99998;',
+      'background:var(--card);',
+      'border:1px solid var(--border-hover);',
+      'border-radius:20px;',
+      'overflow:hidden;',
+      'display:flex;flex-direction:column;',
+      'box-shadow:0 24px 80px rgba(0,0,0,0.45),0 0 0 1px rgba(255,255,255,0.04) inset;',
+      'transform:translateY(-12px) scale(0.97);',
+      'opacity:0;',
+      'pointer-events:none;',
+      'transition:transform 0.26s cubic-bezier(0.34,1.56,0.64,1),opacity 0.2s ease;',
+    '}',
+    '#zd-notif-panel.open{',
+      'transform:translateY(0) scale(1);',
+      'opacity:1;',
+      'pointer-events:all;',
+    '}',
+    '@media(max-width:600px){',
+      '#zd-notif-panel{top:0;right:0;left:0;width:100%;border-radius:0 0 20px 20px;max-height:80vh;}',
+    '}',
+
+    /* ── Panel Header ─────────────────────────────────────── */
+    '#zd-notif-header{',
+      'padding:1.1rem 1.25rem 0.9rem;',
+      'border-bottom:1px solid var(--border);',
+      'background:var(--bg2);',
+      'display:flex;align-items:center;gap:0.75rem;',
+      'flex-shrink:0;',
+    '}',
+    '.zd-nh-icon{',
+      'width:36px;height:36px;border-radius:10px;',
+      'background:var(--accent-glow);',
+      'border:1px solid var(--accent);',
+      'display:flex;align-items:center;justify-content:center;',
+      'color:var(--accent);flex-shrink:0;',
+    '}',
+    '.zd-nh-title{',
+      'font-family:"Bebas Neue","Space Grotesk",sans-serif;',
+      'font-size:1.15rem;letter-spacing:0.08em;',
+      'color:var(--text);flex:1;',
+    '}',
+    '#zd-notif-unread-pill{',
+      'padding:0.2rem 0.55rem;',
+      'border-radius:99px;',
+      'background:var(--red);',
+      'color:#fff;',
+      'font-size:0.62rem;font-weight:800;',
+      'font-family:"Space Grotesk",sans-serif;',
+      'display:none;',
+    '}',
+    '.zd-nh-close{',
+      'width:30px;height:30px;border-radius:8px;',
+      'border:1px solid var(--border-hover);',
+      'background:var(--bg3);',
+      'color:var(--text3);',
+      'cursor:pointer;display:flex;align-items:center;justify-content:center;',
+      'font-size:0.9rem;line-height:1;',
+      'transition:all 0.15s;flex-shrink:0;',
+    '}',
+    '.zd-nh-close:hover{background:var(--border-hover);color:var(--text);}',
+
+    /* ── Admin action bar ─────────────────────────────────── */
+    '#zd-notif-adminbar{',
+      'display:none;',
+      'padding:0.6rem 1.25rem;',
+      'background:var(--bg3);',
+      'border-bottom:1px solid var(--border);',
+      'gap:0.5rem;',
+      'flex-shrink:0;',
+    '}',
+    '#zd-notif-adminbar.visible{display:flex;}',
+    '.zd-admin-action-btn{',
+      'flex:1;',
+      'padding:0.45rem 0.75rem;',
+      'border-radius:8px;',
+      'border:1px solid var(--border-hover);',
+      'background:var(--bg2);',
+      'color:var(--text2);',
+      'font-size:0.72rem;font-weight:700;',
+      'letter-spacing:0.06em;text-transform:uppercase;',
+      'font-family:"Space Grotesk",sans-serif;',
+      'cursor:pointer;',
+      'display:flex;align-items:center;justify-content:center;gap:0.4rem;',
+      'transition:all 0.18s;',
+    '}',
+    '.zd-admin-action-btn:hover{',
+      'background:var(--accent-glow);',
+      'border-color:var(--accent);',
+      'color:var(--accent);',
+    '}',
+    '.zd-admin-action-btn.danger:hover{',
+      'background:rgba(248,113,113,0.1);',
+      'border-color:var(--red);color:var(--red);',
+    '}',
+
+    /* ── Notifications list ───────────────────────────────── */
+    '#zd-notif-list{',
+      'flex:1;overflow-y:auto;',
+      'scrollbar-width:thin;',
+      'scrollbar-color:var(--border-hover) transparent;',
+    '}',
+    '#zd-notif-list::-webkit-scrollbar{width:4px;}',
+    '#zd-notif-list::-webkit-scrollbar-thumb{background:var(--border-hover);border-radius:4px;}',
+
+    /* ── Single notification item ─────────────────────────── */
+    '.zd-ni{',
+      'display:flex;gap:0.85rem;align-items:flex-start;',
+      'padding:1rem 1.25rem;',
+      'border-bottom:1px solid var(--border);',
+      'transition:background 0.15s;',
+      'animation:zd-ni-in 0.3s ease both;',
+      'animation-delay:var(--ni-delay,0ms);',
+    '}',
+    '@keyframes zd-ni-in{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:translateX(0)}}',
+    '.zd-ni:last-child{border-bottom:none;}',
+    '.zd-ni:hover{background:var(--bg2);}',
+    '.zd-ni.personal{',
+      'border-left:3px solid var(--accent);',
+      'background:var(--accent-glow);',
+    '}',
+    '.zd-ni.personal:hover{filter:brightness(1.05);}',
+
+    /* icon bubble */
+    '.zd-ni-icon{',
+      'width:38px;height:38px;border-radius:11px;',
+      'display:flex;align-items:center;justify-content:center;',
+      'font-size:1rem;flex-shrink:0;',
+      'border:1px solid var(--border);',
+    '}',
+    '.zd-ni-icon.info   {background:rgba(96,165,250,0.12);border-color:rgba(96,165,250,0.25);}',
+    '.zd-ni-icon.success{background:rgba(52,211,153,0.12);border-color:rgba(52,211,153,0.25);}',
+    '.zd-ni-icon.warn   {background:rgba(251,146,60,0.12);border-color:rgba(251,146,60,0.25);}',
+    '.zd-ni-icon.danger {background:rgba(248,113,113,0.12);border-color:rgba(248,113,113,0.25);}',
+
+    '.zd-ni-body{flex:1;min-width:0;}',
+    '.zd-ni-title{',
+      'font-size:0.85rem;font-weight:700;',
+      'color:var(--text);',
+      'font-family:"Space Grotesk",sans-serif;',
+      'margin-bottom:0.2rem;',
+      'display:flex;align-items:center;gap:0.4rem;',
+    '}',
+    '.zd-ni-personal-tag{',
+      'font-size:0.52rem;font-weight:800;letter-spacing:0.08em;',
+      'text-transform:uppercase;',
+      'background:var(--accent-grad);color:#fff;',
+      'border-radius:4px;padding:1px 5px;',
+      'flex-shrink:0;',
+    '}',
+    '.zd-ni-msg{font-size:0.79rem;color:var(--text2);line-height:1.5;}',
+    '.zd-ni-time{',
+      'font-size:0.66rem;color:var(--text3);',
+      'margin-top:0.35rem;',
+      'font-family:"DM Mono",monospace;',
+    '}',
+
+    /* ── Empty state ──────────────────────────────────────── */
+    '.zd-ni-empty{',
+      'padding:3rem 1.5rem;text-align:center;',
+    '}',
+    '.zd-ni-empty-icon{',
+      'width:56px;height:56px;border-radius:16px;',
+      'background:var(--bg3);border:1px solid var(--border);',
+      'display:flex;align-items:center;justify-content:center;',
+      'margin:0 auto 1rem;',
+      'color:var(--text3);',
+    '}',
+    '.zd-ni-empty-title{',
+      'font-family:"Space Grotesk",sans-serif;',
+      'font-size:0.9rem;font-weight:700;',
+      'color:var(--text2);margin-bottom:0.3rem;',
+    '}',
+    '.zd-ni-empty-sub{font-size:0.78rem;color:var(--text3);}',
+
+    /* ── Skeleton loader ──────────────────────────────────── */
+    '.zd-skel{',
+      'padding:1rem 1.25rem;',
+      'display:flex;gap:0.85rem;',
+      'border-bottom:1px solid var(--border);',
+    '}',
+    '.zd-skel-icon{width:38px;height:38px;border-radius:11px;background:var(--bg3);flex-shrink:0;}',
+    '.zd-skel-lines{flex:1;display:flex;flex-direction:column;gap:0.4rem;padding-top:0.3rem;}',
+    '.zd-skel-line{height:10px;border-radius:5px;background:var(--bg3);}',
+    '.zd-skel-line.w70{width:70%;}',
+    '.zd-skel-line.w50{width:50%;}',
+    '.zd-skel-line.w30{width:30%;}',
+    '.zd-skel-icon,.zd-skel-line{animation:zd-shimmer 1.4s ease-in-out infinite;}',
+    '@keyframes zd-shimmer{0%,100%{opacity:0.4}50%{opacity:0.8}}',
+
+    /* ── Footer ───────────────────────────────────────────── */
+    '#zd-notif-footer{',
+      'padding:0.75rem 1.25rem;',
+      'border-top:1px solid var(--border);',
+      'background:var(--bg2);',
+      'display:flex;align-items:center;justify-content:space-between;',
+      'flex-shrink:0;',
+    '}',
+    '.zd-mark-read-btn{',
+      'background:none;border:none;',
+      'color:var(--accent);',
+      'font-size:0.75rem;font-weight:600;',
+      'font-family:"Space Grotesk",sans-serif;',
+      'cursor:pointer;',
+      'transition:color 0.15s;',
+      'letter-spacing:0.03em;',
+    '}',
+    '.zd-mark-read-btn:hover{color:var(--accent2);}',
+    '.zd-footer-count{',
+      'font-size:0.68rem;color:var(--text3);',
+      'font-family:"DM Mono",monospace;',
+    '}',
+
+    /* ── Composer overlay (broadcast / direct) ────────────── */
+    '.zd-composer-overlay{',
+      'position:fixed;inset:0;z-index:999999;',
+      'background:rgba(0,0,0,0.6);',
+      'backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);',
+      'display:flex;align-items:center;justify-content:center;',
+      'padding:1.5rem;',
+      'opacity:0;transition:opacity 0.22s;',
+    '}',
+    '.zd-composer-overlay.open{opacity:1;}',
+    '.zd-composer{',
+      'width:100%;max-width:480px;',
+      'background:var(--card);',
+      'border:1px solid var(--border-hover);',
+      'border-radius:20px;',
+      'overflow:hidden;',
+      'box-shadow:0 32px 80px rgba(0,0,0,0.5);',
+      'transform:translateY(16px) scale(0.97);',
+      'transition:transform 0.26s cubic-bezier(0.34,1.56,0.64,1);',
+    '}',
+    '.zd-composer-overlay.open .zd-composer{transform:translateY(0) scale(1);}',
+    '.zd-composer-head{',
+      'padding:1.1rem 1.3rem;',
+      'border-bottom:1px solid var(--border);',
+      'background:var(--bg2);',
+      'display:flex;align-items:center;gap:0.75rem;',
+    '}',
+    '.zd-composer-head-icon{',
+      'width:34px;height:34px;border-radius:9px;',
+      'background:var(--accent-glow);border:1px solid var(--accent);',
+      'display:flex;align-items:center;justify-content:center;color:var(--accent);',
+    '}',
+    '.zd-composer-title{',
+      'font-family:"Bebas Neue","Space Grotesk",sans-serif;',
+      'font-size:1rem;letter-spacing:0.08em;color:var(--text);flex:1;',
+    '}',
+    '.zd-composer-body{',
+      'padding:1.3rem;display:flex;flex-direction:column;gap:1rem;',
+      'max-height:60vh;overflow-y:auto;',
+    '}',
+    '.zd-field{display:flex;flex-direction:column;gap:0.35rem;}',
+    '.zd-label{',
+      'font-size:0.68rem;font-weight:700;text-transform:uppercase;',
+      'letter-spacing:0.1em;color:var(--text3);',
+      'font-family:"Space Grotesk",sans-serif;',
+    '}',
+    '.zd-input,.zd-textarea,.zd-select{',
+      'background:var(--bg2);border:1px solid var(--border-hover);',
+      'color:var(--text);border-radius:10px;',
+      'padding:0.65rem 0.9rem;',
+      'font-family:"Space Grotesk",sans-serif;font-size:0.85rem;',
+      'width:100%;box-sizing:border-box;',
+      'transition:border-color 0.18s,box-shadow 0.18s;',
+    '}',
+    '.zd-input::placeholder,.zd-textarea::placeholder{color:var(--text3);}',
+    '.zd-input:focus,.zd-textarea:focus,.zd-select:focus{',
+      'outline:none;border-color:var(--accent);',
+      'box-shadow:0 0 0 3px var(--accent-glow);',
+    '}',
+    '.zd-textarea{resize:vertical;min-height:80px;}',
+    '.zd-char-count{font-size:0.66rem;color:var(--text3);text-align:right;font-family:"DM Mono",monospace;}',
+    '.zd-type-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.4rem;}',
+    '.zd-type-opt{',
+      'padding:0.45rem 0.7rem;border-radius:8px;',
+      'border:1px solid var(--border);background:var(--bg2);',
+      'color:var(--text2);font-size:0.78rem;font-weight:600;',
+      'font-family:"Space Grotesk",sans-serif;',
+      'cursor:pointer;display:flex;align-items:center;gap:0.35rem;',
+      'transition:all 0.15s;',
+    '}',
+    '.zd-type-opt input[type=radio]{display:none;}',
+    '.zd-type-opt.sel-info   {background:rgba(96,165,250,0.12);border-color:var(--blue);color:var(--blue);}',
+    '.zd-type-opt.sel-success{background:rgba(52,211,153,0.12);border-color:var(--green);color:var(--green);}',
+    '.zd-type-opt.sel-warn   {background:rgba(251,146,60,0.12);border-color:var(--orange);color:var(--orange);}',
+    '.zd-type-opt.sel-danger {background:rgba(248,113,113,0.12);border-color:var(--red);color:var(--red);}',
+    '.zd-lookup-row{display:flex;gap:0.5rem;}',
+    '.zd-lookup-btn{',
+      'padding:0.65rem 1rem;border-radius:10px;',
+      'border:1px solid var(--accent);background:var(--accent-glow);',
+      'color:var(--accent);font-size:0.78rem;font-weight:700;',
+      'font-family:"Space Grotesk",sans-serif;cursor:pointer;',
+      'white-space:nowrap;transition:all 0.18s;',
+    '}',
+    '.zd-lookup-btn:hover{background:var(--accent);color:#fff;}',
+    '.zd-user-preview{',
+      'display:none;',
+      'background:var(--bg2);border:1px solid var(--border-hover);',
+      'border-radius:10px;padding:0.7rem 0.9rem;',
+      'align-items:center;gap:0.65rem;margin-top:0.5rem;',
+    '}',
+    '.zd-user-preview.show{display:flex;}',
+    '.zd-user-avatar{',
+      'width:36px;height:36px;border-radius:50%;',
+      'background:var(--bg3);border:2px solid var(--border-hover);',
+      'display:flex;align-items:center;justify-content:center;',
+      'overflow:hidden;flex-shrink:0;font-size:1.1rem;',
+    '}',
+    '.zd-user-name{font-size:0.85rem;font-weight:700;color:var(--text);font-family:"Space Grotesk",sans-serif;}',
+    '.zd-user-email{font-size:0.7rem;color:var(--text3);font-family:"DM Mono",monospace;}',
+    '.zd-err{font-size:0.72rem;color:var(--red);margin-top:0.3rem;display:none;}',
+    '.zd-err.show{display:block;}',
+    '.zd-composer-foot{',
+      'padding:1rem 1.3rem;border-top:1px solid var(--border);',
+      'background:var(--bg2);display:flex;align-items:center;',
+      'justify-content:flex-end;gap:0.6rem;',
+    '}',
+    '.zd-btn-cancel{',
+      'padding:0.6rem 1.1rem;border-radius:9px;',
+      'border:1px solid var(--border-hover);background:transparent;',
+      'color:var(--text2);font-size:0.82rem;font-weight:600;',
+      'font-family:"Space Grotesk",sans-serif;cursor:pointer;',
+      'transition:all 0.18s;',
+    '}',
+    '.zd-btn-cancel:hover{background:var(--bg3);color:var(--text);}',
+    '.zd-btn-send{',
+      'padding:0.6rem 1.4rem;border-radius:9px;',
+      'border:none;background:var(--accent-grad);',
+      'color:#fff;font-size:0.82rem;font-weight:700;',
+      'letter-spacing:0.05em;',
+      'font-family:"Space Grotesk",sans-serif;cursor:pointer;',
+      'display:flex;align-items:center;gap:0.4rem;',
+      'transition:all 0.2s;',
+      'box-shadow:0 4px 16px var(--accent-glow);',
+    '}',
+    '.zd-btn-send:hover{transform:translateY(-1px);box-shadow:0 8px 24px var(--accent-glow);filter:brightness(1.1);}',
+    '.zd-btn-send:disabled{opacity:0.45;transform:none;cursor:not-allowed;}'
+  ].join('');
+
+  /* ── Inject CSS into <head> ───────────────────────────── */
+  function injectCSS() {
+    if (document.getElementById('zd-notif-css')) return;
+    var el = document.createElement('style');
+    el.id = 'zd-notif-css';
+    el.textContent = CSS;
+    document.head.appendChild(el);
   }
 
-  // FIX: badgeId param so every badge element has a unique id
-  function _bellButtonHTML(btnId, badgeId) {
-    return [
-      '<button id="' + btnId + '" aria-label="Notifications" title="Notifications">',
-        '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">',
+  /* ── Build bell HTML ──────────────────────────────────── */
+  function buildBell() {
+    if (document.getElementById('zd-bell-wrap')) return;
+    var wrap = document.createElement('div');
+    wrap.id = 'zd-bell-wrap';
+    wrap.innerHTML = [
+      '<button id="zd-bell-btn" aria-label="Notifications">',
+        /* Bell icon */
+        '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">',
           '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>',
           '<path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
         '</svg>',
-        '<span class="notif-badge" id="' + badgeId + '" style="display:none">0</span>',
+        '<span id="zd-bell-badge"></span>',
       '</button>'
     ].join('');
+    document.body.appendChild(wrap);
+    document.getElementById('zd-bell-btn').addEventListener('click', togglePanel);
   }
 
-  function _injectDesktopBell() {
-    var desktopWrap = document.createElement('div');
-    desktopWrap.className = 'notif-bell-wrap zd-desktop-bell';
-    desktopWrap.style.cssText = [
-      'position:fixed',
-      'top:1.1rem',
-      'right:1.4rem',
-      'z-index:10000',  // FIX: must be above np-panel (9999) so badge stays visible
-      'display:none'
-    ].join(';');
-
-    // FIX: use unique id "notif-bell-btn-desktop" and "notif-badge-desktop"
-    desktopWrap.innerHTML = [
-      '<button id="notif-bell-btn-desktop" aria-label="Notifications" title="Notifications"',
-      ' style="width:38px;height:38px;display:flex;align-items:center;justify-content:center;',
-      'background:rgba(124,111,255,0.07);border:1px solid rgba(124,111,255,0.15);border-radius:50%;',
-      'cursor:pointer;color:var(--text2);transition:all 0.2s;position:relative;">',
-        '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">',
-          '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>',
-          '<path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
-        '</svg>',
-        '<span class="notif-badge" id="notif-badge-desktop" style="display:none">0</span>',
-      '</button>'
-    ].join('');
-
-    document.body.appendChild(desktopWrap);
-
-    // Show only on desktop
-    var mq = window.matchMedia('(min-width: 769px)');
-    function handleMQ(e) { desktopWrap.style.display = e.matches ? 'block' : 'none'; }
-    if (mq.addEventListener) {
-      mq.addEventListener('change', handleMQ);
-    } else {
-      mq.addListener(handleMQ); // Safari < 14 fallback
-    }
-    handleMQ(mq);
-
-    _desktopWrap = desktopWrap;
-  }
-
-  var _desktopWrap = null;
-
-  // ── 2. Remove notifications from sidebar nav ────────────
-  function _patchSidebarNav() {
-    var navLinks = document.querySelectorAll('.nav-link');
-    navLinks.forEach(function (link) {
-      if (link.dataset.page === 'notifications') {
-        var li = link.closest('li');
-        if (li) li.style.display = 'none';
-      }
-    });
-  }
-
-  // ── 3. Panel logic ──────────────────────────────────────
-  var _isOpen = false;
-
-  function _initPanelLogic() {
-    // FIX: Wire BOTH bell buttons here with their own click listeners.
-    // Previously the desktop bell was never wired — this was the main bug.
-
-    // Mobile bell
-    document.addEventListener('click', function (e) {
-      var mobileBell  = document.getElementById('notif-bell-btn');
-      var desktopBell = document.getElementById('notif-bell-btn-desktop');
-      var panel       = document.getElementById('zd-notif-panel');
-
-      // Bell button clicks — toggle panel
-      if ((mobileBell  && mobileBell.contains(e.target)) ||
-          (desktopBell && desktopBell.contains(e.target))) {
-        e.stopPropagation();
-        _toggle();
-        return;
-      }
-
-      // Close button or mark-read button inside panel — let their
-      // onclick handlers fire; don't interfere here.
-      if (_isOpen && panel && panel.contains(e.target)) {
-        return;
-      }
-
-      // Outside click → close
-      if (_isOpen && panel && !panel.contains(e.target)) {
-        _closePanel();
-      }
-    }, true); // FIX: use capture phase so this fires before any stopPropagation
-
-    // Load initial badge count
-    _refreshBadge();
-    // Poll every 90s
-    setInterval(_refreshBadge, 90000);
-  }
-
-  function _toggle() {
-    _isOpen ? _closePanel() : _openPanel();
-  }
-
-  function _openPanel() {
-    _isOpen = true;
-    _ensurePanel();
-    var panel = document.getElementById('zd-notif-panel');
-    if (panel) {
-      _positionPanel(panel);
-      requestAnimationFrame(function () {
-        _positionPanel(panel);
-        panel.classList.add('np-open');
-        _loadNotifications();
-      });
-    }
-    _markSeen();
-    _refreshBadge();
-  }
-
-  function _closePanel() {
-    _isOpen = false;
-    var panel = document.getElementById('zd-notif-panel');
-    if (panel) panel.classList.remove('np-open');
-  }
-
-  // ── 4. Build panel DOM ───────────────────────────────────
-  function _ensurePanel() {
+  /* ── Build panel HTML ─────────────────────────────────── */
+  function buildPanel() {
     if (document.getElementById('zd-notif-panel')) return;
 
+    /* Backdrop */
+    var bd = document.createElement('div');
+    bd.id = 'zd-notif-backdrop';
+    bd.addEventListener('click', closePanel);
+    document.body.appendChild(bd);
+
+    /* Panel */
     var panel = document.createElement('div');
     panel.id = 'zd-notif-panel';
-    panel.className = 'np-panel';
     panel.setAttribute('role', 'dialog');
-    panel.setAttribute('aria-label', 'Notifications');
-    panel.innerHTML = '<div class="np-body"><div class="np-empty"><div class="np-empty-title">Loading...</div></div></div>';
+    panel.innerHTML = [
+      /* Header */
+      '<div id="zd-notif-header">',
+        '<div class="zd-nh-icon">',
+          '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">',
+            '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>',
+            '<path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
+          '</svg>',
+        '</div>',
+        '<span class="zd-nh-title">Notifications</span>',
+        '<span id="zd-notif-unread-pill"></span>',
+        '<button class="zd-nh-close" id="zd-notif-close" aria-label="Close">✕</button>',
+      '</div>',
+
+      /* Admin bar — visible only for admins */
+      '<div id="zd-notif-adminbar">',
+        '<button class="zd-admin-action-btn" id="zd-btn-broadcast">',
+          '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">',
+            '<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>',
+          '</svg>',
+          'Broadcast',
+        '</button>',
+        '<button class="zd-admin-action-btn" id="zd-btn-direct">',
+          '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">',
+            '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+          '</svg>',
+          'Send to User',
+        '</button>',
+      '</div>',
+
+      /* List */
+      '<div id="zd-notif-list"></div>',
+
+      /* Footer */
+      '<div id="zd-notif-footer">',
+        '<button class="zd-mark-read-btn" id="zd-mark-read">Mark all as read</button>',
+        '<span class="zd-footer-count" id="zd-footer-count"></span>',
+      '</div>'
+    ].join('');
 
     document.body.appendChild(panel);
-    _positionPanel(panel);
 
-    // FIX: Use event delegation on the panel itself for close/mark-read buttons.
-    // This survives innerHTML rebuilds since the listener is on the panel element,
-    // not on the dynamically-created buttons inside it.
-    panel.addEventListener('click', function (e) {
-      // Close button
-      if (e.target.closest('.np-close-btn')) {
-        e.stopPropagation();
-        _closePanel();
-        return;
-      }
-      // Mark all read button
-      if (e.target.closest('.np-mark-read-btn')) {
-        e.stopPropagation();
-        ZDNotif._markAllRead();
-        return;
-      }
-      // Admin broadcast button
-      if (e.target.closest('.np-admin-btn') && !e.target.closest('.np-direct-btn')) {
-        e.stopPropagation();
-        _openBroadcast();
-        return;
-      }
-      // Admin direct (send to user) button
-      if (e.target.closest('.np-direct-btn')) {
-        e.stopPropagation();
-        _openDirect();
-        return;
-      }
-    });
+    /* Wire up events */
+    document.getElementById('zd-notif-close').addEventListener('click', closePanel);
+    document.getElementById('zd-mark-read').addEventListener('click', markAllRead);
+    document.getElementById('zd-btn-broadcast').addEventListener('click', function() { closePanel(); openBroadcast(); });
+    document.getElementById('zd-btn-direct').addEventListener('click', function() { closePanel(); openDirect(); });
   }
 
-  function _positionPanel(panel) {
-    var isMobile = window.innerWidth < 769;
+  /* ── Panel open / close ───────────────────────────────── */
+  var _open = false;
 
-    if (isMobile) {
-      // FIX: z-index must beat mobile-topbar (z-index: 99) but we also need
-      //      the panel to render BELOW the topbar, not on top of it.
-      //      Use z-index: 200 (above topbar's 99, below modals at 1000+)
-      panel.style.position  = 'fixed';
-      panel.style.top       = '56px'; // height of mobile-topbar
-      panel.style.left      = '8px';
-      panel.style.right     = '8px';
-      panel.style.width     = 'auto';
-      panel.style.maxHeight = 'calc(100vh - 72px)';
-      panel.style.zIndex    = '200';
-      return;
-    }
-
-    // Desktop: anchor below the bell button
-    var bell = document.getElementById('notif-bell-btn-desktop') ||
-               document.getElementById('notif-bell-btn');
-    if (!bell) return;
-
-    var rect   = bell.getBoundingClientRect();
-    var panelW = 380;
-    var left   = rect.right - panelW;
-    if (left < 8) left = 8;
-    if (left + panelW > window.innerWidth - 8) left = window.innerWidth - panelW - 8;
-
-    panel.style.position  = 'fixed';
-    panel.style.top       = (rect.bottom + 8) + 'px';
-    panel.style.left      = left + 'px';
-    panel.style.right     = 'auto';
-    panel.style.width     = panelW + 'px';
-    panel.style.maxHeight = 'calc(100vh - ' + (rect.bottom + 20) + 'px)';
-    panel.style.zIndex    = '9999';
-  }
-
-  // ── 5. Load notifications from Supabase ─────────────────
-  async function _loadNotifications() {
+  function openPanel() {
+    if (_open) return;
+    _open = true;
+    buildPanel();
     var panel = document.getElementById('zd-notif-panel');
-    if (!panel) return;
+    var bd    = document.getElementById('zd-notif-backdrop');
 
-    if (typeof currentUser === 'undefined' || !currentUser) {
-      panel.innerHTML = _emptyHTML('Sign in to see notifications');
+    /* Show admin bar if admin */
+    var adminBar = document.getElementById('zd-notif-adminbar');
+    if (isAdmin() && adminBar) adminBar.classList.add('visible');
+
+    /* Animate in */
+    requestAnimationFrame(function() {
+      if (bd) bd.classList.add('open');
+      if (panel) panel.classList.add('open');
+    });
+
+    loadNotifications();
+    markSeen();
+  }
+
+  function closePanel() {
+    _open = false;
+    var panel = document.getElementById('zd-notif-panel');
+    var bd    = document.getElementById('zd-notif-backdrop');
+    if (panel) panel.classList.remove('open');
+    if (bd)    bd.classList.remove('open');
+  }
+
+  function togglePanel() { _open ? closePanel() : openPanel(); }
+
+  /* ── Load notifications ───────────────────────────────── */
+  async function loadNotifications() {
+    var list = document.getElementById('zd-notif-list');
+    if (!list) return;
+
+    /* Skeleton */
+    list.innerHTML = [0,1,2].map(function() {
+      return '<div class="zd-skel">' +
+        '<div class="zd-skel-icon"></div>' +
+        '<div class="zd-skel-lines">' +
+          '<div class="zd-skel-line w70"></div>' +
+          '<div class="zd-skel-line w50"></div>' +
+          '<div class="zd-skel-line w30"></div>' +
+        '</div></div>';
+    }).join('');
+
+    if (typeof currentUser === 'undefined' || !currentUser || typeof db === 'undefined') {
+      list.innerHTML = emptyHTML('Sign in to see notifications', 'You need to be logged in.');
       return;
     }
-
-    var isAdmin = _isAdmin();
-
-    panel.innerHTML = _headerHTML(isAdmin) +
-      '<div class="np-body"><div class="np-empty"><div class="np-empty-title">Loading...</div></div></div>';
 
     try {
-      var result = await db.from('notifications')
+      var res = await db.from('notifications')
         .select('*')
         .or('user_id.is.null,user_id.eq.' + currentUser.id)
         .order('created_at', { ascending: false })
-        .limit(30);
+        .limit(40);
 
-      var notifs = (result.data || []).filter(function (n) {
+      var notifs = (res.data || []).filter(function(n) {
         return !n.expires_at || new Date(n.expires_at) > new Date();
       });
 
-      var body;
+      /* Footer count */
+      var footerCount = document.getElementById('zd-footer-count');
+      if (footerCount) footerCount.textContent = notifs.length + ' notification' + (notifs.length !== 1 ? 's' : '');
+
       if (!notifs.length) {
-        body = '<div class="np-body">' + _emptyBodyHTML() + '</div>';
-      } else {
-        body = '<div class="np-body">' + notifs.map(_notifItemHTML).join('') + '</div>' +
-               '<div class="np-footer"><button class="np-mark-read-btn">Mark all as read</button></div>';
+        list.innerHTML = emptyHTML('All clear!', 'No notifications yet — you\'re caught up.');
+        return;
       }
 
-      panel.innerHTML = _headerHTML(isAdmin) + body;
-      _positionPanel(panel);
+      list.innerHTML = notifs.map(function(n, i) {
+        var isPersonal = n.user_id !== null;
+        var type = n.type || 'info';
+        var icons = { info:'📢', success:'✅', warn:'⚠️', danger:'🚨' };
+        return [
+          '<div class="zd-ni ' + (isPersonal ? 'personal' : '') + '" style="--ni-delay:' + (i * 40) + 'ms">',
+            '<div class="zd-ni-icon ' + esc(type) + '">' + (icons[type] || '📢') + '</div>',
+            '<div class="zd-ni-body">',
+              '<div class="zd-ni-title">',
+                esc(n.title || ''),
+                isPersonal ? '<span class="zd-ni-personal-tag">Personal</span>' : '',
+              '</div>',
+              '<div class="zd-ni-msg">' + esc(n.message || n.body || '') + '</div>',
+              '<div class="zd-ni-time">' + timeAgo(n.created_at) + '</div>',
+            '</div>',
+          '</div>'
+        ].join('');
+      }).join('');
 
-    } catch (err) {
-      panel.innerHTML = _headerHTML(isAdmin) +
-        '<div class="np-body"><div class="np-empty"><div class="np-empty-title">Failed to load</div></div></div>';
-      _positionPanel(panel);
+    } catch(err) {
+      list.innerHTML = emptyHTML('Could not load', 'Something went wrong. Try again.');
     }
   }
 
-  // FIX: Removed inline onclick="ZDNotif.xxx()" from all header buttons.
-  //      Clicks are now handled by the delegated listener on the panel element
-  //      (set up once in _ensurePanel), so they survive innerHTML rebuilds.
-  function _headerHTML(isAdmin) {
+  function emptyHTML(title, sub) {
     return [
-      '<div class="np-header">',
-        '<div class="np-header-left">',
-          '<span class="np-header-title">Alerts</span>',
+      '<div class="zd-ni-empty">',
+        '<div class="zd-ni-empty-icon">',
+          '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.5">',
+            '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>',
+            '<path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
+          '</svg>',
         '</div>',
-        '<div class="np-header-right">',
-          isAdmin ? [
-            '<button class="np-admin-btn np-direct-btn" style="margin-right:0.3rem">',
-              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px">',
-                '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>',
-                '<circle cx="12" cy="7" r="4"/>',
-              '</svg>',
-              'Send to User',
-            '</button>',
-            '<button class="np-admin-btn">',
-              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px">',
-                '<line x1="22" y1="2" x2="11" y2="13"/>',
-                '<polygon points="22 2 15 22 11 13 2 9 22 2"/>',
-              '</svg>',
-              'Broadcast',
-            '</button>'
-          ].join('') : '',
-          '<button class="np-close-btn" aria-label="Close">✕</button>',
-        '</div>',
+        '<div class="zd-ni-empty-title">' + esc(title) + '</div>',
+        '<div class="zd-ni-empty-sub">' + esc(sub) + '</div>',
       '</div>'
     ].join('');
   }
 
-  function _emptyBodyHTML() {
-    return [
-      '<div class="np-empty">',
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:36px;height:36px;opacity:0.25;margin-bottom:10px">',
-          '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>',
-          '<path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
-        '</svg>',
-        '<div class="np-empty-title">No alerts</div>',
-        '<div class="np-empty-sub">You\'re all caught up.</div>',
-      '</div>'
-    ].join('');
-  }
-
-  function _notifItemHTML(n) {
-    var isPersonal = n.user_id !== null;
-    var iconMap = { danger: '🚨', warn: '⚠️', success: '✅', info: '📢' };
-    var typeKey  = n.type || 'info';
-    var icon     = iconMap[typeKey] || '📢';
-    var timeStr  = _timeAgo(n.created_at);
-
-    return [
-      '<div class="np-item' + (isPersonal ? ' np-item--unread' : '') + '">',
-        '<div class="np-item-icon type-' + _escHtml(typeKey) + '">' + icon + '</div>',
-        '<div class="np-item-content">',
-          '<div class="np-item-title">'  + _escHtml(n.title   || '')           + '</div>',
-          '<div class="np-item-body">'   + _escHtml(n.message || n.body || '') + '</div>',
-          '<div class="np-item-time">'   + timeStr + (isPersonal ? ' · Personal' : '') + '</div>',
-        '</div>',
-      '</div>'
-    ].join('');
-  }
-
-  function _emptyHTML(msg) {
-    return '<div class="np-body"><div class="np-empty"><div class="np-empty-title">' + _escHtml(msg) + '</div></div></div>';
-  }
-
-  // ── 6. Badge count ───────────────────────────────────────
-  async function _refreshBadge() {
+  /* ── Badge count ──────────────────────────────────────── */
+  async function refreshBadge() {
     if (typeof currentUser === 'undefined' || !currentUser || typeof db === 'undefined') return;
-
     try {
-      var result = await db.from('notifications')
+      var r = await db.from('notifications')
         .select('id', { count: 'exact', head: true })
         .or('user_id.is.null,user_id.eq.' + currentUser.id);
-
-      var total  = result.count || 0;
-      var seen   = parseInt(localStorage.getItem('sa_notif_seen') || '0');
+      var total = r.count || 0;
+      var seen  = parseInt(localStorage.getItem('sa_notif_seen') || '0');
       var unread = Math.max(0, total - seen);
-
-      // FIX: updated badge IDs to match the new unique IDs
-      var badges = [
-        document.getElementById('notif-badge-mobile'),
-        document.getElementById('notif-badge-desktop'),
-        // Also sync the original sidebar badge if it still exists
-        document.getElementById('notif-badge')
-      ];
-      badges.forEach(function (badge) {
-        if (!badge) return;
-        if (unread > 0) {
-          badge.textContent = unread > 9 ? '9+' : String(unread);
-          badge.style.display = 'flex';
-        } else {
-          badge.style.display = 'none';
-        }
-      });
-    } catch (e) { /* silent */ }
+      var badge = document.getElementById('zd-bell-badge');
+      var pill  = document.getElementById('zd-notif-unread-pill');
+      if (badge) {
+        badge.textContent = unread > 9 ? '9+' : String(unread);
+        badge.style.display = unread > 0 ? 'flex' : 'none';
+      }
+      if (pill) {
+        pill.textContent = unread > 0 ? String(unread) + ' new' : '';
+        pill.style.display = unread > 0 ? 'inline' : 'none';
+      }
+      /* also sync legacy badge if it still exists in the DOM */
+      var legacy = document.getElementById('notif-badge');
+      if (legacy) legacy.style.display = unread > 0 ? 'inline' : 'none';
+    } catch(e) {}
   }
 
-  function _markSeen() {
+  function markSeen() {
     if (typeof currentUser === 'undefined' || typeof db === 'undefined') return;
     db.from('notifications')
       .select('id', { count: 'exact', head: true })
       .or('user_id.is.null,user_id.eq.' + currentUser.id)
-      .then(function (r) {
+      .then(function(r) {
         localStorage.setItem('sa_notif_seen', r.count || 0);
+        refreshBadge();
       });
   }
 
-  // ── 7. Admin Broadcast ───────────────────────────────────
-  function _openBroadcast() {
-    _closePanel();
+  function markAllRead() {
+    markSeen();
+    var badge = document.getElementById('zd-bell-badge');
+    var pill  = document.getElementById('zd-notif-unread-pill');
+    if (badge) badge.style.display = 'none';
+    if (pill)  pill.style.display  = 'none';
+    if (typeof showToast === 'function') showToast('All notifications marked as read');
+  }
 
-    var existing = document.getElementById('zd-broadcast-overlay');
+  /* ── Hide old sidebar Alerts nav link ─────────────────── */
+  function patchSidebarNav() {
+    document.querySelectorAll('.nav-link').forEach(function(link) {
+      if (link.dataset.page === 'notifications') {
+        var li = link.closest('li');
+        if (li) li.style.display = 'none';
+        else link.style.display = 'none';
+      }
+    });
+  }
+
+  /* ── Helpers ──────────────────────────────────────────── */
+  function isAdmin() {
+    return typeof currentProfile !== 'undefined' && currentProfile && currentProfile.role === 'admin';
+  }
+
+  function esc(str) {
+    return String(str || '')
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function timeAgo(ts) {
+    if (!ts) return '';
+    var d = Math.floor((Date.now() - new Date(ts).getTime()) / 1000);
+    if (d < 60)    return 'just now';
+    if (d < 3600)  return Math.floor(d/60) + 'm ago';
+    if (d < 86400) return Math.floor(d/3600) + 'h ago';
+    return Math.floor(d/86400) + 'd ago';
+  }
+
+  /* ── Broadcast composer ───────────────────────────────── */
+  function openBroadcast() {
+    var id = 'zd-broadcast-overlay';
+    var existing = document.getElementById(id);
     if (existing) existing.remove();
 
     var overlay = document.createElement('div');
-    overlay.id = 'zd-broadcast-overlay';
-    overlay.className = 'np-composer-overlay';
+    overlay.id = id;
+    overlay.className = 'zd-composer-overlay';
     overlay.innerHTML = [
-      '<div class="np-composer" role="dialog">',
-        '<div class="np-composer-header">',
-          '<div class="np-composer-title">',
-            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px">',
-              '<line x1="22" y1="2" x2="11" y2="13"/>',
-              '<polygon points="22 2 15 22 11 13 2 9 22 2"/>',
+      '<div class="zd-composer">',
+        '<div class="zd-composer-head">',
+          '<div class="zd-composer-head-icon">',
+            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">',
+              '<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>',
             '</svg>',
-            'Broadcast Notification',
           '</div>',
-          '<button class="np-close-btn np-broadcast-close">✕</button>',
+          '<span class="zd-composer-title">Broadcast to All Users</span>',
+          '<button class="zd-nh-close zd-close-this">✕</button>',
         '</div>',
-        '<div class="np-composer-body">',
-          '<div class="np-field">',
-            '<label class="np-label">Type</label>',
-            '<div class="np-type-grid">',
-              '<label class="np-type-option np-type-info"><input type="radio" name="zd-npc-type" value="info" checked><span>📢 Info</span></label>',
-              '<label class="np-type-option np-type-success"><input type="radio" name="zd-npc-type" value="success"><span>✅ Success</span></label>',
-              '<label class="np-type-option np-type-warn"><input type="radio" name="zd-npc-type" value="warn"><span>⚠️ Warning</span></label>',
-              '<label class="np-type-option np-type-danger"><input type="radio" name="zd-npc-type" value="danger"><span>🚨 Alert</span></label>',
-            '</div>',
+        '<div class="zd-composer-body">',
+          typeGridHTML('bc'),
+          '<div class="zd-field">',
+            '<label class="zd-label">Title <span style="color:var(--red)">*</span></label>',
+            '<input class="zd-input" id="zd-bc-title" placeholder="Notification title" maxlength="80">',
+            '<div class="zd-char-count" id="zd-bc-title-c">0 / 80</div>',
           '</div>',
-          '<div class="np-field">',
-            '<label class="np-label">Title <span style="color:var(--red)">*</span></label>',
-            '<input class="np-input" id="zd-npc-title" placeholder="Notification title" maxlength="80"/>',
-            '<div class="np-char-count" id="zd-npc-title-count">0 / 80</div>',
-          '</div>',
-          '<div class="np-field">',
-            '<label class="np-label">Message <span style="color:var(--red)">*</span></label>',
-            '<textarea class="np-textarea" id="zd-npc-body" placeholder="Message to all users…" rows="3" maxlength="280"></textarea>',
-            '<div class="np-char-count" id="zd-npc-body-count">0 / 280</div>',
+          '<div class="zd-field">',
+            '<label class="zd-label">Message <span style="color:var(--red)">*</span></label>',
+            '<textarea class="zd-textarea" id="zd-bc-msg" placeholder="Message to all users…" maxlength="280"></textarea>',
+            '<div class="zd-char-count" id="zd-bc-msg-c">0 / 280</div>',
           '</div>',
         '</div>',
-        '<div class="np-composer-footer">',
-          '<button class="np-cancel-btn np-broadcast-close">Cancel</button>',
-          '<button class="np-send-btn" id="zd-npc-send-btn">',
-            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px">',
-              '<line x1="22" y1="2" x2="11" y2="13"/>',
-              '<polygon points="22 2 15 22 11 13 2 9 22 2"/>',
+        '<div class="zd-composer-foot">',
+          '<button class="zd-btn-cancel zd-close-this">Cancel</button>',
+          '<button class="zd-btn-send" id="zd-bc-send">',
+            '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">',
+              '<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>',
             '</svg>',
             'Send Now',
           '</button>',
@@ -465,127 +745,71 @@
     ].join('');
 
     document.body.appendChild(overlay);
-
-    // Char counters
-    ['title', 'body'].forEach(function (field) {
-      var el    = document.getElementById('zd-npc-' + field);
-      var count = document.getElementById('zd-npc-' + field + '-count');
-      if (el && count) {
-        el.addEventListener('input', function () {
-          count.textContent = el.value.length + ' / ' + el.maxLength;
-        });
-      }
+    wireTypeGrid(overlay, 'bc');
+    wireCharCount(overlay, 'zd-bc-title', 'zd-bc-title-c');
+    wireCharCount(overlay, 'zd-bc-msg', 'zd-bc-msg-c');
+    overlay.querySelectorAll('.zd-close-this').forEach(function(b) {
+      b.addEventListener('click', function() { overlay.remove(); });
     });
-
-    // Send button
-    var sendBtn = document.getElementById('zd-npc-send-btn');
-    if (sendBtn) sendBtn.addEventListener('click', _sendBroadcast);
-
-    // Close buttons (✕ and Cancel) — use class instead of inline onclick
-    overlay.querySelectorAll('.np-broadcast-close').forEach(function (btn) {
-      btn.addEventListener('click', function () { overlay.remove(); });
-    });
-
-    // Close on backdrop click
-    overlay.addEventListener('click', function (e) {
-      if (e.target === overlay) overlay.remove();
-    });
-
-    requestAnimationFrame(function () {
-      overlay.classList.add('np-composer-overlay--open');
-    });
+    overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+    document.getElementById('zd-bc-send').addEventListener('click', function() { sendBroadcast(overlay); });
+    requestAnimationFrame(function() { overlay.classList.add('open'); });
   }
 
-  // ── Send to a specific user by email ────────────────────
-  function _openDirect() {
-    _closePanel();
-
-    var existing = document.getElementById('zd-direct-overlay');
+  /* ── Direct composer ──────────────────────────────────── */
+  function openDirect() {
+    var id = 'zd-direct-overlay';
+    var existing = document.getElementById(id);
     if (existing) existing.remove();
 
     var overlay = document.createElement('div');
-    overlay.id = 'zd-direct-overlay';
-    overlay.className = 'np-composer-overlay';
+    overlay.id = id;
+    overlay.className = 'zd-composer-overlay';
     overlay.innerHTML = [
-      '<div class="np-composer" role="dialog">',
-        '<div class="np-composer-header">',
-          '<div class="np-composer-title">',
-            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px">',
-              '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>',
-              '<circle cx="12" cy="7" r="4"/>',
+      '<div class="zd-composer">',
+        '<div class="zd-composer-head">',
+          '<div class="zd-composer-head-icon">',
+            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">',
+              '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
             '</svg>',
-            'Send to User',
           '</div>',
-          '<button class="np-close-btn np-direct-close">✕</button>',
+          '<span class="zd-composer-title">Send to User</span>',
+          '<button class="zd-nh-close zd-close-this">✕</button>',
         '</div>',
-
-        '<div class="np-composer-body">',
-
-          // ── Email lookup ─────────────────────────────
-          '<div class="np-field">',
-            '<label class="np-label">Recipient Email <span style="color:var(--red)">*</span></label>',
-            '<div style="display:flex;gap:0.5rem;align-items:center">',
-              '<input class="np-input" id="zd-direct-email" placeholder="user@example.com" type="email" style="flex:1"/>',
-              '<button id="zd-direct-lookup-btn" style="',
-                'padding:0.55rem 0.85rem;background:var(--accent-glow);border:1px solid var(--accent);',
-                'border-radius:var(--radius-xs);color:var(--accent);font-size:0.78rem;font-weight:700;',
-                'cursor:pointer;white-space:nowrap;font-family:\'Space Grotesk\',sans-serif;',
-                'transition:all 0.18s;letter-spacing:0.04em">',
-                'Look Up',
-              '</button>',
+        '<div class="zd-composer-body">',
+          '<div class="zd-field">',
+            '<label class="zd-label">Recipient Email <span style="color:var(--red)">*</span></label>',
+            '<div class="zd-lookup-row">',
+              '<input class="zd-input" id="zd-dr-email" type="email" placeholder="user@example.com" style="flex:1">',
+              '<button class="zd-lookup-btn" id="zd-dr-lookup">Look Up</button>',
             '</div>',
-            // User preview card — shown after successful lookup
-            '<div id="zd-direct-user-preview" style="display:none;margin-top:0.6rem;',
-              'background:var(--bg2);border:1px solid var(--border-hover);border-radius:var(--radius-xs);',
-              'padding:0.6rem 0.8rem;display:none;align-items:center;gap:0.6rem">',
-              '<div id="zd-direct-user-avatar" style="',
-                'width:34px;height:34px;border-radius:50%;background:var(--bg3);',
-                'border:2px solid var(--border-hover);display:flex;align-items:center;',
-                'justify-content:center;overflow:hidden;flex-shrink:0;font-size:1.1rem">',
-                '👤',
-              '</div>',
+            '<div class="zd-user-preview" id="zd-dr-preview">',
+              '<div class="zd-user-avatar" id="zd-dr-avatar">👤</div>',
               '<div style="flex:1;min-width:0">',
-                '<div id="zd-direct-user-name" style="font-size:0.85rem;font-weight:700;color:var(--text);font-family:\'Space Grotesk\',sans-serif"></div>',
-                '<div id="zd-direct-user-email-disp" style="font-size:0.72rem;color:var(--text3);font-family:\'DM Mono\',monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>',
+                '<div class="zd-user-name" id="zd-dr-name"></div>',
+                '<div class="zd-user-email" id="zd-dr-email-disp"></div>',
               '</div>',
-              '<div id="zd-direct-user-check" style="color:var(--green);font-size:1rem">✓</div>',
+              '<span style="color:var(--green);font-size:1.1rem">✓</span>',
             '</div>',
-            '<div id="zd-direct-lookup-err" style="font-size:0.72rem;color:var(--red);margin-top:0.3rem;display:none"></div>',
+            '<div class="zd-err" id="zd-dr-err"></div>',
           '</div>',
-
-          // ── Type ──────────────────────────────────────
-          '<div class="np-field">',
-            '<label class="np-label">Type</label>',
-            '<div class="np-type-grid">',
-              '<label class="np-type-option np-type-info"><input type="radio" name="zd-direct-type" value="info" checked><span>📢 Info</span></label>',
-              '<label class="np-type-option np-type-success"><input type="radio" name="zd-direct-type" value="success"><span>✅ Success</span></label>',
-              '<label class="np-type-option np-type-warn"><input type="radio" name="zd-direct-type" value="warn"><span>⚠️ Warning</span></label>',
-              '<label class="np-type-option np-type-danger"><input type="radio" name="zd-direct-type" value="danger"><span>🚨 Alert</span></label>',
-            '</div>',
+          typeGridHTML('dr'),
+          '<div class="zd-field">',
+            '<label class="zd-label">Title <span style="color:var(--red)">*</span></label>',
+            '<input class="zd-input" id="zd-dr-title" placeholder="Notification title" maxlength="80">',
+            '<div class="zd-char-count" id="zd-dr-title-c">0 / 80</div>',
           '</div>',
-
-          // ── Title ─────────────────────────────────────
-          '<div class="np-field">',
-            '<label class="np-label">Title <span style="color:var(--red)">*</span></label>',
-            '<input class="np-input" id="zd-direct-title" placeholder="Notification title" maxlength="80"/>',
-            '<div class="np-char-count" id="zd-direct-title-count">0 / 80</div>',
+          '<div class="zd-field">',
+            '<label class="zd-label">Message <span style="color:var(--red)">*</span></label>',
+            '<textarea class="zd-textarea" id="zd-dr-msg" placeholder="Personal message…" maxlength="280"></textarea>',
+            '<div class="zd-char-count" id="zd-dr-msg-c">0 / 280</div>',
           '</div>',
-
-          // ── Message ───────────────────────────────────
-          '<div class="np-field">',
-            '<label class="np-label">Message <span style="color:var(--red)">*</span></label>',
-            '<textarea class="np-textarea" id="zd-direct-body" placeholder="Personal message to this user…" rows="3" maxlength="280"></textarea>',
-            '<div class="np-char-count" id="zd-direct-body-count">0 / 280</div>',
-          '</div>',
-
         '</div>',
-
-        '<div class="np-composer-footer">',
-          '<button class="np-cancel-btn np-direct-close">Cancel</button>',
-          '<button class="np-send-btn" id="zd-direct-send-btn" disabled style="opacity:0.4;cursor:not-allowed">',
-            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px">',
-              '<line x1="22" y1="2" x2="11" y2="13"/>',
-              '<polygon points="22 2 15 22 11 13 2 9 22 2"/>',
+        '<div class="zd-composer-foot">',
+          '<button class="zd-btn-cancel zd-close-this">Cancel</button>',
+          '<button class="zd-btn-send" id="zd-dr-send" disabled style="opacity:0.45;cursor:not-allowed">',
+            '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">',
+              '<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>',
             '</svg>',
             'Send',
           '</button>',
@@ -594,268 +818,185 @@
     ].join('');
 
     document.body.appendChild(overlay);
-
-    // ── Char counters ──────────────────────────────────
-    ['title', 'body'].forEach(function (field) {
-      var el    = document.getElementById('zd-direct-' + field);
-      var count = document.getElementById('zd-direct-' + field + '-count');
-      if (el && count) {
-        el.addEventListener('input', function () {
-          count.textContent = el.value.length + ' / ' + el.maxLength;
-        });
-      }
+    wireTypeGrid(overlay, 'dr');
+    wireCharCount(overlay, 'zd-dr-title', 'zd-dr-title-c');
+    wireCharCount(overlay, 'zd-dr-msg', 'zd-dr-msg-c');
+    overlay.querySelectorAll('.zd-close-this').forEach(function(b) {
+      b.addEventListener('click', function() { overlay.remove(); });
     });
+    overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
 
-    // ── Look Up button ─────────────────────────────────
-    var lookupBtn = document.getElementById('zd-direct-lookup-btn');
-    var emailInput = document.getElementById('zd-direct-email');
-    var sendBtn = document.getElementById('zd-direct-send-btn');
-
-    lookupBtn.addEventListener('click', async function () {
-      var email = emailInput.value.trim().toLowerCase();
-      var errEl   = document.getElementById('zd-direct-lookup-err');
-      var preview = document.getElementById('zd-direct-user-preview');
-
-      errEl.style.display   = 'none';
-      preview.style.display = 'none';
-      sendBtn.disabled      = true;
-      sendBtn.style.opacity = '0.4';
-      sendBtn.style.cursor  = 'not-allowed';
-      overlay._resolvedUserId = null;
-
-      if (!email || !email.includes('@')) {
-        errEl.textContent   = 'Enter a valid email address.';
-        errEl.style.display = 'block';
-        return;
-      }
-
-      lookupBtn.textContent = 'Looking up…';
-      lookupBtn.disabled    = true;
-
+    /* Lookup */
+    var lookupBtn = document.getElementById('zd-dr-lookup');
+    var emailIn   = document.getElementById('zd-dr-email');
+    var sendBtn   = document.getElementById('zd-dr-send');
+    lookupBtn.addEventListener('click', async function() {
+      var email = emailIn.value.trim().toLowerCase();
+      var errEl = document.getElementById('zd-dr-err');
+      var prev  = document.getElementById('zd-dr-preview');
+      errEl.className = 'zd-err'; prev.className = 'zd-user-preview';
+      overlay._uid = null; sendBtn.disabled = true; sendBtn.style.opacity = '0.45';
+      if (!email || !email.includes('@')) { errEl.textContent = 'Enter a valid email.'; errEl.classList.add('show'); return; }
+      lookupBtn.textContent = 'Looking up…'; lookupBtn.disabled = true;
       try {
-        // Look up user by email in the profiles table
-        var result = await db.from('profiles')
-          .select('id, name, email, avatar_url')
-          .eq('email', email)
-          .single();
-
-        if (result.error || !result.data) {
-          throw new Error('No user found with that email address.');
-        }
-
-        var user = result.data;
-        overlay._resolvedUserId = user.id;
-
-        // Show the user preview card
-        var nameEl   = document.getElementById('zd-direct-user-name');
-        var emailEl  = document.getElementById('zd-direct-user-email-disp');
-        var avatarEl = document.getElementById('zd-direct-user-avatar');
-
-        nameEl.textContent  = user.name || 'Unknown';
-        emailEl.textContent = user.email || email;
-
-        if (user.avatar_url) {
-          avatarEl.innerHTML = '<img src="' + _escHtml(user.avatar_url) + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
-        } else {
-          avatarEl.textContent = '👤';
-        }
-
-        preview.style.display = 'flex';
-
-        // Enable Send button now that we have a valid user
-        sendBtn.disabled      = false;
-        sendBtn.style.opacity = '1';
-        sendBtn.style.cursor  = 'pointer';
-
-      } catch (err) {
-        errEl.textContent   = '❌ ' + err.message;
-        errEl.style.display = 'block';
+        var r = await db.from('profiles').select('id,name,email,avatar_url').eq('email', email).single();
+        if (r.error || !r.data) throw new Error('No user found with that email.');
+        var u = r.data;
+        overlay._uid = u.id;
+        document.getElementById('zd-dr-name').textContent = u.name || 'Unknown';
+        document.getElementById('zd-dr-email-disp').textContent = u.email || email;
+        var av = document.getElementById('zd-dr-avatar');
+        av.innerHTML = u.avatar_url ? '<img src="' + esc(u.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">' : '👤';
+        prev.classList.add('show');
+        sendBtn.disabled = false; sendBtn.style.opacity = '1'; sendBtn.style.cursor = 'pointer';
+      } catch(err) {
+        errEl.textContent = '❌ ' + err.message; errEl.classList.add('show');
       } finally {
-        lookupBtn.textContent = 'Look Up';
-        lookupBtn.disabled    = false;
+        lookupBtn.textContent = 'Look Up'; lookupBtn.disabled = false;
       }
     });
+    emailIn.addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); lookupBtn.click(); } });
+    sendBtn.addEventListener('click', function() { sendDirect(overlay); });
+    requestAnimationFrame(function() { overlay.classList.add('open'); });
+  }
 
-    // Also trigger lookup on Enter in email field
-    emailInput.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter') { e.preventDefault(); lookupBtn.click(); }
-    });
+  /* ── Type grid builder ─────────────────────────────────── */
+  function typeGridHTML(prefix) {
+    var types = [
+      { v:'info',    label:'📢 Info' },
+      { v:'success', label:'✅ Success' },
+      { v:'warn',    label:'⚠️ Warning' },
+      { v:'danger',  label:'🚨 Alert' }
+    ];
+    return '<div class="zd-field"><label class="zd-label">Type</label><div class="zd-type-grid">' +
+      types.map(function(t) {
+        return '<label class="zd-type-opt" data-type="' + t.v + '" data-prefix="' + prefix + '">' +
+          '<input type="radio" name="zd-' + prefix + '-type" value="' + t.v + '"' + (t.v === 'info' ? ' checked' : '') + '>' +
+          t.label + '</label>';
+      }).join('') +
+    '</div></div>';
+  }
 
-    // ── Send button ────────────────────────────────────
-    sendBtn.addEventListener('click', function () { _sendDirect(overlay); });
-
-    // ── Close buttons ──────────────────────────────────
-    overlay.querySelectorAll('.np-direct-close').forEach(function (btn) {
-      btn.addEventListener('click', function () { overlay.remove(); });
-    });
-    overlay.addEventListener('click', function (e) {
-      if (e.target === overlay) overlay.remove();
-    });
-
-    requestAnimationFrame(function () {
-      overlay.classList.add('np-composer-overlay--open');
-      emailInput.focus();
+  function wireTypeGrid(container, prefix) {
+    container.querySelectorAll('.zd-type-opt[data-prefix="' + prefix + '"]').forEach(function(opt) {
+      opt.addEventListener('click', function() {
+        container.querySelectorAll('.zd-type-opt[data-prefix="' + prefix + '"]').forEach(function(o) {
+          o.className = 'zd-type-opt';
+          o.setAttribute('data-prefix', prefix);
+          o.setAttribute('data-type', o.getAttribute('data-type'));
+        });
+        var type = opt.getAttribute('data-type');
+        opt.className = 'zd-type-opt sel-' + type;
+        var radio = opt.querySelector('input[type=radio]');
+        if (radio) radio.checked = true;
+      });
     });
   }
 
-  async function _sendDirect(overlay) {
-    var titleEl   = document.getElementById('zd-direct-title');
-    var bodyEl    = document.getElementById('zd-direct-body');
-    var sendBtn   = document.getElementById('zd-direct-send-btn');
-    var userId    = overlay._resolvedUserId;
-    var userEmail = document.getElementById('zd-direct-user-email-disp');
-
-    var title   = titleEl && titleEl.value.trim();
-    var message = bodyEl  && bodyEl.value.trim();
-
-    if (!userId) {
-      if (typeof showToast === 'function') showToast('Look up a user first');
-      return;
-    }
-    if (!title) {
-      if (typeof showToast === 'function') showToast('Title is required');
-      titleEl && titleEl.focus();
-      return;
-    }
-    if (!message) {
-      if (typeof showToast === 'function') showToast('Message is required');
-      bodyEl && bodyEl.focus();
-      return;
-    }
-
-    sendBtn.disabled    = true;
-    sendBtn.textContent = 'Sending…';
-
-    try {
-      var sessionResult = await db.auth.getSession();
-      var session = sessionResult.data && sessionResult.data.session;
-      if (!session) throw new Error('Not authenticated');
-
-      var EDGE_BASE = window.SUPABASE_URL || '';
-      var res = await fetch(EDGE_BASE + '/functions/v1/send-notification', {
-        method: 'POST',
-        headers: {
-          'Content-Type':  'application/json',
-          'Authorization': 'Bearer ' + session.access_token
-        },
-        body: JSON.stringify({
-          title:   title,
-          message: message,
-          user_id: userId    // ← specific user, not null broadcast
-        })
+  function wireCharCount(container, inputId, countId) {
+    var input = document.getElementById(inputId);
+    var count = document.getElementById(countId);
+    if (input && count) {
+      input.addEventListener('input', function() {
+        count.textContent = input.value.length + ' / ' + input.maxLength;
       });
+    }
+  }
 
+  /* ── Send broadcast ───────────────────────────────────── */
+  async function sendBroadcast(overlay) {
+    var title   = (document.getElementById('zd-bc-title') || {}).value || '';
+    var message = (document.getElementById('zd-bc-msg')   || {}).value || '';
+    var sendBtn = document.getElementById('zd-bc-send');
+    title = title.trim(); message = message.trim();
+    if (!title)   { toast('Title is required'); return; }
+    if (!message) { toast('Message is required'); return; }
+    sendBtn.disabled = true; sendBtn.textContent = 'Sending…';
+    try {
+      var session = await getSession();
+      var res = await fetch(window.SUPABASE_URL + '/functions/v1/send-notification', {
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token},
+        body:JSON.stringify({ title:title, message:message, user_id:null })
+      });
       var json = await res.json();
-      if (!res.ok) throw new Error(json.error || 'Failed to send');
-
-      var recipientEmail = userEmail ? userEmail.textContent : 'user';
-      if (typeof showToast === 'function') {
-        showToast('✅ Notification sent to ' + recipientEmail + '!');
-      }
+      if (!res.ok) throw new Error(json.error || 'Failed');
+      toast('✅ Broadcast sent!');
       overlay.remove();
-      _refreshBadge();
-
-    } catch (err) {
-      if (typeof showToast === 'function') showToast('❌ ' + err.message);
-      sendBtn.disabled    = false;
-      sendBtn.textContent = 'Send';
+      refreshBadge();
+    } catch(err) {
+      toast('❌ ' + err.message);
+      sendBtn.disabled = false; sendBtn.textContent = 'Send Now';
     }
   }
 
-  async function _sendBroadcast() {
-    var titleEl = document.getElementById('zd-npc-title');
-    var bodyEl  = document.getElementById('zd-npc-body');
-    var sendBtn = document.getElementById('zd-npc-send-btn');
-
-    var title   = titleEl && titleEl.value.trim();
-    var message = bodyEl  && bodyEl.value.trim();
-
-    if (!title)   { if (typeof showToast === 'function') showToast('Title is required'); titleEl && titleEl.focus(); return; }
-    if (!message) { if (typeof showToast === 'function') showToast('Message is required'); bodyEl && bodyEl.focus(); return; }
-
-    sendBtn.disabled    = true;
-    sendBtn.textContent = 'Sending…';
-
+  /* ── Send direct ──────────────────────────────────────── */
+  async function sendDirect(overlay) {
+    var title   = (document.getElementById('zd-dr-title') || {}).value || '';
+    var message = (document.getElementById('zd-dr-msg')   || {}).value || '';
+    var sendBtn = document.getElementById('zd-dr-send');
+    title = title.trim(); message = message.trim();
+    if (!overlay._uid) { toast('Look up a user first'); return; }
+    if (!title)   { toast('Title is required'); return; }
+    if (!message) { toast('Message is required'); return; }
+    sendBtn.disabled = true; sendBtn.textContent = 'Sending…';
     try {
-      var sessionResult = await db.auth.getSession();
-      var session = sessionResult.data && sessionResult.data.session;
-      if (!session) throw new Error('Not authenticated');
-
-      var EDGE_BASE = window.SUPABASE_URL || '';
-      var res = await fetch(EDGE_BASE + '/functions/v1/send-notification', {
-        method: 'POST',
-        headers: {
-          'Content-Type':  'application/json',
-          'Authorization': 'Bearer ' + session.access_token
-        },
-        body: JSON.stringify({ title: title, message: message, user_id: null })
+      var session = await getSession();
+      var res = await fetch(window.SUPABASE_URL + '/functions/v1/send-notification', {
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token},
+        body:JSON.stringify({ title:title, message:message, user_id:overlay._uid })
       });
-
       var json = await res.json();
-      if (!res.ok) throw new Error(json.error || 'Failed to send');
-
-      if (typeof showToast === 'function') showToast('✅ Notification broadcast sent!');
-      var overlay = document.getElementById('zd-broadcast-overlay');
-      if (overlay) overlay.remove();
-      _refreshBadge();
-
-    } catch (err) {
-      if (typeof showToast === 'function') showToast('❌ ' + err.message);
-      sendBtn.disabled    = false;
-      sendBtn.textContent = 'Send Now';
+      if (!res.ok) throw new Error(json.error || 'Failed');
+      toast('✅ Notification sent!');
+      overlay.remove();
+      refreshBadge();
+    } catch(err) {
+      toast('❌ ' + err.message);
+      sendBtn.disabled = false; sendBtn.textContent = 'Send';
     }
   }
 
-  // ── 8. Helpers ───────────────────────────────────────────
-  function _isAdmin() {
-    return typeof currentProfile !== 'undefined' && currentProfile && currentProfile.role === 'admin';
+  async function getSession() {
+    var r = await db.auth.getSession();
+    if (!r.data || !r.data.session) throw new Error('Not authenticated');
+    return r.data.session;
   }
 
-  function _escHtml(str) {
-    if (!str) return '';
-    return String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
+  function toast(msg) {
+    if (typeof showToast === 'function') showToast(msg);
+    else console.log('[ZDNotif]', msg);
   }
 
-  function _timeAgo(ts) {
-    if (!ts) return '';
-    var diff = Math.floor((Date.now() - new Date(ts).getTime()) / 1000);
-    if (diff < 60)    return 'just now';
-    if (diff < 3600)  return Math.floor(diff / 60)   + 'm ago';
-    if (diff < 86400) return Math.floor(diff / 3600)  + 'h ago';
-    return Math.floor(diff / 86400) + 'd ago';
-  }
-
-  // ── 9. Public API ─────────────────────────────────────────
+  /* ── Public API ───────────────────────────────────────── */
   window.ZDNotif = {
-    toggle:        _toggle,
-    close:         _closePanel,
-    open:          _openPanel,
-    openBroadcast: _openBroadcast,
-    openDirect:    _openDirect,
-    _send:         _sendBroadcast,
-    _sendDirect:   _sendDirect,
-    _markAllRead: function () {
-      _markSeen();
-      var badges = [
-        document.getElementById('notif-badge-mobile'),
-        document.getElementById('notif-badge-desktop'),
-        document.getElementById('notif-badge')
-      ];
-      badges.forEach(function (b) { if (b) b.style.display = 'none'; });
-      if (typeof showToast === 'function') showToast('All notifications marked as read');
-    },
-    refresh: _refreshBadge
+    open:          openPanel,
+    close:         closePanel,
+    toggle:        togglePanel,
+    refresh:       refreshBadge,
+    openBroadcast: openBroadcast,
+    openDirect:    openDirect
   };
 
-  // Patch the existing loadNotificationCount so it updates new badges too
-  var _origLoadNotifCount = window.loadNotificationCount;
-  window.loadNotificationCount = function () {
-    _refreshBadge();
-    if (typeof _origLoadNotifCount === 'function') _origLoadNotifCount();
-  };
+  /* Patch legacy loadNotificationCount if it exists */
+  window.loadNotificationCount = refreshBadge;
+
+  /* ── INIT ─────────────────────────────────────────────── */
+  function init() {
+    injectCSS();
+    buildBell();
+    patchSidebarNav();
+
+    /* Start badge polling after a short delay (wait for auth) */
+    setTimeout(refreshBadge, 1500);
+    setInterval(refreshBadge, 90000);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 
 })();
