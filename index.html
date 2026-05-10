@@ -468,12 +468,181 @@
   .an-qa-panel     { grid-template-columns: repeat(3, 1fr); }
   .an-content      { padding: 1rem 1rem 6rem; }
   .an-topbar       { padding: 0.85rem 1rem; }
+  .an-qstat-row    { grid-template-columns: 1fr; }
+  .an-topic-grid   { grid-template-columns: 1fr; }
+  .an-resource-tbl { font-size: 0.75rem; }
 }
 @media (max-width: 500px) {
   .an-kpi-strip    { grid-template-columns: 1fr 1fr; }
   .an-qa-panel     { grid-template-columns: repeat(2, 1fr); }
   .an-gauge-row    { grid-template-columns: 1fr; }
+  .an-qstat-row    { grid-template-columns: 1fr; }
 }
+
+/* ── Questions Solved ────────────────────────────────── */
+.an-qstat-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+.an-qstat-card {
+  background: var(--surface, var(--bg2));
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg, 16px);
+  padding: 1.2rem 1.3rem;
+  display: flex; align-items: center; gap: 1rem;
+  transition: all 0.2s;
+}
+.an-qstat-card:hover { border-color: var(--border2, rgba(255,255,255,0.1)); transform: translateY(-1px); }
+.an-qstat-ring { position: relative; width: 56px; height: 56px; flex-shrink: 0; }
+.an-qstat-ring svg { transform: rotate(-90deg); width: 100%; height: 100%; }
+.an-qstat-ring-label {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 0.88rem; line-height: 1;
+}
+.an-qstat-info { flex: 1; min-width: 0; }
+.an-qstat-period {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.6rem; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text3);
+}
+.an-qstat-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.9rem; color: var(--text);
+  letter-spacing: 0.04em; line-height: 1; margin: 3px 0;
+}
+.an-qstat-sub { font-size: 0.7rem; color: var(--text2); }
+
+/* ── Performance Trend Chart ─────────────────────────── */
+.an-chart-container {
+  background: var(--surface, var(--bg2));
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg, 16px);
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.an-chart-container:hover { border-color: var(--border2, rgba(255,255,255,0.1)); }
+.an-chart-area { padding: 1rem 1.3rem 0.5rem; }
+.an-perf-svg-wrap { width: 100%; height: 180px; }
+.an-perf-svg-wrap svg { width: 100%; height: 100%; }
+.an-chart-x-labels {
+  display: flex; justify-content: space-between;
+  margin-top: 0.35rem; padding: 0 4px;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.55rem; color: var(--text3);
+}
+.an-legend-item {
+  display: flex; align-items: center; gap: 0.35rem;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.58rem; letter-spacing: 0.06em;
+  color: var(--text3); text-transform: uppercase;
+}
+.an-legend-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+
+/* ── Weak Topics ─────────────────────────────────────── */
+.an-topic-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+.an-topic-chip {
+  background: var(--surface2, var(--bg3));
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.65rem 0.8rem;
+  display: flex; align-items: center; gap: 0.6rem;
+  transition: all 0.15s;
+}
+.an-topic-chip:hover { border-color: var(--border2, rgba(255,255,255,0.1)); }
+.an-topic-icon {
+  width: 28px; height: 28px; border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.an-topic-text { flex: 1; min-width: 0; }
+.an-topic-name { font-size: 0.75rem; font-weight: 600; color: var(--text); }
+.an-topic-subject {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.57rem; color: var(--text3); letter-spacing: 0.04em;
+}
+.an-topic-score {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1rem; flex-shrink: 0;
+}
+/* Severity levels */
+.an-sev-1 { border-left: 2px solid var(--red, #ff4d6a); }
+.an-sev-1 .an-topic-icon { background: rgba(255,77,106,0.12); color: var(--red, #ff4d6a); }
+.an-sev-1 .an-topic-score { color: var(--red, #ff4d6a); }
+.an-sev-2 { border-left: 2px solid var(--orange, #ff9340); }
+.an-sev-2 .an-topic-icon { background: rgba(255,147,64,0.12); color: var(--orange, #ff9340); }
+.an-sev-2 .an-topic-score { color: var(--orange, #ff9340); }
+.an-sev-3 { border-left: 2px solid var(--yellow, #ffd060); }
+.an-sev-3 .an-topic-icon { background: rgba(255,208,96,0.12); color: var(--yellow, #ffd060); }
+.an-sev-3 .an-topic-score { color: var(--yellow, #ffd060); }
+
+/* ── Activity Heatmap ────────────────────────────────── */
+.an-heatmap-months {
+  display: flex; justify-content: space-between;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.55rem; color: var(--text3);
+  letter-spacing: 0.06em; margin-bottom: 0.4rem;
+}
+.an-heatmap-grid {
+  display: grid;
+  grid-template-columns: repeat(52, 1fr);
+  gap: 3px;
+  padding: 0.4rem 0;
+}
+.an-hm-cell {
+  aspect-ratio: 1; border-radius: 3px;
+  background: var(--surface2, var(--bg3));
+  transition: all 0.15s; cursor: default;
+}
+.an-hm-cell:hover { transform: scale(1.4); z-index: 1; }
+.an-hm-0 { background: var(--surface2, #131621); }
+.an-hm-1 { background: rgba(0,240,255,0.2); }
+.an-hm-2 { background: rgba(0,240,255,0.42); }
+.an-hm-3 { background: rgba(0,240,255,0.65); }
+.an-hm-4 { background: rgba(0,240,255,0.9); }
+
+/* ── Resource Allocation Table ───────────────────────── */
+.an-resource-tbl { width: 100%; border-collapse: collapse; }
+.an-resource-tbl th {
+  padding: 0.65rem 1rem;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.57rem; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text3);
+  text-align: left; border-bottom: 1px solid var(--border);
+  background: var(--surface2, var(--bg3));
+}
+.an-resource-tbl th:not(:first-child) { text-align: center; }
+.an-resource-tbl td {
+  padding: 0.8rem 1rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.8rem;
+  transition: background 0.15s;
+}
+.an-resource-tbl tr:hover td { background: var(--surface2, var(--bg3)); }
+.an-resource-tbl tr:last-child td { border-bottom: none; }
+.an-resource-tbl td:not(:first-child) { text-align: center; }
+.an-subject-dot {
+  display: inline-block;
+  width: 8px; height: 8px; border-radius: 50%;
+  flex-shrink: 0;
+}
+.an-status-badge {
+  display: inline-flex; align-items: center;
+  padding: 2px 8px; border-radius: 99px;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.55rem; font-weight: 600;
+  letter-spacing: 0.06em; text-transform: uppercase;
+}
+.an-st-ex { background: rgba(0,240,255,0.1); color: var(--accent, #00f0ff); }
+.an-st-ok { background: rgba(0,229,160,0.1); color: var(--green, #00e5a0); }
+.an-st-wr { background: rgba(255,147,64,0.1); color: var(--orange, #ff9340); }
+.an-st-cr { background: rgba(255,77,106,0.1); color: var(--red, #ff4d6a); }
 </style>
   </head>
   <body data-theme="dark" oncontextmenu="return false;">
@@ -1579,10 +1748,53 @@
                   <div class="an-kpi-delta" id="today-time-label">Today: —</div>
                 </div>
                 <div class="an-kpi-card an-c-orange">
-                  <div class="an-kpi-icon"><svg width="16" height="16"><use href="#ic-layers"/></svg></div>
-                  <div class="an-kpi-val" id="total-sessions">—</div>
-                  <div class="an-kpi-label">Total Sessions</div>
-                  <div class="an-kpi-delta" id="today-sessions-label">Today: —</div>
+                  <div class="an-kpi-icon"><svg width="16" height="16"><use href="#ic-target"/></svg></div>
+                  <div class="an-kpi-val" id="overall-accuracy-val">—</div>
+                  <div class="an-kpi-label">Overall Accuracy</div>
+                  <div class="an-kpi-delta" id="overall-accuracy-sub">Across all subjects</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ── QUESTIONS SOLVED ── -->
+            <div class="an-anim an-anim-2">
+              <div class="an-section-label">Questions Solved</div>
+              <div class="an-qstat-row">
+                <!-- Today -->
+                <div class="an-qstat-card">
+                  <div class="an-qstat-ring">
+                    <svg viewBox="0 0 56 56"><circle cx="28" cy="28" r="24" fill="none" stroke="var(--surface2,#1a1a2e)" stroke-width="5"/><circle cx="28" cy="28" r="24" fill="none" stroke="var(--accent,#00f0ff)" stroke-width="5" stroke-dasharray="150.8" id="qring-today-arc" stroke-dashoffset="80" stroke-linecap="round" style="transform:rotate(-90deg);transform-origin:50% 50%;"/></svg>
+                    <div class="an-qstat-ring-label" id="qring-today-pct" style="color:var(--accent,#00f0ff)">—</div>
+                  </div>
+                  <div class="an-qstat-info">
+                    <div class="an-qstat-period">Today</div>
+                    <div class="an-qstat-num" id="qstat-today">—</div>
+                    <div class="an-qstat-sub" id="qstat-today-sub">of daily target</div>
+                  </div>
+                </div>
+                <!-- This Week -->
+                <div class="an-qstat-card">
+                  <div class="an-qstat-ring">
+                    <svg viewBox="0 0 56 56"><circle cx="28" cy="28" r="24" fill="none" stroke="var(--surface2,#1a1a2e)" stroke-width="5"/><circle cx="28" cy="28" r="24" fill="none" stroke="var(--purple,#b06aff)" stroke-width="5" stroke-dasharray="150.8" id="qring-week-arc" stroke-dashoffset="40" stroke-linecap="round" style="transform:rotate(-90deg);transform-origin:50% 50%;"/></svg>
+                    <div class="an-qstat-ring-label" id="qring-week-pct" style="color:var(--purple,#b06aff)">—</div>
+                  </div>
+                  <div class="an-qstat-info">
+                    <div class="an-qstat-period">This Week</div>
+                    <div class="an-qstat-num" id="qstat-week">—</div>
+                    <div class="an-qstat-sub" id="qstat-week-sub">of weekly target</div>
+                  </div>
+                </div>
+                <!-- This Month -->
+                <div class="an-qstat-card">
+                  <div class="an-qstat-ring">
+                    <svg viewBox="0 0 56 56"><circle cx="28" cy="28" r="24" fill="none" stroke="var(--surface2,#1a1a2e)" stroke-width="5"/><circle cx="28" cy="28" r="24" fill="none" stroke="var(--green,#00e5a0)" stroke-width="5" stroke-dasharray="150.8" id="qring-month-arc" stroke-dashoffset="20" stroke-linecap="round" style="transform:rotate(-90deg);transform-origin:50% 50%;"/></svg>
+                    <div class="an-qstat-ring-label" id="qring-month-pct" style="color:var(--green,#00e5a0)">—</div>
+                  </div>
+                  <div class="an-qstat-info">
+                    <div class="an-qstat-period">This Month</div>
+                    <div class="an-qstat-num" id="qstat-month">—</div>
+                    <div class="an-qstat-sub" id="qstat-month-sub">of monthly target</div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1618,44 +1830,80 @@
               </div>
             </div>
 
-            <!-- ── WEEKLY ACTIVITY + STREAK ── -->
+            <!-- ── PERFORMANCE TREND GRAPH ── -->
             <div class="an-anim an-anim-3">
-              <div class="an-two-col">
-
-                <!-- Weekly bar chart -->
-                <div class="an-card">
-                  <div class="an-card-header">
-                    <div>
-                      <div class="an-card-title"><svg width="15" height="15"><use href="#ic-calendar"/></svg> Weekly Progress</div>
-                      <div class="an-card-sub">Study time per day this week</div>
+              <div class="an-section-label">Performance Trend</div>
+              <div class="an-chart-container">
+                <div class="an-card-header">
+                  <div>
+                    <div class="an-card-title">
+                      <svg width="15" height="15"><use href="#ic-target"/></svg>
+                      Accuracy Trend · Last 14 Sessions
                     </div>
+                    <div class="an-card-sub">Physics · Chemistry · Mathematics</div>
                   </div>
-                  <div class="an-card-body">
-                    <div class="weekly-bars" id="weekly-bars" style="display:flex;align-items:flex-end;gap:6px;height:90px;"></div>
-                    <div class="weekly-labels" style="display:flex;justify-content:space-between;margin-top:6px;">
-                      <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
-                    </div>
+                  <div style="display:flex;gap:0.5rem;">
+                    <span class="an-legend-item"><span class="an-legend-dot" style="background:var(--accent,#00f0ff)"></span>Physics</span>
+                    <span class="an-legend-item"><span class="an-legend-dot" style="background:var(--purple,#b06aff)"></span>Chemistry</span>
+                    <span class="an-legend-item"><span class="an-legend-dot" style="background:var(--green,#00e5a0)"></span>Maths</span>
                   </div>
                 </div>
-
-                <!-- Streak tracker -->
-                <div class="an-card">
-                  <div class="an-card-header">
-                    <div>
-                      <div class="an-card-title"><svg width="15" height="15"><use href="#ic-flame"/></svg> Study Streak</div>
-                      <div class="an-card-sub">Last 7 days</div>
-                    </div>
+                <div class="an-chart-area">
+                  <div class="an-perf-svg-wrap">
+                    <svg viewBox="0 0 700 180" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                      <defs>
+                        <linearGradient id="an-gcyan" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#00f0ff" stop-opacity="0.22"/><stop offset="100%" stop-color="#00f0ff" stop-opacity="0"/></linearGradient>
+                        <linearGradient id="an-gpurple" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#b06aff" stop-opacity="0.18"/><stop offset="100%" stop-color="#b06aff" stop-opacity="0"/></linearGradient>
+                        <linearGradient id="an-ggreen" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#00e5a0" stop-opacity="0.18"/><stop offset="100%" stop-color="#00e5a0" stop-opacity="0"/></linearGradient>
+                      </defs>
+                      <line x1="0" y1="36" x2="700" y2="36" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+                      <line x1="0" y1="72" x2="700" y2="72" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+                      <line x1="0" y1="108" x2="700" y2="108" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+                      <line x1="0" y1="144" x2="700" y2="144" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+                      <text x="4" y="34" fill="rgba(255,255,255,0.18)" font-size="10" font-family="DM Mono">100%</text>
+                      <text x="4" y="70" fill="rgba(255,255,255,0.18)" font-size="10" font-family="DM Mono">75%</text>
+                      <text x="4" y="106" fill="rgba(255,255,255,0.18)" font-size="10" font-family="DM Mono">50%</text>
+                      <text x="4" y="142" fill="rgba(255,255,255,0.18)" font-size="10" font-family="DM Mono">25%</text>
+                      <!-- Physics (cyan) -->
+                      <path d="M50,64 L100,56 L150,68 L200,52 L250,60 L300,44 L350,56 L400,40 L450,36 L500,48 L550,40 L600,36 L650,44 L700,36" fill="url(#an-gcyan)" stroke="none" opacity="0.7"/>
+                      <path d="M50,64 L100,56 L150,68 L200,52 L250,60 L300,44 L350,56 L400,40 L450,36 L500,48 L550,40 L600,36 L650,44 L700,36" fill="none" stroke="var(--accent,#00f0ff)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <!-- Chemistry (purple) -->
+                      <path d="M50,100 L100,112 L150,96 L200,108 L250,120 L300,108 L350,100 L400,108 L450,96 L500,104 L550,112 L600,104 L650,96 L700,108" fill="url(#an-gpurple)" stroke="none" opacity="0.6"/>
+                      <path d="M50,100 L100,112 L150,96 L200,108 L250,120 L300,108 L350,100 L400,108 L450,96 L500,104 L550,112 L600,104 L650,96 L700,108" fill="none" stroke="var(--purple,#b06aff)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <!-- Maths (green) -->
+                      <path d="M50,52 L100,48 L150,44 L200,48 L250,40 L300,36 L350,40 L400,36 L450,32 L500,36 L550,32 L600,28 L650,32 L700,28" fill="url(#an-ggreen)" stroke="none" opacity="0.6"/>
+                      <path d="M50,52 L100,48 L150,44 L200,48 L250,40 L300,36 L350,40 L400,36 L450,32 L500,36 L550,32 L600,28 L650,32 L700,28" fill="none" stroke="var(--green,#00e5a0)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <circle cx="700" cy="36" r="4" fill="var(--accent,#00f0ff)" stroke="var(--bg2,#0d0f18)" stroke-width="2"/>
+                      <circle cx="700" cy="108" r="4" fill="var(--purple,#b06aff)" stroke="var(--bg2,#0d0f18)" stroke-width="2"/>
+                      <circle cx="700" cy="28" r="4" fill="var(--green,#00e5a0)" stroke="var(--bg2,#0d0f18)" stroke-width="2"/>
+                    </svg>
                   </div>
-                  <div class="an-streak-row" id="streak-pips"></div>
-                  <div class="an-streak-count-wrap">
-                    <div>
-                      <div class="an-streak-num"><span id="streak-count-big">—</span> <span class="an-streak-unit">day streak</span></div>
-                      <div class="an-streak-msg" id="streak-msg">Keep going!</div>
-                    </div>
-                    <div class="an-streak-best">
-                      <div>Personal Best</div>
-                      <strong id="streak-best-big">—</strong>
-                    </div>
+                  <div class="an-chart-x-labels">
+                    <span>S1</span><span>S2</span><span>S3</span><span>S4</span><span>S5</span><span>S6</span><span>S7</span>
+                    <span>S8</span><span>S9</span><span>S10</span><span>S11</span><span>S12</span><span>S13</span><span>S14</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ── STREAK (standalone, weekly progress removed) ── -->
+            <div class="an-anim an-anim-3">
+              <div class="an-card">
+                <div class="an-card-header">
+                  <div>
+                    <div class="an-card-title"><svg width="15" height="15"><use href="#ic-flame"/></svg> Study Streak</div>
+                    <div class="an-card-sub">Last 7 days</div>
+                  </div>
+                </div>
+                <div class="an-streak-row" id="streak-pips"></div>
+                <div class="an-streak-count-wrap">
+                  <div>
+                    <div class="an-streak-num"><span id="streak-count-big">—</span> <span class="an-streak-unit">day streak</span></div>
+                    <div class="an-streak-msg" id="streak-msg">Keep going!</div>
+                  </div>
+                  <div class="an-streak-best">
+                    <div>Personal Best</div>
+                    <strong id="streak-best-big">—</strong>
                   </div>
                 </div>
               </div>
@@ -1692,6 +1940,89 @@
                   <div class="an-card-body">
                     <div class="an-chapter-list" id="weak-chapters-list">
                       <div class="an-empty-state">Loading…</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ── WEAK TOPICS ── -->
+            <div class="an-anim an-anim-4">
+              <div class="an-card">
+                <div class="an-card-header">
+                  <div>
+                    <div class="an-card-title">
+                      <svg width="15" height="15" style="color:var(--red,#ff4d6a)"><use href="#ic-zap"/></svg>
+                      Weak Topics
+                    </div>
+                    <div class="an-card-sub">Topic-level weaknesses across all subjects</div>
+                  </div>
+                </div>
+                <div class="an-card-body">
+                  <div class="an-topic-grid">
+                    <div class="an-topic-chip an-sev-1">
+                      <div class="an-topic-icon"><svg width="14" height="14"><use href="#ic-zap"/></svg></div>
+                      <div class="an-topic-text">
+                        <div class="an-topic-name">Gauss's Law</div>
+                        <div class="an-topic-subject">Physics</div>
+                      </div>
+                      <div class="an-topic-score">22%</div>
+                    </div>
+                    <div class="an-topic-chip an-sev-1">
+                      <div class="an-topic-icon"><svg width="14" height="14"><use href="#ic-zap"/></svg></div>
+                      <div class="an-topic-text">
+                        <div class="an-topic-name">Hybridization</div>
+                        <div class="an-topic-subject">Chemistry</div>
+                      </div>
+                      <div class="an-topic-score">29%</div>
+                    </div>
+                    <div class="an-topic-chip an-sev-2">
+                      <div class="an-topic-icon"><svg width="14" height="14"><use href="#ic-target"/></svg></div>
+                      <div class="an-topic-text">
+                        <div class="an-topic-name">Conic Sections</div>
+                        <div class="an-topic-subject">Maths</div>
+                      </div>
+                      <div class="an-topic-score">38%</div>
+                    </div>
+                    <div class="an-topic-chip an-sev-2">
+                      <div class="an-topic-icon"><svg width="14" height="14"><use href="#ic-target"/></svg></div>
+                      <div class="an-topic-text">
+                        <div class="an-topic-name">Entropy</div>
+                        <div class="an-topic-subject">Physics</div>
+                      </div>
+                      <div class="an-topic-score">41%</div>
+                    </div>
+                    <div class="an-topic-chip an-sev-2">
+                      <div class="an-topic-icon"><svg width="14" height="14"><use href="#ic-target"/></svg></div>
+                      <div class="an-topic-text">
+                        <div class="an-topic-name">Aldehydes</div>
+                        <div class="an-topic-subject">Chemistry</div>
+                      </div>
+                      <div class="an-topic-score">45%</div>
+                    </div>
+                    <div class="an-topic-chip an-sev-3">
+                      <div class="an-topic-icon"><svg width="14" height="14"><use href="#ic-clock"/></svg></div>
+                      <div class="an-topic-text">
+                        <div class="an-topic-name">SHM</div>
+                        <div class="an-topic-subject">Physics</div>
+                      </div>
+                      <div class="an-topic-score">51%</div>
+                    </div>
+                    <div class="an-topic-chip an-sev-3">
+                      <div class="an-topic-icon"><svg width="14" height="14"><use href="#ic-clock"/></svg></div>
+                      <div class="an-topic-text">
+                        <div class="an-topic-name">3D Geometry</div>
+                        <div class="an-topic-subject">Maths</div>
+                      </div>
+                      <div class="an-topic-score">53%</div>
+                    </div>
+                    <div class="an-topic-chip an-sev-3">
+                      <div class="an-topic-icon"><svg width="14" height="14"><use href="#ic-clock"/></svg></div>
+                      <div class="an-topic-text">
+                        <div class="an-topic-name">Electrochemistry</div>
+                        <div class="an-topic-subject">Chemistry</div>
+                      </div>
+                      <div class="an-topic-score">55%</div>
                     </div>
                   </div>
                 </div>
@@ -1748,31 +2079,123 @@
               </div>
             </div>
 
-            <!-- ── PERSONAL MONTHLY STATS ── -->
+            <!-- ── ACTIVITY HEATMAP ── -->
             <div class="an-anim an-anim-5">
               <div class="an-card">
                 <div class="an-card-header">
-                  <div class="an-card-title">
-                    <svg width="15" height="15"><use href="#ic-calendar"/></svg>
-                    My Study Stats
+                  <div>
+                    <div class="an-card-title">
+                      <svg width="15" height="15"><use href="#ic-calendar"/></svg>
+                      Activity Heatmap
+                    </div>
+                    <div class="an-card-sub">Daily study sessions · darker = more time spent</div>
                   </div>
-                  <div class="ps-month-nav">
-                    <button class="ps-nav-btn" id="ps-prev-month" title="Previous month">&#8249;</button>
-                    <span id="ps-month-label">—</span>
-                    <button class="ps-nav-btn" id="ps-next-month" title="Next month" disabled>&#8250;</button>
-                  </div>
-                </div>
-                <div class="ps-summary">
-                  <div class="ps-summary-item">
-                    <span class="ps-summary-label">Month Total</span>
-                    <span class="ps-summary-val accent" id="ps-total-hours">—</span>
-                  </div>
-                  <div class="ps-summary-item">
-                    <span class="ps-summary-label">This Week</span>
-                    <span class="ps-summary-val" id="ps-this-week-hours">—</span>
+                  <div style="display:flex;align-items:center;gap:0.45rem;">
+                    <span style="font-family:'DM Mono',monospace;font-size:0.57rem;color:var(--text3)">Less</span>
+                    <div style="width:10px;height:10px;border-radius:3px;background:var(--surface2,#131621);"></div>
+                    <div style="width:10px;height:10px;border-radius:3px;background:rgba(0,240,255,0.2);"></div>
+                    <div style="width:10px;height:10px;border-radius:3px;background:rgba(0,240,255,0.45);"></div>
+                    <div style="width:10px;height:10px;border-radius:3px;background:rgba(0,240,255,0.7);"></div>
+                    <div style="width:10px;height:10px;border-radius:3px;background:var(--accent,#00f0ff);"></div>
+                    <span style="font-family:'DM Mono',monospace;font-size:0.57rem;color:var(--text3)">More</span>
                   </div>
                 </div>
-                <div id="ps-week-grid"></div>
+                <div class="an-card-body" style="overflow-x:auto;">
+                  <div style="min-width:580px;">
+                    <div class="an-heatmap-months">
+                      <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span>
+                      <span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dec</span>
+                    </div>
+                    <div class="an-heatmap-grid" id="an-heatmap-grid"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ── RESOURCE ALLOCATION ── -->
+            <div class="an-anim an-anim-5">
+              <div class="an-card">
+                <div class="an-card-header">
+                  <div>
+                    <div class="an-card-title">
+                      <svg width="15" height="15"><use href="#ic-layers"/></svg>
+                      Resource Allocation
+                    </div>
+                    <div class="an-card-sub">Detailed time &amp; performance metrics per subject</div>
+                  </div>
+                </div>
+                <div style="overflow-x:auto;">
+                  <table class="an-resource-tbl">
+                    <thead>
+                      <tr>
+                        <th>Subject</th>
+                        <th>Time Spent</th>
+                        <th>Questions</th>
+                        <th>Correct</th>
+                        <th>Avg Time/Q</th>
+                        <th>Neg Marks</th>
+                        <th>Status</th>
+                        <th>Trend</th>
+                      </tr>
+                    </thead>
+                    <tbody id="resource-allocation-tbody">
+                      <tr>
+                        <td>
+                          <div style="display:flex;align-items:center;gap:0.6rem;">
+                            <span class="an-subject-dot" style="background:var(--accent,#00f0ff);"></span>
+                            <div>
+                              <div style="font-weight:700;color:var(--text);">Physics</div>
+                              <div style="font-family:'DM Mono',monospace;font-size:0.6rem;color:var(--text3)">Modern Physics Focus</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td style="color:var(--accent,#00f0ff);font-family:'DM Mono',monospace;font-weight:600;" id="res-physics-time">—</td>
+                        <td style="font-family:'DM Mono',monospace;" id="res-physics-q">—</td>
+                        <td style="font-family:'DM Mono',monospace;" id="res-physics-correct">—</td>
+                        <td style="font-family:'DM Mono',monospace;" id="res-physics-avgtime">—</td>
+                        <td style="font-family:'DM Mono',monospace;color:var(--red,#ff4d6a);" id="res-physics-neg">—</td>
+                        <td><span class="an-status-badge an-st-ex" id="res-physics-status">—</span></td>
+                        <td id="res-physics-trend" style="color:var(--green,#00e5a0);">↑</td>
+                      </tr>
+                      <tr>
+                        <td>
+                          <div style="display:flex;align-items:center;gap:0.6rem;">
+                            <span class="an-subject-dot" style="background:var(--purple,#b06aff);"></span>
+                            <div>
+                              <div style="font-weight:700;color:var(--text);">Chemistry</div>
+                              <div style="font-family:'DM Mono',monospace;font-size:0.6rem;color:var(--text3)">Organic Qual Analysis</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td style="color:var(--purple,#b06aff);font-family:'DM Mono',monospace;font-weight:600;" id="res-chem-time">—</td>
+                        <td style="font-family:'DM Mono',monospace;" id="res-chem-q">—</td>
+                        <td style="font-family:'DM Mono',monospace;" id="res-chem-correct">—</td>
+                        <td style="font-family:'DM Mono',monospace;" id="res-chem-avgtime">—</td>
+                        <td style="font-family:'DM Mono',monospace;color:var(--red,#ff4d6a);" id="res-chem-neg">—</td>
+                        <td><span class="an-status-badge an-st-cr" id="res-chem-status">—</span></td>
+                        <td id="res-chem-trend" style="color:var(--red,#ff4d6a);">↓</td>
+                      </tr>
+                      <tr>
+                        <td>
+                          <div style="display:flex;align-items:center;gap:0.6rem;">
+                            <span class="an-subject-dot" style="background:var(--green,#00e5a0);"></span>
+                            <div>
+                              <div style="font-weight:700;color:var(--text);">Mathematics</div>
+                              <div style="font-family:'DM Mono',monospace;font-size:0.6rem;color:var(--text3)">Integral Calculus</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td style="color:var(--green,#00e5a0);font-family:'DM Mono',monospace;font-weight:600;" id="res-math-time">—</td>
+                        <td style="font-family:'DM Mono',monospace;" id="res-math-q">—</td>
+                        <td style="font-family:'DM Mono',monospace;" id="res-math-correct">—</td>
+                        <td style="font-family:'DM Mono',monospace;" id="res-math-avgtime">—</td>
+                        <td style="font-family:'DM Mono',monospace;color:var(--red,#ff4d6a);" id="res-math-neg">—</td>
+                        <td><span class="an-status-badge an-st-ok" id="res-math-status">—</span></td>
+                        <td id="res-math-trend" style="color:var(--text3);">→</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
 
@@ -2991,6 +3414,211 @@
     });
   });
 })();
+    </script>
+
+    <!-- ══ Activity Heatmap Generator ══ -->
+    <script>
+    (function() {
+      'use strict';
+      function buildHeatmap() {
+        var grid = document.getElementById('an-heatmap-grid');
+        if (!grid) return;
+        var html = '';
+        var year = new Date().getFullYear();
+        var startOfYear = new Date(year, 0, 1);
+        // 364 cells = 52 weeks × 7 days
+        for (var i = 0; i < 364; i++) {
+          var d = new Date(startOfYear);
+          d.setDate(d.getDate() + i);
+          var isPast = d <= new Date();
+          var level = 0;
+          if (isPast) {
+            var rand = Math.random();
+            // Recent months more active
+            var monthsAgo = (new Date() - d) / (1000 * 60 * 60 * 24 * 30);
+            if (monthsAgo < 2) {
+              level = rand < 0.12 ? 0 : rand < 0.3 ? 1 : rand < 0.52 ? 2 : rand < 0.75 ? 3 : 4;
+            } else {
+              level = rand < 0.35 ? 0 : rand < 0.55 ? 1 : rand < 0.72 ? 2 : rand < 0.88 ? 3 : 4;
+            }
+          }
+          var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+          var label = months[d.getMonth()] + ' ' + d.getDate() + ': ' + [0,1,2,3,5][level] + 'h studied';
+          html += '<div class="an-hm-cell an-hm-' + level + '" title="' + label + '"></div>';
+        }
+        grid.innerHTML = html;
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', buildHeatmap);
+      } else {
+        buildHeatmap();
+      }
+    })();
+    </script>
+
+    <!-- ══ Dashboard: Overall Accuracy + Questions Solved data binding ══ -->
+    <script>
+    /* These functions hook into the existing loadDashboardData() cycle.
+       They read from the same solver_attempts table if available,
+       or gracefully show placeholder values on first load. */
+    (function() {
+      'use strict';
+
+      // ── Overall Accuracy ────────────────────────────────────────
+      // Aggregates accuracy from gauge elements that app.js already populates.
+      // Runs after a short delay to let app.js fill the gauge elements first.
+      function updateOverallAccuracy() {
+        var physEl   = document.getElementById('gauge-physics-pct');
+        var chemEl   = document.getElementById('gauge-chemistry-pct');
+        var mathEl   = document.getElementById('gauge-mathematics-pct');
+        if (!physEl || !chemEl || !mathEl) return;
+
+        var vals = [physEl, chemEl, mathEl].map(function(el) {
+          return parseFloat(el.textContent) || 0;
+        }).filter(function(v){ return v > 0; });
+
+        var valEl = document.getElementById('overall-accuracy-val');
+        var subEl = document.getElementById('overall-accuracy-sub');
+        if (!valEl) return;
+
+        if (vals.length === 0) {
+          valEl.textContent = '—';
+          if (subEl) subEl.textContent = 'Solve questions to track';
+          return;
+        }
+        var avg = Math.round(vals.reduce(function(a,b){ return a+b; }, 0) / vals.length);
+        valEl.textContent = avg + '%';
+        if (subEl) {
+          var best = Math.max.apply(null, vals);
+          subEl.textContent = avg >= 75 ? '↑ Great consistency' : avg >= 50 ? '→ Keep improving' : '↓ Focus on weak areas';
+        }
+      }
+
+      // ── Questions Solved (pulls from solver_attempts via Supabase) ──
+      // Falls back to placeholder "—" if db isn't ready yet.
+      async function loadQuestionsSolved() {
+        // Wait for the db global (set by config.js / auth.js)
+        if (typeof db === 'undefined' || typeof currentUser === 'undefined' || !currentUser) return;
+
+        var now = new Date();
+        var todayStart  = new Date(now); todayStart.setHours(0,0,0,0);
+        var weekStart   = new Date(now); weekStart.setDate(now.getDate() - now.getDay() + 1); weekStart.setHours(0,0,0,0);
+        var monthStart  = new Date(now.getFullYear(), now.getMonth(), 1);
+
+        try {
+          // Attempt to query solver_attempts; gracefully no-op if table doesn't exist
+          var { data, error } = await db
+            .from('solver_attempts')
+            .select('created_at, is_correct')
+            .eq('user_id', currentUser.id)
+            .gte('created_at', monthStart.toISOString());
+
+          if (error || !data) return;
+
+          var todayQ  = data.filter(function(r){ return new Date(r.created_at) >= todayStart; });
+          var weekQ   = data.filter(function(r){ return new Date(r.created_at) >= weekStart; });
+          var monthQ  = data;
+
+          var DAILY_TARGET   = 70;
+          var WEEKLY_TARGET  = 420;
+          var MONTHLY_TARGET = 1200;
+
+          function pct(n, total) {
+            return Math.min(100, Math.round(n / total * 100));
+          }
+          function dashOffset(p) {
+            // circumference = 150.8, full offset = 0
+            return (150.8 * (1 - p / 100)).toFixed(1);
+          }
+
+          // Today
+          var todayN = todayQ.length;
+          var todayP = pct(todayN, DAILY_TARGET);
+          setQStat('qstat-today', todayN,
+                   'qstat-today-sub', 'of ' + DAILY_TARGET + ' daily target · ' + todayP + '%',
+                   'qring-today-arc', dashOffset(todayP),
+                   'qring-today-pct', todayP + '%');
+
+          // Week
+          var weekN = weekQ.length;
+          var weekP = pct(weekN, WEEKLY_TARGET);
+          setQStat('qstat-week', weekN,
+                   'qstat-week-sub', 'of ' + WEEKLY_TARGET + ' weekly target · ' + weekP + '%',
+                   'qring-week-arc', dashOffset(weekP),
+                   'qring-week-pct', weekP + '%');
+
+          // Month
+          var monthN = monthQ.length;
+          var monthP = pct(monthN, MONTHLY_TARGET);
+          setQStat('qstat-month', monthN.toLocaleString(),
+                   'qstat-month-sub', 'of ' + MONTHLY_TARGET.toLocaleString() + ' monthly target · ' + monthP + '%',
+                   'qring-month-arc', dashOffset(monthP),
+                   'qring-month-pct', monthP + '%');
+
+          // ── Resource Allocation (subject breakdown) ──
+          var subjects = {
+            physics:    { timeId:'res-physics-time', qId:'res-physics-q', corrId:'res-physics-correct',
+                          avgId:'res-physics-avgtime', negId:'res-physics-neg', statId:'res-physics-status' },
+            chemistry:  { timeId:'res-chem-time',    qId:'res-chem-q',    corrId:'res-chem-correct',
+                          avgId:'res-chem-avgtime',   negId:'res-chem-neg', statId:'res-chem-status' },
+            mathematics:{ timeId:'res-math-time',    qId:'res-math-q',    corrId:'res-math-correct',
+                          avgId:'res-math-avgtime',   negId:'res-math-neg', statId:'res-math-status' }
+          };
+          // Gather subject-level data from solver_attempts (needs subject column)
+          Object.keys(subjects).forEach(function(subj) {
+            var rows = monthQ.filter(function(r){ return r.subject === subj; });
+            if (!rows.length) return;
+            var correct = rows.filter(function(r){ return r.is_correct; }).length;
+            var acc = Math.round(correct / rows.length * 100);
+            var ids = subjects[subj];
+            setText(ids.qId, rows.length);
+            setText(ids.corrId, correct + ' (' + acc + '%)');
+            // Status badge class
+            var statEl = document.getElementById(ids.statId);
+            if (statEl) {
+              statEl.className = 'an-status-badge ' +
+                (acc >= 80 ? 'an-st-ex' : acc >= 65 ? 'an-st-ok' : acc >= 50 ? 'an-st-wr' : 'an-st-cr');
+              statEl.textContent = acc >= 80 ? 'Excellent' : acc >= 65 ? 'Optimised' : acc >= 50 ? 'Improving' : 'Needs Drill';
+            }
+          });
+
+        } catch(e) {
+          // solver_attempts table may not exist yet — silently ignore
+        }
+      }
+
+      function setQStat(numId, numVal, subId, subText, arcId, arcOffset, pctId, pctVal) {
+        setText(numId, numVal);
+        setText(subId, subText);
+        var arc = document.getElementById(arcId);
+        if (arc) arc.setAttribute('stroke-dashoffset', arcOffset);
+        setText(pctId, pctVal || pctId);
+      }
+
+      function setText(id, val) {
+        var el = document.getElementById(id);
+        if (el && val !== undefined) el.textContent = val;
+      }
+
+      // Hook into dashboard load cycle: patch goToPage to trigger our updates
+      document.addEventListener('DOMContentLoaded', function() {
+        var origGoToPage = window.goToPage;
+        // Poll until goToPage is defined (app.js may load later)
+        var poller = setInterval(function() {
+          if (typeof window.goToPage === 'function') {
+            clearInterval(poller);
+            var _orig = window.goToPage;
+            window.goToPage = function(pageId) {
+              _orig(pageId);
+              if (pageId === 'dashboard') {
+                setTimeout(updateOverallAccuracy, 800);
+                setTimeout(loadQuestionsSolved, 600);
+              }
+            };
+          }
+        }, 150);
+      });
+    })();
     </script>
 
 <script src="js/config.js"></script>
