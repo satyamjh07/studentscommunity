@@ -1,415 +1,1606 @@
 <!DOCTYPE html>
-
-<html class="dark" lang="en"><head>
+<html lang="en">
+<head>
 <meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>ZEROday | Performance Analytics</title>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Syne:wght@700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1" rel="stylesheet"/>
 <style>
-        body {
-            background-color: #0A0A0A;
-            color: #e5e2e1;
-            margin: 0;
-            font-family: 'Inter', sans-serif;
-        }
-        .material-symbols-outlined {
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-        }
-        .glow-blue {
-            box-shadow: 0 0 20px rgba(0, 240, 255, 0.15);
-        }
-        .glow-purple {
-            box-shadow: 0 0 20px rgba(207, 92, 255, 0.15);
-        }
-        .border-gradient-blue {
-            border: 1px solid rgba(0, 240, 255, 0.2);
-        }
-        .bg-surface-gradient {
-            background: linear-gradient(180deg, #141414 0%, #0A0A0A 100%);
-        }
-    </style>
-<script id="tailwind-config">
-        tailwind.config = {
-          darkMode: "class",
-          theme: {
-            extend: {
-              "colors": {
-                      "on-secondary": "#520071",
-                      "primary": "#dbfcff",
-                      "error": "#ffb4ab",
-                      "primary-fixed": "#7df4ff",
-                      "surface-container-low": "#1c1b1b",
-                      "secondary-container": "#cf5cff",
-                      "on-error": "#690005",
-                      "secondary-fixed": "#f8d8ff",
-                      "on-error-container": "#ffdad6",
-                      "tertiary-fixed": "#e2e2e2",
-                      "surface-variant": "#353534",
-                      "surface-dim": "#131313",
-                      "surface-container-high": "#2a2a2a",
-                      "on-tertiary-fixed-variant": "#454747",
-                      "on-primary-fixed": "#002022",
-                      "primary-fixed-dim": "#00dbe9",
-                      "on-secondary-fixed": "#320047",
-                      "surface-tint": "#00dbe9",
-                      "tertiary-container": "#d9d9d9",
-                      "surface": "#131313",
-                      "secondary": "#ecb2ff",
-                      "secondary-fixed-dim": "#ecb2ff",
-                      "inverse-primary": "#006970",
-                      "on-secondary-fixed-variant": "#74009f",
-                      "on-surface": "#e5e2e1",
-                      "on-tertiary-fixed": "#1a1c1c",
-                      "surface-container-highest": "#353534",
-                      "inverse-surface": "#e5e2e1",
-                      "on-primary-fixed-variant": "#004f54",
-                      "on-primary-container": "#006970",
-                      "on-primary": "#00363a",
-                      "primary-container": "#00f0ff",
-                      "tertiary": "#f5f5f5",
-                      "surface-container": "#201f1f",
-                      "surface-bright": "#3a3939",
-                      "on-tertiary": "#2f3131",
-                      "on-secondary-container": "#480063",
-                      "tertiary-fixed-dim": "#c6c6c7",
-                      "background": "#131313",
-                      "on-background": "#e5e2e1",
-                      "error-container": "#93000a",
-                      "surface-container-lowest": "#0e0e0e",
-                      "inverse-on-surface": "#313030",
-                      "on-tertiary-container": "#5d5f5f",
-                      "on-surface-variant": "#b9cacb",
-                      "outline-variant": "#3b494b",
-                      "outline": "#849495"
-              },
-              "borderRadius": {
-                      "DEFAULT": "0.25rem",
-                      "lg": "0.5rem",
-                      "xl": "0.75rem",
-                      "full": "9999px"
-              },
-              "spacing": {
-                      "margin-desktop": "40px",
-                      "stack-xl": "64px",
-                      "margin-mobile": "16px",
-                      "unit": "4px",
-                      "stack-lg": "32px",
-                      "gutter": "24px",
-                      "stack-md": "16px",
-                      "stack-sm": "8px",
-                      "container-max": "1280px"
-              },
-              "fontFamily": {
-                      "h1": ["Space Grotesk"],
-                      "body-lg": ["Inter"],
-                      "display": ["Space Grotesk"],
-                      "code": ["Inter"],
-                      "body-md": ["Inter"],
-                      "h2": ["Space Grotesk"],
-                      "label-caps": ["Space Grotesk"]
-              },
-              "fontSize": {
-                      "h1": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
-                      "body-lg": ["18px", {"lineHeight": "1.6", "letterSpacing": "0", "fontWeight": "400"}],
-                      "display": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.04em", "fontWeight": "700"}],
-                      "code": ["14px", {"lineHeight": "1.5", "letterSpacing": "0", "fontWeight": "500"}],
-                      "body-md": ["16px", {"lineHeight": "1.6", "letterSpacing": "0", "fontWeight": "400"}],
-                      "h2": ["24px", {"lineHeight": "1.3", "letterSpacing": "-0.01em", "fontWeight": "600"}],
-                      "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.1em", "fontWeight": "600"}]
-              }
-            },
-          },
-        }
-      </script>
+/* ═══ RESET & BASE ═══════════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root {
+  --bg:       #07080d;
+  --bg2:      #0d0f18;
+  --bg3:      #131621;
+  --card:     #111420;
+  --card2:    #181b2a;
+  --border:   rgba(255,255,255,0.06);
+  --border2:  rgba(255,255,255,0.1);
+  --text:     #e8eaf6;
+  --text2:    #7b82a8;
+  --text3:    #3d4268;
+  --cyan:     #00f0ff;
+  --purple:   #b06aff;
+  --green:    #00e5a0;
+  --red:      #ff4d6a;
+  --orange:   #ff9340;
+  --yellow:   #ffd060;
+  --cyan-glow:   rgba(0,240,255,0.15);
+  --purple-glow: rgba(176,106,255,0.15);
+  --green-glow:  rgba(0,229,160,0.15);
+  --red-glow:    rgba(255,77,106,0.15);
+  --sidebar-w: 240px;
+  --radius: 18px;
+  --radius-sm: 12px;
+}
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Space Grotesk', sans-serif;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+/* Noise texture overlay */
+body::before {
+  content:'';
+  position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:0;opacity:0.6;
+}
+
+/* ═══ SCROLLBAR ══════════════════════════════════════════════ */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:99px}
+
+/* ═══ SIDEBAR ════════════════════════════════════════════════ */
+.sidebar {
+  position:fixed;top:0;left:0;
+  width:var(--sidebar-w);height:100vh;
+  background:var(--bg2);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  padding:0;z-index:100;
+  overflow:hidden;
+}
+.sidebar::before {
+  content:'';position:absolute;
+  top:-60px;left:-60px;
+  width:220px;height:220px;
+  background:radial-gradient(circle, rgba(0,240,255,0.06) 0%, transparent 70%);
+  pointer-events:none;
+}
+.sidebar-logo {
+  padding:1.5rem 1.25rem 1rem;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:0.75rem;
+}
+.sidebar-logo-mark {
+  width:34px;height:34px;
+  background:var(--cyan);
+  border-radius:9px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Bebas Neue',sans-serif;
+  font-size:1rem;color:#000;letter-spacing:0.05em;
+  flex-shrink:0;
+}
+.sidebar-logo-text {
+  font-family:'Bebas Neue',sans-serif;
+  font-size:1.3rem;letter-spacing:0.15em;color:var(--cyan);
+}
+.sidebar-logo-sub {
+  font-family:'DM Mono',monospace;
+  font-size:0.5rem;color:var(--text3);
+  letter-spacing:0.12em;text-transform:uppercase;
+  margin-top:1px;
+}
+.sidebar-nav {
+  flex:1;padding:1rem 0.75rem;
+  display:flex;flex-direction:column;gap:2px;
+  overflow-y:auto;
+}
+.nav-item {
+  display:flex;align-items:center;gap:0.65rem;
+  padding:0.65rem 0.75rem;
+  border-radius:10px;
+  font-family:'DM Mono',monospace;
+  font-size:0.68rem;font-weight:500;
+  letter-spacing:0.08em;text-transform:uppercase;
+  color:var(--text3);
+  text-decoration:none;
+  transition:all 0.18s;
+  cursor:pointer;
+  position:relative;
+}
+.nav-item:hover {color:var(--text2);background:rgba(255,255,255,0.03);}
+.nav-item.active {color:var(--cyan);background:rgba(0,240,255,0.07);}
+.nav-item.active::before {
+  content:'';position:absolute;left:0;top:20%;bottom:20%;
+  width:2px;border-radius:2px;background:var(--cyan);
+}
+.nav-item .material-symbols-outlined {font-size:17px;}
+.sidebar-user {
+  padding:1rem 1.25rem;
+  border-top:1px solid var(--border);
+  display:flex;align-items:center;gap:0.7rem;
+}
+.sidebar-avatar {
+  width:32px;height:32px;border-radius:50%;
+  background:var(--bg3);border:1.5px solid var(--border2);
+  overflow:hidden;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.9rem;
+}
+.sidebar-user-info {flex:1;min-width:0;}
+.sidebar-user-name {
+  font-size:0.78rem;font-weight:700;color:var(--text);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.sidebar-user-tag {
+  font-family:'DM Mono',monospace;font-size:0.58rem;
+  color:var(--cyan);letter-spacing:0.06em;
+  text-transform:uppercase;
+}
+
+/* ═══ MAIN CONTENT ═══════════════════════════════════════════ */
+.main {
+  margin-left:var(--sidebar-w);
+  min-height:100vh;
+  padding:0 0 6rem;
+  position:relative;z-index:1;
+}
+
+/* ═══ TOPBAR ══════════════════════════════════════════════ */
+.topbar {
+  position:sticky;top:0;
+  padding:1.1rem 2rem;
+  background:rgba(7,8,13,0.85);
+  backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+  z-index:50;
+  display:flex;align-items:center;justify-content:space-between;
+  gap:1rem;
+}
+.topbar-left {}
+.topbar-title {
+  font-family:'Bebas Neue',sans-serif;
+  font-size:1.6rem;letter-spacing:0.12em;
+  color:var(--text);line-height:1;
+}
+.topbar-sub {
+  font-family:'DM Mono',monospace;
+  font-size:0.62rem;color:var(--text3);
+  letter-spacing:0.1em;margin-top:2px;
+  text-transform:uppercase;
+}
+.topbar-right {display:flex;align-items:center;gap:0.75rem;}
+.topbar-chip {
+  display:flex;align-items:center;gap:0.4rem;
+  padding:0.4rem 0.85rem;
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:99px;
+  font-family:'DM Mono',monospace;
+  font-size:0.62rem;color:var(--text2);
+  letter-spacing:0.06em;
+}
+.live-dot {
+  width:6px;height:6px;border-radius:50%;
+  background:var(--green);
+  box-shadow:0 0 6px var(--green);
+  animation:pulse 2s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+.topbar-btn {
+  width:36px;height:36px;border-radius:10px;
+  background:var(--bg2);border:1px solid var(--border);
+  color:var(--text2);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all 0.18s;
+}
+.topbar-btn:hover{border-color:var(--cyan);color:var(--cyan);background:rgba(0,240,255,0.07);}
+.topbar-btn .material-symbols-outlined{font-size:18px;}
+
+/* ═══ CONTENT GRID ═══════════════════════════════════════════ */
+.content {padding:1.75rem 2rem;display:flex;flex-direction:column;gap:1.5rem;}
+
+/* ═══ SECTION LABEL ══════════════════════════════════════════ */
+.section-label {
+  font-family:'DM Mono',monospace;
+  font-size:0.6rem;letter-spacing:0.15em;
+  color:var(--text3);text-transform:uppercase;
+  margin-bottom:0.75rem;
+  display:flex;align-items:center;gap:0.5rem;
+}
+.section-label::after {
+  content:'';flex:1;height:1px;
+  background:linear-gradient(90deg,var(--border),transparent);
+}
+
+/* ═══ CARD BASE ══════════════════════════════════════════════ */
+.card {
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  overflow:hidden;
+  transition:border-color 0.2s;
+}
+.card:hover{border-color:var(--border2);}
+.card-header {
+  padding:1.1rem 1.4rem 0.9rem;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  gap:0.75rem;flex-wrap:wrap;
+}
+.card-title {
+  font-family:'Bebas Neue',sans-serif;
+  font-size:1rem;letter-spacing:0.1em;color:var(--text);
+  display:flex;align-items:center;gap:0.5rem;
+}
+.card-title .material-symbols-outlined{font-size:16px;color:var(--cyan);}
+.card-sub {
+  font-family:'DM Mono',monospace;
+  font-size:0.6rem;color:var(--text3);
+  letter-spacing:0.06em;margin-top:2px;
+}
+.card-body {padding:1.25rem 1.4rem;}
+
+/* ═══ KPI HERO STRIP ════════════════════════════════════════ */
+.kpi-strip {
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:1rem;
+}
+.kpi-card {
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:1.2rem 1.25rem;
+  position:relative;overflow:hidden;
+  transition:all 0.22s;
+}
+.kpi-card::before {
+  content:'';position:absolute;
+  top:0;left:0;right:0;height:2px;
+  border-radius:var(--radius) var(--radius) 0 0;
+}
+.kpi-card.c-cyan::before{background:linear-gradient(90deg,var(--cyan),transparent);}
+.kpi-card.c-purple::before{background:linear-gradient(90deg,var(--purple),transparent);}
+.kpi-card.c-green::before{background:linear-gradient(90deg,var(--green),transparent);}
+.kpi-card.c-orange::before{background:linear-gradient(90deg,var(--orange),transparent);}
+.kpi-card::after {
+  content:'';position:absolute;
+  right:-30px;top:-30px;
+  width:100px;height:100px;
+  border-radius:50%;
+  opacity:0.06;
+}
+.kpi-card.c-cyan::after{background:var(--cyan);}
+.kpi-card.c-purple::after{background:var(--purple);}
+.kpi-card.c-green::after{background:var(--green);}
+.kpi-card.c-orange::after{background:var(--orange);}
+.kpi-card:hover{transform:translateY(-2px);border-color:var(--border2);}
+.kpi-icon {
+  width:32px;height:32px;border-radius:9px;
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:0.85rem;font-size:0.9rem;
+}
+.kpi-card.c-cyan .kpi-icon{background:rgba(0,240,255,0.1);color:var(--cyan);}
+.kpi-card.c-purple .kpi-icon{background:rgba(176,106,255,0.1);color:var(--purple);}
+.kpi-card.c-green .kpi-icon{background:rgba(0,229,160,0.1);color:var(--green);}
+.kpi-card.c-orange .kpi-icon{background:rgba(255,147,64,0.1);color:var(--orange);}
+.kpi-icon .material-symbols-outlined{font-size:16px;}
+.kpi-val {
+  font-family:'Bebas Neue',sans-serif;
+  font-size:2.4rem;line-height:1;color:var(--text);
+  letter-spacing:0.04em;
+}
+.kpi-label {
+  font-family:'DM Mono',monospace;
+  font-size:0.62rem;color:var(--text2);
+  letter-spacing:0.08em;text-transform:uppercase;
+  margin-top:4px;
+}
+.kpi-delta {
+  font-family:'DM Mono',monospace;
+  font-size:0.62rem;margin-top:0.5rem;
+  display:flex;align-items:center;gap:0.3rem;
+}
+.kpi-delta.up{color:var(--green);}
+.kpi-delta.down{color:var(--red);}
+.kpi-delta .material-symbols-outlined{font-size:12px;}
+
+/* ═══ QUICK ACCESS PANEL ═════════════════════════════════════ */
+.qa-panel {
+  display:grid;
+  grid-template-columns:repeat(6,1fr);
+  gap:0.75rem;
+}
+.qa-btn {
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  padding:1rem 0.75rem;
+  text-align:center;
+  cursor:pointer;
+  text-decoration:none;
+  transition:all 0.2s;
+  display:flex;flex-direction:column;
+  align-items:center;gap:0.5rem;
+}
+.qa-btn:hover {
+  border-color:var(--cyan);
+  background:rgba(0,240,255,0.05);
+  transform:translateY(-2px);
+}
+.qa-icon {
+  width:38px;height:38px;border-radius:10px;
+  background:var(--bg3);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--text2);
+  transition:all 0.2s;
+}
+.qa-btn:hover .qa-icon{background:rgba(0,240,255,0.1);color:var(--cyan);}
+.qa-icon .material-symbols-outlined{font-size:18px;}
+.qa-label {
+  font-family:'DM Mono',monospace;
+  font-size:0.58rem;letter-spacing:0.08em;
+  text-transform:uppercase;color:var(--text3);
+  line-height:1.3;
+}
+.qa-btn:hover .qa-label{color:var(--text2);}
+
+/* ═══ QUESTION STATS ROW ═════════════════════════════════════ */
+.qstat-row {
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:1rem;
+}
+.qstat-card {
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:1.3rem 1.4rem;
+  display:flex;align-items:center;gap:1rem;
+  transition:all 0.2s;
+}
+.qstat-card:hover{border-color:var(--border2);transform:translateY(-1px);}
+.qstat-ring {
+  position:relative;
+  width:56px;height:56px;flex-shrink:0;
+}
+.qstat-ring svg {transform:rotate(-90deg);}
+.qstat-ring-label {
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Bebas Neue',sans-serif;
+  font-size:0.95rem;color:var(--text);
+}
+.qstat-info {flex:1;min-width:0;}
+.qstat-period {
+  font-family:'DM Mono',monospace;
+  font-size:0.6rem;letter-spacing:0.1em;
+  text-transform:uppercase;color:var(--text3);
+}
+.qstat-num {
+  font-family:'Bebas Neue',sans-serif;
+  font-size:2rem;color:var(--text);
+  letter-spacing:0.04em;line-height:1;
+  margin:2px 0;
+}
+.qstat-sub {font-size:0.72rem;color:var(--text2);}
+
+/* ═══ TWO-COLUMN GRID ════════════════════════════════════════ */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;}
+.three-col{display:grid;grid-template-columns:2fr 1fr 1fr;gap:1.25rem;}
+
+/* ═══ ACCURACY GAUGES ════════════════════════════════════════ */
+.gauge-row{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;}
+.gauge-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius);padding:1.5rem 1.25rem;
+  display:flex;flex-direction:column;align-items:center;
+  transition:all 0.2s;
+}
+.gauge-card:hover{border-color:var(--border2);}
+.gauge-wrap{position:relative;width:100px;height:100px;}
+.gauge-wrap svg{transform:rotate(-90deg);width:100%;height:100%;}
+.gauge-center{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+}
+.gauge-pct{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:1.6rem;line-height:1;letter-spacing:0.03em;
+}
+.gauge-subject{
+  font-family:'DM Mono',monospace;
+  font-size:0.6rem;letter-spacing:0.1em;
+  color:var(--text3);text-transform:uppercase;
+  margin-top:0.75rem;
+}
+.gauge-trend{
+  font-family:'DM Mono',monospace;
+  font-size:0.62rem;margin-top:0.3rem;
+  display:flex;align-items:center;gap:0.25rem;
+}
+.gauge-trend.up{color:var(--green);}
+.gauge-trend.down{color:var(--red);}
+.gauge-trend .material-symbols-outlined{font-size:12px;}
+
+/* ═══ PERFORMANCE CHART (SVG) ════════════════════════════════ */
+.chart-container{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius);overflow:hidden;
+}
+.chart-area {
+  width:100%;
+  padding:1.4rem;
+}
+.perf-svg-wrap{
+  width:100%;height:180px;
+  position:relative;
+}
+.perf-svg-wrap svg{width:100%;height:100%;}
+.chart-legend{
+  display:flex;gap:1.25rem;
+  padding:0.75rem 1.4rem;
+  border-top:1px solid var(--border);
+  background:var(--bg2);
+}
+.legend-item{
+  display:flex;align-items:center;gap:0.4rem;
+  font-family:'DM Mono',monospace;
+  font-size:0.6rem;letter-spacing:0.06em;
+  color:var(--text3);text-transform:uppercase;
+}
+.legend-dot{width:8px;height:8px;border-radius:2px;}
+
+/* ═══ CHAPTER LISTS ══════════════════════════════════════════ */
+.chapter-list{display:flex;flex-direction:column;gap:0.6rem;}
+.chapter-row{
+  display:flex;align-items:center;gap:0.75rem;
+  padding:0.7rem 0.9rem;
+  background:var(--bg3);
+  border-radius:9px;
+  border:1px solid var(--border);
+  transition:all 0.15s;
+}
+.chapter-row:hover{border-color:var(--border2);background:var(--card2);}
+.chapter-rank{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:1rem;color:var(--text3);
+  width:20px;text-align:center;flex-shrink:0;
+}
+.chapter-rank.top{color:var(--cyan);}
+.chapter-rank.weak{color:var(--red);}
+.chapter-name{
+  flex:1;font-size:0.8rem;font-weight:600;color:var(--text);
+  min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.chapter-sub{
+  font-family:'DM Mono',monospace;
+  font-size:0.6rem;color:var(--text3);letter-spacing:0.04em;
+  margin-top:1px;
+}
+.chapter-bar-wrap{
+  width:80px;height:5px;background:var(--bg);
+  border-radius:99px;overflow:hidden;flex-shrink:0;
+}
+.chapter-bar{height:100%;border-radius:99px;}
+.chapter-score{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:0.9rem;min-width:36px;text-align:right;
+}
+.badge-pill {
+  font-family:'DM Mono',monospace;
+  font-size:0.52rem;font-weight:700;
+  letter-spacing:0.08em;text-transform:uppercase;
+  padding:2px 7px;border-radius:99px;flex-shrink:0;
+}
+.badge-crit{background:rgba(255,77,106,0.15);color:var(--red);}
+.badge-med {background:rgba(255,147,64,0.15);color:var(--orange);}
+.badge-low {background:rgba(0,229,160,0.15);color:var(--green);}
+.badge-top {background:rgba(0,240,255,0.15);color:var(--cyan);}
+
+/* ═══ WEAK TOPICS ════════════════════════════════════════════ */
+.topic-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;}
+.topic-chip{
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:9px;padding:0.7rem 0.85rem;
+  display:flex;align-items:center;gap:0.6rem;
+  transition:all 0.15s;cursor:default;
+}
+.topic-chip:hover{border-color:var(--border2);}
+.topic-icon{
+  width:28px;height:28px;border-radius:7px;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;font-size:0.8rem;
+}
+.topic-icon .material-symbols-outlined{font-size:14px;}
+.topic-text{flex:1;min-width:0;}
+.topic-name{font-size:0.75rem;font-weight:600;color:var(--text);}
+.topic-subject{
+  font-family:'DM Mono',monospace;
+  font-size:0.58rem;color:var(--text3);letter-spacing:0.04em;
+}
+.topic-score{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:1rem;
+}
+.sev-1{border-left:2px solid var(--red);}
+.sev-1 .topic-icon{background:rgba(255,77,106,0.12);color:var(--red);}
+.sev-1 .topic-score{color:var(--red);}
+.sev-2{border-left:2px solid var(--orange);}
+.sev-2 .topic-icon{background:rgba(255,147,64,0.12);color:var(--orange);}
+.sev-2 .topic-score{color:var(--orange);}
+.sev-3{border-left:2px solid var(--yellow);}
+.sev-3 .topic-icon{background:rgba(255,208,96,0.12);color:var(--yellow);}
+.sev-3 .topic-score{color:var(--yellow);}
+
+/* ═══ HEATMAP ════════════════════════════════════════════════ */
+.heatmap-grid{
+  display:grid;
+  grid-template-columns:repeat(52,1fr);
+  gap:3px;
+  padding:0.5rem 0;
+}
+.hm-cell{
+  aspect-ratio:1;border-radius:3px;
+  background:var(--bg3);
+  transition:all 0.15s;cursor:default;
+}
+.hm-cell:hover{transform:scale(1.4);z-index:1;}
+.hm-0{background:var(--bg3);}
+.hm-1{background:rgba(0,240,255,0.2);}
+.hm-2{background:rgba(0,240,255,0.4);}
+.hm-3{background:rgba(0,240,255,0.65);}
+.hm-4{background:rgba(0,240,255,0.9);}
+.heatmap-days{
+  display:flex;justify-content:space-between;
+  font-family:'DM Mono',monospace;
+  font-size:0.55rem;color:var(--text3);
+  letter-spacing:0.06em;
+  margin-bottom:0.4rem;
+}
+
+/* ═══ TIME TABLE ════════════════════════════════════════════ */
+.tbl{width:100%;border-collapse:collapse;}
+.tbl th{
+  padding:0.7rem 1.1rem;
+  font-family:'DM Mono',monospace;
+  font-size:0.58rem;letter-spacing:0.1em;
+  text-transform:uppercase;color:var(--text3);
+  text-align:left;border-bottom:1px solid var(--border);
+  background:var(--bg2);
+}
+.tbl th:not(:first-child){text-align:center;}
+.tbl td{
+  padding:0.85rem 1.1rem;
+  border-bottom:1px solid var(--border);
+  font-size:0.82rem;
+  transition:background 0.15s;
+}
+.tbl tr:hover td{background:var(--bg2);}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl td:not(:first-child){text-align:center;}
+.subject-dot{
+  display:inline-block;
+  width:8px;height:8px;border-radius:50%;
+  margin-right:0.5rem;vertical-align:middle;
+  flex-shrink:0;
+}
+.status-badge{
+  display:inline-flex;align-items:center;gap:0.35rem;
+  padding:3px 9px;border-radius:99px;
+  font-family:'DM Mono',monospace;
+  font-size:0.56rem;font-weight:600;
+  letter-spacing:0.06em;text-transform:uppercase;
+}
+.st-ex{background:rgba(0,240,255,0.1);color:var(--cyan);}
+.st-ok{background:rgba(0,229,160,0.1);color:var(--green);}
+.st-wr{background:rgba(255,147,64,0.1);color:var(--orange);}
+.st-cr{background:rgba(255,77,106,0.1);color:var(--red);}
+
+/* ═══ STREAK TRACKER ════════════════════════════════════════ */
+.streak-row{
+  display:flex;align-items:center;gap:0.5rem;
+  padding:0.85rem 1.4rem;
+}
+.streak-day{
+  display:flex;flex-direction:column;align-items:center;
+  gap:0.3rem;flex:1;
+}
+.streak-day-name{
+  font-family:'DM Mono',monospace;
+  font-size:0.55rem;letter-spacing:0.06em;
+  color:var(--text3);text-transform:uppercase;
+}
+.streak-pip{
+  width:28px;height:28px;border-radius:7px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.65rem;
+}
+.streak-pip.done{background:rgba(0,229,160,0.15);border:1px solid var(--green);}
+.streak-pip.missed{background:rgba(255,77,106,0.1);border:1px solid rgba(255,77,106,0.2);}
+.streak-pip.today{background:rgba(0,240,255,0.15);border:1px solid var(--cyan);box-shadow:0 0 10px rgba(0,240,255,0.2);}
+.streak-pip.future{background:var(--bg3);border:1px solid var(--border);}
+.streak-pip .material-symbols-outlined{font-size:13px;}
+.streak-pip.done .material-symbols-outlined{color:var(--green);}
+.streak-pip.missed .material-symbols-outlined{color:rgba(255,77,106,0.4);}
+.streak-pip.today .material-symbols-outlined{color:var(--cyan);}
+.streak-count-wrap{
+  text-align:center;padding:1rem 1.4rem;
+  border-top:1px solid var(--border);
+  background:var(--bg2);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.streak-num{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:2rem;color:var(--cyan);letter-spacing:0.04em;
+  display:flex;align-items:baseline;gap:0.4rem;
+}
+.streak-num span{
+  font-family:'DM Mono',monospace;
+  font-size:0.65rem;color:var(--text3);
+  letter-spacing:0.06em;text-transform:uppercase;
+}
+.streak-best{
+  font-family:'DM Mono',monospace;
+  font-size:0.62rem;color:var(--text3);
+  letter-spacing:0.06em;text-align:right;
+}
+.streak-best strong{color:var(--yellow);display:block;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;}
+
+/* ═══ PREDICTION CARD ════════════════════════════════════════ */
+.prediction-card{
+  background:linear-gradient(135deg,rgba(0,240,255,0.06),rgba(176,106,255,0.06));
+  border:1px solid rgba(0,240,255,0.15);
+  border-radius:var(--radius);
+  padding:1.5rem;
+  position:relative;overflow:hidden;
+}
+.prediction-card::before{
+  content:'';position:absolute;
+  right:-40px;top:-40px;
+  width:160px;height:160px;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(0,240,255,0.08),transparent 70%);
+}
+.prediction-score{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:3.5rem;letter-spacing:0.05em;
+  background:linear-gradient(135deg,var(--cyan),var(--purple));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;line-height:1;
+}
+.prediction-label{
+  font-family:'DM Mono',monospace;
+  font-size:0.62rem;color:var(--text3);
+  letter-spacing:0.1em;text-transform:uppercase;
+  margin-top:4px;
+}
+.prediction-breakdown{
+  display:flex;flex-direction:column;gap:0.5rem;
+  margin-top:1rem;
+}
+.pb-row{
+  display:flex;align-items:center;gap:0.65rem;
+}
+.pb-subject{
+  font-family:'DM Mono',monospace;
+  font-size:0.62rem;color:var(--text2);
+  letter-spacing:0.06em;width:50px;flex-shrink:0;
+}
+.pb-bar-wrap{flex:1;height:5px;background:var(--bg3);border-radius:99px;overflow:hidden;}
+.pb-bar{height:100%;border-radius:99px;}
+.pb-score{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:0.85rem;width:36px;text-align:right;
+}
+
+/* ═══ MINI STAT ══════════════════════════════════════════════ */
+.mini-stat-row{display:flex;flex-direction:column;gap:0.65rem;}
+.mini-stat{
+  display:flex;align-items:center;gap:0.75rem;
+  padding:0.7rem 0.9rem;
+  background:var(--bg3);border-radius:9px;
+  border:1px solid var(--border);
+  transition:all 0.15s;
+}
+.mini-stat:hover{border-color:var(--border2);}
+.mini-stat-icon{
+  width:28px;height:28px;border-radius:7px;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
+.mini-stat-icon .material-symbols-outlined{font-size:13px;}
+.mini-stat-label{
+  flex:1;font-size:0.75rem;font-weight:500;color:var(--text2);
+}
+.mini-stat-val{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:1rem;color:var(--text);letter-spacing:0.04em;
+}
+
+/* ═══ MOBILE ══════════════════════════════════════════════ */
+@media(max-width:900px){
+  .sidebar{display:none;}
+  .main{margin-left:0;}
+  .topbar{padding:0.85rem 1rem;}
+  .content{padding:1rem;}
+  .kpi-strip{grid-template-columns:1fr 1fr;}
+  .qstat-row{grid-template-columns:1fr;}
+  .gauge-row{grid-template-columns:1fr 1fr;}
+  .two-col,.three-col{grid-template-columns:1fr;}
+  .qa-panel{grid-template-columns:repeat(3,1fr);}
+  .topic-grid{grid-template-columns:1fr;}
+}
+@media(max-width:480px){
+  .kpi-strip{grid-template-columns:1fr 1fr;}
+  .qa-panel{grid-template-columns:repeat(2,1fr);}
+  .gauge-row{grid-template-columns:1fr;}
+}
+
+/* ═══ ANIMATIONS ═════════════════════════════════════════════ */
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.anim{animation:fadeUp 0.45s ease both;}
+.anim-1{animation-delay:0.05s;}
+.anim-2{animation-delay:0.1s;}
+.anim-3{animation-delay:0.15s;}
+.anim-4{animation-delay:0.2s;}
+.anim-5{animation-delay:0.25s;}
+.anim-6{animation-delay:0.3s;}
+
+/* ═══ EXPORT BTN ════════════════════════════════════════════ */
+.btn-outline{
+  display:inline-flex;align-items:center;gap:0.4rem;
+  padding:0.45rem 0.9rem;
+  background:transparent;
+  border:1px solid var(--border2);
+  border-radius:8px;
+  color:var(--text2);
+  font-family:'DM Mono',monospace;
+  font-size:0.62rem;letter-spacing:0.06em;
+  text-transform:uppercase;
+  cursor:pointer;transition:all 0.18s;
+}
+.btn-outline:hover{border-color:var(--cyan);color:var(--cyan);background:rgba(0,240,255,0.05);}
+.btn-outline .material-symbols-outlined{font-size:13px;}
+.btn-primary{
+  display:inline-flex;align-items:center;gap:0.4rem;
+  padding:0.45rem 0.9rem;
+  background:var(--cyan);
+  border:1px solid var(--cyan);
+  border-radius:8px;
+  color:#000;
+  font-family:'DM Mono',monospace;
+  font-size:0.62rem;font-weight:700;
+  letter-spacing:0.06em;text-transform:uppercase;
+  cursor:pointer;transition:all 0.18s;
+}
+.btn-primary:hover{background:rgba(0,240,255,0.85);box-shadow:0 4px 16px rgba(0,240,255,0.25);}
+.btn-primary .material-symbols-outlined{font-size:13px;}
+</style>
 </head>
-<body class="bg-background overflow-x-hidden">
-<!-- SideNavBar (Shared Component) -->
-<aside class="hidden md:flex flex-col h-screen fixed left-0 top-0 p-4 bg-[#141414] w-64 border-r border-[#1F1F1F] shadow-[10px_0_30px_rgba(0,240,255,0.03)] z-50">
-<div class="text-xl font-black text-[#00F0FF] mb-8 font-['Space_Grotesk'] tracking-widest px-4">ZEROday</div>
-<div class="mb-4 px-4 flex items-center gap-3">
-<div class="w-10 h-10 rounded-full bg-[#1F1F1F] border border-[#00F0FF]/20 flex items-center justify-center overflow-hidden">
-<img alt="Elite Student Profile" class="w-full h-full object-cover" data-alt="Stylized digital avatar of a high-performance student with tech accessories and neon accents" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBhgdZD-_ReGKZh7gbUuBeBs6XoD4NFBrxtiFYX4OitamTsWgkRrnOSCMatL7A3evbv46OkdYAtdyGOHvz3FGwIUqUQS8EEmDBAgevoBOgnf8zXW_r3gqkmkSXryzsSleFU9T07jsW0Jf_1Dt6r9XVtAnoSl3jKAK-_1LE45RU-U_mSxQBI_eo7Y8bjhneqvh0IuLPSTLUWniOGTISG0EArGMRUOJMIR52hHypGV_ckKeByakHDEvkfh7GiOcH00RbSHzD8D34C6Zns"/>
-</div>
-<div class="flex flex-col">
-<span class="font-['Space_Grotesk'] text-sm font-bold text-white tracking-tighter">ZEROday</span>
-<span class="font-mono text-[10px] text-[#00F0FF]/60 font-bold">RANK_ONE_MINDSET</span>
-</div>
-</div>
-<nav class="flex-1 mt-4">
-<a class="text-gray-400 hover:text-white px-4 py-3 mb-2 flex items-center gap-3 transition-all font-mono text-xs font-bold hover:bg-[#1F1F1F] active:translate-x-1 duration-200" href="#">
-<span class="material-symbols-outlined" data-icon="grid_view">grid_view</span>
-                DASHBOARD
-            </a>
-<a class="text-gray-400 hover:text-white px-4 py-3 mb-2 flex items-center gap-3 transition-all font-mono text-xs font-bold hover:bg-[#1F1F1F] active:translate-x-1 duration-200" href="#">
-<span class="material-symbols-outlined" data-icon="fitness_center">fitness_center</span>
-                PRACTICE
-            </a>
-<a class="bg-[#00F0FF] text-black rounded-lg px-4 py-3 mb-2 flex items-center gap-3 font-mono text-xs font-bold active:translate-x-1 duration-200" href="#">
-<span class="material-symbols-outlined" data-icon="query_stats" style="font-variation-settings: 'FILL' 1;">query_stats</span>
-                ANALYTICS
-            </a>
-<a class="text-gray-400 hover:text-white px-4 py-3 mb-2 flex items-center gap-3 transition-all font-mono text-xs font-bold hover:bg-[#1F1F1F] active:translate-x-1 duration-200" href="#">
-<span class="material-symbols-outlined" data-icon="settings">settings</span>
-                SETTINGS
-            </a>
-</nav>
-<div class="mt-auto">
-<button class="w-full py-4 bg-[#00F0FF] text-black font-['Space_Grotesk'] font-black text-xs tracking-widest rounded-xl mb-4 active:scale-95 transition-transform">
-                START_MOCK_TEST
-            </button>
-<a class="text-gray-400 hover:text-white px-4 py-3 flex items-center gap-3 transition-all font-mono text-xs font-bold hover:bg-[#1F1F1F]" href="#">
-<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
-                SUPPORT
-            </a>
-</div>
+<body>
+
+<!-- ══ SIDEBAR ═══════════════════════════════════════════════ -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-mark">ZD</div>
+    <div>
+      <div class="sidebar-logo-text">ZEROday</div>
+      <div class="sidebar-logo-sub">JEE 2026</div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <a class="nav-item" href="#">
+      <span class="material-symbols-outlined">dashboard</span>Dashboard
+    </a>
+    <a class="nav-item" href="#">
+      <span class="material-symbols-outlined">timer</span>Study Timer
+    </a>
+    <a class="nav-item" href="#">
+      <span class="material-symbols-outlined">fitness_center</span>Practice
+    </a>
+    <a class="nav-item active" href="#">
+      <span class="material-symbols-outlined">query_stats</span>Analytics
+    </a>
+    <a class="nav-item" href="#">
+      <span class="material-symbols-outlined">group</span>Community
+    </a>
+    <a class="nav-item" href="#">
+      <span class="material-symbols-outlined">layers</span>JEE Solver
+    </a>
+    <a class="nav-item" href="#">
+      <span class="material-symbols-outlined">music_note</span>White Noise
+    </a>
+    <a class="nav-item" href="#">
+      <span class="material-symbols-outlined">notifications</span>Alerts
+    </a>
+    <a class="nav-item" href="#">
+      <span class="material-symbols-outlined">settings</span>Settings
+    </a>
+  </nav>
+  <div class="sidebar-user">
+    <div class="sidebar-avatar">🧑</div>
+    <div class="sidebar-user-info">
+      <div class="sidebar-user-name">Satyam Jha</div>
+      <div class="sidebar-user-tag">Dropper · 2026</div>
+    </div>
+  </div>
 </aside>
-<!-- TopAppBar (Shared Component Mobile/Web) -->
-<header class="flex justify-between items-center w-full px-6 py-4 sticky top-0 z-40 bg-[#0A0A0A]/80 backdrop-blur-md md:ml-64 md:w-[calc(100%-16rem)] border-b border-[#1F1F1F]">
-<div class="text-2xl font-black text-[#00F0FF] tracking-widest font-['Space_Grotesk'] uppercase md:hidden">ZEROday</div>
-<div class="hidden md:flex flex-col">
-<h1 class="font-h1 text-h1 text-primary">PERFORMANCE_ANALYTICS</h1>
-<p class="font-code text-xs text-outline tracking-widest uppercase">System status: Optimizing</p>
-</div>
-<div class="flex items-center gap-4">
-<button class="text-[#00F0FF] hover:text-[#00F0FF] transition-colors active:scale-95 duration-100">
-<span class="material-symbols-outlined" data-icon="local_fire_department">local_fire_department</span>
-</button>
-<button class="text-[#00F0FF] hover:text-[#00F0FF] transition-colors active:scale-95 duration-100">
-<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
-</button>
-</div>
-</header>
-<!-- Main Canvas -->
-<main class="md:ml-64 p-6 lg:p-10 pb-32">
-<div class="max-w-container-max mx-auto space-y-gutter">
-<!-- Hero Stats Bento Grid -->
-<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter">
-<!-- Accuracy Gauge Physics -->
-<div class="bg-[#141414] rounded-[24px] p-6 border-t border-[#1F1F1F] flex flex-col items-center justify-center text-center glow-blue">
-<div class="relative w-32 h-32 mb-4">
-<svg class="w-full h-full transform -rotate-90">
-<circle class="text-[#1F1F1F]" cx="64" cy="64" fill="transparent" r="58" stroke="currentColor" stroke-width="8"></circle>
-<circle class="text-[#00F0FF]" cx="64" cy="64" fill="transparent" r="58" stroke="currentColor" stroke-dasharray="364.4" stroke-dashoffset="72.8" stroke-width="8"></circle>
-</svg>
-<div class="absolute inset-0 flex flex-col items-center justify-center">
-<span class="font-display text-h1 text-primary">80%</span>
-</div>
-</div>
-<h3 class="font-label-caps text-label-caps text-outline uppercase tracking-widest">Physics_Accuracy</h3>
-<div class="mt-2 text-primary font-code text-xs">+5% from last week</div>
-</div>
-<!-- Accuracy Gauge Chemistry -->
-<div class="bg-[#141414] rounded-[24px] p-6 border-t border-[#1F1F1F] flex flex-col items-center justify-center text-center">
-<div class="relative w-32 h-32 mb-4">
-<svg class="w-full h-full transform -rotate-90">
-<circle class="text-[#1F1F1F]" cx="64" cy="64" fill="transparent" r="58" stroke="currentColor" stroke-width="8"></circle>
-<circle class="text-[#cf5cff]" cx="64" cy="64" fill="transparent" r="58" stroke="currentColor" stroke-dasharray="364.4" stroke-dashoffset="145.7" stroke-width="8"></circle>
-</svg>
-<div class="absolute inset-0 flex flex-col items-center justify-center">
-<span class="font-display text-h1 text-white">60%</span>
-</div>
-</div>
-<h3 class="font-label-caps text-label-caps text-outline uppercase tracking-widest">Chem_Accuracy</h3>
-<div class="mt-2 text-error font-code text-xs">-2% critical attention</div>
-</div>
-<!-- Accuracy Gauge Math -->
-<div class="bg-[#141414] rounded-[24px] p-6 border-t border-[#1F1F1F] flex flex-col items-center justify-center text-center glow-blue">
-<div class="relative w-32 h-32 mb-4">
-<svg class="w-full h-full transform -rotate-90">
-<circle class="text-[#1F1F1F]" cx="64" cy="64" fill="transparent" r="58" stroke="currentColor" stroke-width="8"></circle>
-<circle class="text-[#00F0FF]" cx="64" cy="64" fill="transparent" r="58" stroke="currentColor" stroke-dasharray="364.4" stroke-dashoffset="18.2" stroke-width="8"></circle>
-</svg>
-<div class="absolute inset-0 flex flex-col items-center justify-center">
-<span class="font-display text-h1 text-primary">95%</span>
-</div>
-</div>
-<h3 class="font-label-caps text-label-caps text-outline uppercase tracking-widest">Math_Accuracy</h3>
-<div class="mt-2 text-primary font-code text-xs">Peak performance detected</div>
-</div>
-</div>
-<!-- Performance Graph & Weak Topics -->
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
-<!-- Recent Performance Line Graph -->
-<div class="lg:col-span-2 bg-[#141414] rounded-[24px] p-8 border-t border-[#1F1F1F]">
-<div class="flex justify-between items-end mb-8">
-<div>
-<h2 class="font-h2 text-h2 text-white uppercase tracking-tighter">PERFORMANCE_VECTOR</h2>
-<p class="font-body-md text-outline">Accuracy trends over the last 14 sessions</p>
-</div>
-<div class="flex gap-4">
-<div class="flex items-center gap-2">
-<div class="w-2 h-2 rounded-full bg-[#00F0FF]"></div>
-<span class="font-label-caps text-[10px] text-outline">ACCURACY</span>
-</div>
-<div class="flex items-center gap-2">
-<div class="w-2 h-2 rounded-full bg-[#cf5cff]"></div>
-<span class="font-label-caps text-[10px] text-outline">TIME_COST</span>
-</div>
-</div>
-</div>
-<div class="relative h-64 w-full bg-[#0f0f0f] rounded-xl overflow-hidden border border-[#1f1f1f]">
-<img alt="Performance Graph" class="w-full h-full object-cover opacity-60" data-alt="Digital line graph showing fluctuating performance metrics with neon cyan and magenta paths on a dark grid backdrop" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBENDf0c93CrifrmxDA2U7Em8n0z_ibSZKIFzdA5MQYhJ705hidJR88ZyNY9W7KNvIYGUzJgQ6pRzrMvbIzvm0ARGHRofMETDWz2IU_6-3BDFEFwMoGn2W6B5SvLNH7nVpGknPzELOEyeQG41DO2zEjpDfb8CJ0ZeQScvSzRVpDtFama4zyH46-ma4nljLkde3dZJHt-QQY7vyul8AgZA9tqQ50NRykwNDaU8SCVrSlU8Ub5w0utjJ4jEZEtS736pUwVcnVNfvLKTui"/>
-<div class="absolute inset-0 flex items-end justify-between px-6 pb-2">
-<span class="font-code text-[10px] text-outline">MON</span>
-<span class="font-code text-[10px] text-outline">TUE</span>
-<span class="font-code text-[10px] text-outline">WED</span>
-<span class="font-code text-[10px] text-outline">THU</span>
-<span class="font-code text-[10px] text-outline">FRI</span>
-<span class="font-code text-[10px] text-outline">SAT</span>
-<span class="font-code text-[10px] text-outline">SUN</span>
-</div>
-</div>
-</div>
-<!-- Weak Topics Bar Chart -->
-<div class="bg-[#141414] rounded-[24px] p-8 border-t border-[#1F1F1F]">
-<h2 class="font-h2 text-h2 text-white uppercase tracking-tighter mb-2">SYSTEM_WEAKNESS</h2>
-<p class="font-body-md text-outline mb-8">Priority topics for immediate review</p>
-<div class="space-y-6">
-<div class="space-y-2">
-<div class="flex justify-between text-xs font-code">
-<span class="text-white">ELECTROSTATICS</span>
-<span class="text-error">CRITICAL</span>
-</div>
-<div class="h-2 w-full bg-[#0f0f0f] rounded-full overflow-hidden">
-<div class="h-full bg-error rounded-full" style="width: 85%;"></div>
-</div>
-</div>
-<div class="space-y-2">
-<div class="flex justify-between text-xs font-code">
-<span class="text-white">THERMODYNAMICS</span>
-<span class="text-secondary-container">MEDIUM</span>
-</div>
-<div class="h-2 w-full bg-[#0f0f0f] rounded-full overflow-hidden">
-<div class="h-full bg-[#cf5cff] rounded-full" style="width: 60%;"></div>
-</div>
-</div>
-<div class="space-y-2">
-<div class="flex justify-between text-xs font-code">
-<span class="text-white">COORDINATE GEOMETRY</span>
-<span class="text-secondary-container">MEDIUM</span>
-</div>
-<div class="h-2 w-full bg-[#0f0f0f] rounded-full overflow-hidden">
-<div class="h-full bg-[#cf5cff] rounded-full" style="width: 45%;"></div>
-</div>
-</div>
-<div class="space-y-2">
-<div class="flex justify-between text-xs font-code">
-<span class="text-white">ORGANIC SYNTHESIS</span>
-<span class="text-outline">LOW</span>
-</div>
-<div class="h-2 w-full bg-[#0f0f0f] rounded-full overflow-hidden">
-<div class="h-full bg-outline rounded-full" style="width: 30%;"></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<!-- Subject Breakdown Detail Table -->
-<div class="bg-[#141414] rounded-[24px] overflow-hidden border-t border-[#1F1F1F]">
-<div class="p-8 flex justify-between items-center">
-<div>
-<h2 class="font-h2 text-h2 text-white uppercase tracking-tighter">RESOURCE_ALLOCATION</h2>
-<p class="font-body-md text-outline">Detailed time and effort metrics per subject</p>
-</div>
-<button class="bg-[#1F1F1F] text-[#00F0FF] font-label-caps px-4 py-2 rounded-lg border border-[#00F0FF]/20 hover:bg-[#00F0FF]/10 transition-colors">
-                        EXPORT_REPORT
-                    </button>
-</div>
-<div class="overflow-x-auto">
-<table class="w-full text-left font-body-md">
-<thead>
-<tr class="bg-[#0f0f0f] border-y border-[#1F1F1F]">
-<th class="px-8 py-4 font-label-caps text-outline tracking-widest">SUBJECT</th>
-<th class="px-8 py-4 font-label-caps text-outline tracking-widest text-center">TIME_SPENT</th>
-<th class="px-8 py-4 font-label-caps text-outline tracking-widest text-center">AVG_TIME/QUES</th>
-<th class="px-8 py-4 font-label-caps text-outline tracking-widest text-center">CORRECT_RATIO</th>
-<th class="px-8 py-4 font-label-caps text-outline tracking-widest text-right">TREND</th>
-</tr>
-</thead>
-<tbody class="divide-y divide-[#1F1F1F]">
-<tr class="hover:bg-[#1F1F1F]/50 transition-colors">
-<td class="px-8 py-6">
-<div class="flex items-center gap-3">
-<div class="w-1 h-8 bg-[#00F0FF]"></div>
-<div>
-<div class="text-white font-bold">PHYSICS</div>
-<div class="text-[10px] font-code text-outline">MODERN_PHYSICS_FOCUS</div>
-</div>
-</div>
-</td>
-<td class="px-8 py-6 text-center font-code text-primary">12h 45m</td>
-<td class="px-8 py-6 text-center font-code">2.4m</td>
-<td class="px-8 py-6 text-center">
-<span class="bg-[#00F0FF]/10 text-[#00F0FF] text-[10px] font-bold px-3 py-1 rounded-full">EXCELLENT</span>
-</td>
-<td class="px-8 py-6 text-right">
-<span class="material-symbols-outlined text-[#00F0FF]" data-icon="trending_up">trending_up</span>
-</td>
-</tr>
-<tr class="hover:bg-[#1F1F1F]/50 transition-colors">
-<td class="px-8 py-6">
-<div class="flex items-center gap-3">
-<div class="w-1 h-8 bg-[#cf5cff]"></div>
-<div>
-<div class="text-white font-bold">CHEMISTRY</div>
-<div class="text-[10px] font-code text-outline">ORGANIC_QUAL_ANALYSIS</div>
-</div>
-</div>
-</td>
-<td class="px-8 py-6 text-center font-code text-[#cf5cff]">08h 12m</td>
-<td class="px-8 py-6 text-center font-code">1.8m</td>
-<td class="px-8 py-6 text-center">
-<span class="bg-error/10 text-error text-[10px] font-bold px-3 py-1 rounded-full">REQUIRES_DRILL</span>
-</td>
-<td class="px-8 py-6 text-right">
-<span class="material-symbols-outlined text-error" data-icon="trending_down">trending_down</span>
-</td>
-</tr>
-<tr class="hover:bg-[#1F1F1F]/50 transition-colors">
-<td class="px-8 py-6">
-<div class="flex items-center gap-3">
-<div class="w-1 h-8 bg-[#00F0FF]"></div>
-<div>
-<div class="text-white font-bold">MATHEMATICS</div>
-<div class="text-[10px] font-code text-outline">INTEGRAL_CALCULUS</div>
-</div>
-</div>
-</td>
-<td class="px-8 py-6 text-center font-code text-primary">15h 30m</td>
-<td class="px-8 py-6 text-center font-code">3.1m</td>
-<td class="px-8 py-6 text-center">
-<span class="bg-[#00F0FF]/10 text-[#00F0FF] text-[10px] font-bold px-3 py-1 rounded-full">OPTIMIZED</span>
-</td>
-<td class="px-8 py-6 text-right">
-<span class="material-symbols-outlined text-[#00F0FF]" data-icon="trending_flat">trending_flat</span>
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-</div>
+
+<!-- ══ MAIN ═══════════════════════════════════════════════════ -->
+<main class="main">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-title">Performance Analytics</div>
+      <div class="topbar-sub">Last updated: Just now · Session #47</div>
+    </div>
+    <div class="topbar-right">
+      <div class="topbar-chip">
+        <div class="live-dot"></div>
+        Live tracking
+      </div>
+      <button class="topbar-btn" title="Export Report">
+        <span class="material-symbols-outlined">download</span>
+      </button>
+      <button class="topbar-btn" title="Filter">
+        <span class="material-symbols-outlined">tune</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="content">
+
+    <!-- ── QUICK ACCESS PANEL ──────────────────────────────── -->
+    <div class="anim anim-1">
+      <div class="section-label">Quick Access</div>
+      <div class="qa-panel">
+        <a class="qa-btn" href="#">
+          <div class="qa-icon"><span class="material-symbols-outlined">fitness_center</span></div>
+          <div class="qa-label">Start<br>Practice</div>
+        </a>
+        <a class="qa-btn" href="#">
+          <div class="qa-icon"><span class="material-symbols-outlined">quiz</span></div>
+          <div class="qa-label">Mock<br>Test</div>
+        </a>
+        <a class="qa-btn" href="#">
+          <div class="qa-icon"><span class="material-symbols-outlined">layers</span></div>
+          <div class="qa-label">JEE<br>Solver</div>
+        </a>
+        <a class="qa-btn" href="#">
+          <div class="qa-icon"><span class="material-symbols-outlined">menu_book</span></div>
+          <div class="qa-label">Revision<br>Mode</div>
+        </a>
+        <a class="qa-btn" href="#">
+          <div class="qa-icon"><span class="material-symbols-outlined">schedule</span></div>
+          <div class="qa-label">Study<br>Timer</div>
+        </a>
+        <a class="qa-btn" href="#">
+          <div class="qa-icon"><span class="material-symbols-outlined">emoji_events</span></div>
+          <div class="qa-label">Leader<br>board</div>
+        </a>
+      </div>
+    </div>
+
+    <!-- ── KPI STRIP ───────────────────────────────────────── -->
+    <div class="anim anim-2">
+      <div class="section-label">Overview</div>
+      <div class="kpi-strip">
+        <div class="kpi-card c-cyan">
+          <div class="kpi-icon"><span class="material-symbols-outlined">local_fire_department</span></div>
+          <div class="kpi-val">14</div>
+          <div class="kpi-label">Day Streak</div>
+          <div class="kpi-delta up">
+            <span class="material-symbols-outlined">trending_up</span>Best: 21 days
+          </div>
+        </div>
+        <div class="kpi-card c-purple">
+          <div class="kpi-icon"><span class="material-symbols-outlined">stars</span></div>
+          <div class="kpi-val">1,847</div>
+          <div class="kpi-label">Aura Score</div>
+          <div class="kpi-delta up">
+            <span class="material-symbols-outlined">trending_up</span>+112 this week
+          </div>
+        </div>
+        <div class="kpi-card c-green">
+          <div class="kpi-icon"><span class="material-symbols-outlined">check_circle</span></div>
+          <div class="kpi-val">78%</div>
+          <div class="kpi-label">Overall Accuracy</div>
+          <div class="kpi-delta up">
+            <span class="material-symbols-outlined">trending_up</span>+3% vs last week
+          </div>
+        </div>
+        <div class="kpi-card c-orange">
+          <div class="kpi-icon"><span class="material-symbols-outlined">schedule</span></div>
+          <div class="kpi-val">36h</div>
+          <div class="kpi-label">This Week</div>
+          <div class="kpi-delta down">
+            <span class="material-symbols-outlined">trending_down</span>Target: 42h
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── QUESTIONS SOLVED ─────────────────────────────────── -->
+    <div class="anim anim-2">
+      <div class="section-label">Questions Solved</div>
+      <div class="qstat-row">
+        <!-- Today -->
+        <div class="qstat-card">
+          <div class="qstat-ring">
+            <svg viewBox="0 0 56 56"><circle cx="28" cy="28" r="24" fill="none" stroke="var(--bg3)" stroke-width="5"/><circle cx="28" cy="28" r="24" fill="none" stroke="var(--cyan)" stroke-width="5" stroke-dasharray="150.8" stroke-dashoffset="45" stroke-linecap="round"/></svg>
+            <div class="qstat-ring-label">70</div>
+          </div>
+          <div class="qstat-info">
+            <div class="qstat-period">Today</div>
+            <div class="qstat-num">47</div>
+            <div class="qstat-sub">of 70 daily target · <span style="color:var(--cyan)">67%</span></div>
+          </div>
+        </div>
+        <!-- This Week -->
+        <div class="qstat-card">
+          <div class="qstat-ring">
+            <svg viewBox="0 0 56 56"><circle cx="28" cy="28" r="24" fill="none" stroke="var(--bg3)" stroke-width="5"/><circle cx="28" cy="28" r="24" fill="none" stroke="var(--purple)" stroke-width="5" stroke-dasharray="150.8" stroke-dashoffset="24" stroke-linecap="round"/></svg>
+            <div class="qstat-ring-label" style="color:var(--purple)">84</div>
+          </div>
+          <div class="qstat-info">
+            <div class="qstat-period">This Week</div>
+            <div class="qstat-num">312</div>
+            <div class="qstat-sub">of 420 weekly target · <span style="color:var(--purple)">84%</span></div>
+          </div>
+        </div>
+        <!-- This Month -->
+        <div class="qstat-card">
+          <div class="qstat-ring">
+            <svg viewBox="0 0 56 56"><circle cx="28" cy="28" r="24" fill="none" stroke="var(--bg3)" stroke-width="5"/><circle cx="28" cy="28" r="24" fill="none" stroke="var(--green)" stroke-width="5" stroke-dasharray="150.8" stroke-dashoffset="12" stroke-linecap="round"/></svg>
+            <div class="qstat-ring-label" style="color:var(--green)">92</div>
+          </div>
+          <div class="qstat-info">
+            <div class="qstat-period">This Month</div>
+            <div class="qstat-num">1,104</div>
+            <div class="qstat-sub">of 1,200 monthly target · <span style="color:var(--green)">92%</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ACCURACY GAUGES + PERFORMANCE GRAPH ─────────────── -->
+    <div class="anim anim-3">
+      <div class="section-label">Subject Accuracy</div>
+      <div class="gauge-row">
+        <div class="gauge-card">
+          <div class="gauge-wrap">
+            <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" fill="none" stroke="var(--bg3)" stroke-width="8"/><circle cx="50" cy="50" r="42" fill="none" stroke="var(--cyan)" stroke-width="8" stroke-dasharray="263.9" stroke-dashoffset="52.8" stroke-linecap="round"/></svg>
+            <div class="gauge-center">
+              <div class="gauge-pct" style="color:var(--cyan)">80%</div>
+            </div>
+          </div>
+          <div class="gauge-subject">Physics</div>
+          <div class="gauge-trend up">
+            <span class="material-symbols-outlined">trending_up</span>+5% this week
+          </div>
+        </div>
+        <div class="gauge-card">
+          <div class="gauge-wrap">
+            <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" fill="none" stroke="var(--bg3)" stroke-width="8"/><circle cx="50" cy="50" r="42" fill="none" stroke="var(--purple)" stroke-width="8" stroke-dasharray="263.9" stroke-dashoffset="105.6" stroke-linecap="round"/></svg>
+            <div class="gauge-center">
+              <div class="gauge-pct" style="color:var(--purple)">60%</div>
+            </div>
+          </div>
+          <div class="gauge-subject">Chemistry</div>
+          <div class="gauge-trend down">
+            <span class="material-symbols-outlined">trending_down</span>−2% · needs focus
+          </div>
+        </div>
+        <div class="gauge-card">
+          <div class="gauge-wrap">
+            <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" fill="none" stroke="var(--bg3)" stroke-width="8"/><circle cx="50" cy="50" r="42" fill="none" stroke="var(--green)" stroke-width="8" stroke-dasharray="263.9" stroke-dashoffset="13.2" stroke-linecap="round"/></svg>
+            <div class="gauge-center">
+              <div class="gauge-pct" style="color:var(--green)">95%</div>
+            </div>
+          </div>
+          <div class="gauge-subject">Mathematics</div>
+          <div class="gauge-trend up">
+            <span class="material-symbols-outlined">trending_up</span>Peak performance
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PERFORMANCE GRAPH ───────────────────────────────── -->
+    <div class="anim anim-3">
+      <div class="section-label">Performance Trend</div>
+      <div class="chart-container">
+        <div class="card-header">
+          <div>
+            <div class="card-title">
+              <span class="material-symbols-outlined">show_chart</span>
+              Accuracy Trend · Last 14 Sessions
+            </div>
+            <div class="card-sub">Physics · Chemistry · Mathematics</div>
+          </div>
+          <div style="display:flex;gap:0.5rem;">
+            <button class="btn-outline" style="font-size:0.58rem;padding:0.35rem 0.7rem;">14 days</button>
+            <button class="btn-outline" style="font-size:0.58rem;padding:0.35rem 0.7rem;">30 days</button>
+          </div>
+        </div>
+        <div class="chart-area">
+          <!-- SVG Line Chart -->
+          <div class="perf-svg-wrap">
+            <svg viewBox="0 0 700 180" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="gcyan" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#00f0ff" stop-opacity="0.25"/><stop offset="100%" stop-color="#00f0ff" stop-opacity="0"/></linearGradient>
+                <linearGradient id="gpurple" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#b06aff" stop-opacity="0.2"/><stop offset="100%" stop-color="#b06aff" stop-opacity="0"/></linearGradient>
+                <linearGradient id="ggreen" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#00e5a0" stop-opacity="0.2"/><stop offset="100%" stop-color="#00e5a0" stop-opacity="0"/></linearGradient>
+              </defs>
+              <!-- Grid lines -->
+              <line x1="0" y1="36" x2="700" y2="36" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+              <line x1="0" y1="72" x2="700" y2="72" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+              <line x1="0" y1="108" x2="700" y2="108" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+              <line x1="0" y1="144" x2="700" y2="144" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+              <!-- Y labels -->
+              <text x="4" y="34" fill="rgba(255,255,255,0.2)" font-size="10" font-family="DM Mono">100%</text>
+              <text x="4" y="70" fill="rgba(255,255,255,0.2)" font-size="10" font-family="DM Mono">75%</text>
+              <text x="4" y="106" fill="rgba(255,255,255,0.2)" font-size="10" font-family="DM Mono">50%</text>
+              <text x="4" y="142" fill="rgba(255,255,255,0.2)" font-size="10" font-family="DM Mono">25%</text>
+              <!-- Physics path (cyan) -->
+              <path d="M50,64 L100,56 L150,68 L200,52 L250,60 L300,44 L350,56 L400,40 L450,36 L500,48 L550,40 L600,36 L650,44 L700,36" fill="url(#gcyan)" stroke="none" opacity="0.7"/>
+              <path d="M50,64 L100,56 L150,68 L200,52 L250,60 L300,44 L350,56 L400,40 L450,36 L500,48 L550,40 L600,36 L650,44 L700,36" fill="none" stroke="#00f0ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <!-- Chemistry path (purple) -->
+              <path d="M50,100 L100,112 L150,96 L200,108 L250,120 L300,108 L350,100 L400,108 L450,96 L500,104 L550,112 L600,104 L650,96 L700,108" fill="url(#gpurple)" stroke="none" opacity="0.6"/>
+              <path d="M50,100 L100,112 L150,96 L200,108 L250,120 L300,108 L350,100 L400,108 L450,96 L500,104 L550,112 L600,104 L650,96 L700,108" fill="none" stroke="#b06aff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <!-- Math path (green) -->
+              <path d="M50,52 L100,48 L150,44 L200,48 L250,40 L300,36 L350,40 L400,36 L450,32 L500,36 L550,32 L600,28 L650,32 L700,28" fill="url(#ggreen)" stroke="none" opacity="0.6"/>
+              <path d="M50,52 L100,48 L150,44 L200,48 L250,40 L300,36 L350,40 L400,36 L450,32 L500,36 L550,32 L600,28 L650,32 L700,28" fill="none" stroke="#00e5a0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <!-- Data points -->
+              <circle cx="700" cy="36" r="4" fill="#00f0ff" stroke="var(--card)" stroke-width="2"/>
+              <circle cx="700" cy="108" r="4" fill="#b06aff" stroke="var(--card)" stroke-width="2"/>
+              <circle cx="700" cy="28" r="4" fill="#00e5a0" stroke="var(--card)" stroke-width="2"/>
+            </svg>
+          </div>
+          <!-- X axis labels -->
+          <div style="display:flex;justify-content:space-between;margin-top:0.4rem;padding:0 6px;">
+            <span style="font-family:'DM Mono',monospace;font-size:0.55rem;color:var(--text3);">S1</span>
+            <span style="font-family:'DM Mono',monospace;font-size:0.55rem;color:var(--text3);">S2</span>
+            <span style="font-family:'DM Mono',monospace;font-size:0.55rem;color:var(--text3);">S3</span>
+            <span style="font-family:'DM Mono',monospace;font-size:0.55rem;color:var(--text3);">S4</span>
+            <span style="font-family:'DM Mono',monospace;font-size:0.55rem;color:var(--text3);">S5</span>
+            <span style="font-family:'DM Mono',monospace;font-size:0.55rem;color:var(--text3);">S6</span>
+            <span style="font-family:'DM Mono',monospace;font-size:0.55rem;color:var(--text3);">S7</span>
+            <span style="font-family:'DM Mono',monospace;font-size:0.55rem;color:var(--text3);">S8</span>
+            <span style="font-family:'DM Mono',monospace;font-size:0.55rem;color:var(--text3);">S9</span>
+            <span style="font-family:'DM Mono',monospace;font-size:0.55rem;color:var(--text3);">S10</span>
+            <span style="font-family:'DM Mono',monospace;font-size:0.55rem;color:var(--text3);">S11</span>
+            <span style="font-family:'DM Mono',monospace;font-size:0.55rem;color:var(--text3);">S12</span>
+            <span style="font-family:'DM Mono',monospace;font-size:0.55rem;color:var(--text3);">S13</span>
+            <span style="font-family:'DM Mono',monospace;font-size:0.55rem;color:var(--text3);">S14</span>
+          </div>
+        </div>
+        <div class="chart-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--cyan);"></div>Physics</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--purple);"></div>Chemistry</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--green);"></div>Mathematics</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── CHAPTERS: TOP + WEAK ────────────────────────────── -->
+    <div class="anim anim-4">
+      <div class="two-col">
+        <!-- Top Chapters -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">
+                <span class="material-symbols-outlined" style="color:var(--green)">emoji_events</span>
+                Top Chapters
+              </div>
+              <div class="card-sub">Highest accuracy chapters</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="chapter-list">
+              <div class="chapter-row">
+                <div class="chapter-rank top">1</div>
+                <div style="flex:1;min-width:0;">
+                  <div class="chapter-name">Integral Calculus</div>
+                  <div class="chapter-sub">Mathematics · 48 questions</div>
+                </div>
+                <div class="chapter-bar-wrap"><div class="chapter-bar" style="width:96%;background:var(--green);"></div></div>
+                <div class="chapter-score" style="color:var(--green)">96%</div>
+                <span class="badge-pill badge-top">🔥 Hot</span>
+              </div>
+              <div class="chapter-row">
+                <div class="chapter-rank top">2</div>
+                <div style="flex:1;min-width:0;">
+                  <div class="chapter-name">Differential Equations</div>
+                  <div class="chapter-sub">Mathematics · 31 questions</div>
+                </div>
+                <div class="chapter-bar-wrap"><div class="chapter-bar" style="width:93%;background:var(--cyan);"></div></div>
+                <div class="chapter-score" style="color:var(--cyan)">93%</div>
+                <span class="badge-pill badge-top">Strong</span>
+              </div>
+              <div class="chapter-row">
+                <div class="chapter-rank top">3</div>
+                <div style="flex:1;min-width:0;">
+                  <div class="chapter-name">Modern Physics</div>
+                  <div class="chapter-sub">Physics · 27 questions</div>
+                </div>
+                <div class="chapter-bar-wrap"><div class="chapter-bar" style="width:91%;background:var(--cyan);"></div></div>
+                <div class="chapter-score" style="color:var(--cyan)">91%</div>
+                <span class="badge-pill badge-top">Strong</span>
+              </div>
+              <div class="chapter-row">
+                <div class="chapter-rank top">4</div>
+                <div style="flex:1;min-width:0;">
+                  <div class="chapter-name">Probability & Statistics</div>
+                  <div class="chapter-sub">Mathematics · 22 questions</div>
+                </div>
+                <div class="chapter-bar-wrap"><div class="chapter-bar" style="width:88%;background:var(--cyan);"></div></div>
+                <div class="chapter-score" style="color:var(--cyan)">88%</div>
+                <span class="badge-pill badge-low">Good</span>
+              </div>
+              <div class="chapter-row">
+                <div class="chapter-rank top">5</div>
+                <div style="flex:1;min-width:0;">
+                  <div class="chapter-name">Optics & Wave Theory</div>
+                  <div class="chapter-sub">Physics · 19 questions</div>
+                </div>
+                <div class="chapter-bar-wrap"><div class="chapter-bar" style="width:85%;background:var(--cyan);"></div></div>
+                <div class="chapter-score" style="color:var(--cyan)">85%</div>
+                <span class="badge-pill badge-low">Good</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Weak Chapters -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">
+                <span class="material-symbols-outlined" style="color:var(--red)">warning</span>
+                Weak Chapters
+              </div>
+              <div class="card-sub">Chapters needing immediate attention</div>
+            </div>
+            <button class="btn-primary">
+              <span class="material-symbols-outlined">fitness_center</span>Drill Now
+            </button>
+          </div>
+          <div class="card-body">
+            <div class="chapter-list">
+              <div class="chapter-row">
+                <div class="chapter-rank weak">1</div>
+                <div style="flex:1;min-width:0;">
+                  <div class="chapter-name">Electrostatics</div>
+                  <div class="chapter-sub">Physics · 34 questions · Avg 4.2m/q</div>
+                </div>
+                <div class="chapter-bar-wrap"><div class="chapter-bar" style="width:28%;background:var(--red);"></div></div>
+                <div class="chapter-score" style="color:var(--red)">28%</div>
+                <span class="badge-pill badge-crit">Critical</span>
+              </div>
+              <div class="chapter-row">
+                <div class="chapter-rank weak">2</div>
+                <div style="flex:1;min-width:0;">
+                  <div class="chapter-name">Chemical Bonding</div>
+                  <div class="chapter-sub">Chemistry · 29 questions · Avg 3.8m/q</div>
+                </div>
+                <div class="chapter-bar-wrap"><div class="chapter-bar" style="width:35%;background:var(--red);"></div></div>
+                <div class="chapter-score" style="color:var(--red)">35%</div>
+                <span class="badge-pill badge-crit">Critical</span>
+              </div>
+              <div class="chapter-row">
+                <div class="chapter-rank weak">3</div>
+                <div style="flex:1;min-width:0;">
+                  <div class="chapter-name">Thermodynamics</div>
+                  <div class="chapter-sub">Physics · 21 questions · Avg 3.1m/q</div>
+                </div>
+                <div class="chapter-bar-wrap"><div class="chapter-bar" style="width:42%;background:var(--orange);"></div></div>
+                <div class="chapter-score" style="color:var(--orange)">42%</div>
+                <span class="badge-pill badge-med">Medium</span>
+              </div>
+              <div class="chapter-row">
+                <div class="chapter-rank weak">4</div>
+                <div style="flex:1;min-width:0;">
+                  <div class="chapter-name">Coordinate Geometry</div>
+                  <div class="chapter-sub">Mathematics · 18 questions · Avg 2.9m/q</div>
+                </div>
+                <div class="chapter-bar-wrap"><div class="chapter-bar" style="width:48%;background:var(--orange);"></div></div>
+                <div class="chapter-score" style="color:var(--orange)">48%</div>
+                <span class="badge-pill badge-med">Medium</span>
+              </div>
+              <div class="chapter-row">
+                <div class="chapter-rank weak">5</div>
+                <div style="flex:1;min-width:0;">
+                  <div class="chapter-name">Organic Synthesis</div>
+                  <div class="chapter-sub">Chemistry · 16 questions · Avg 2.5m/q</div>
+                </div>
+                <div class="chapter-bar-wrap"><div class="chapter-bar" style="width:52%;background:var(--yellow);"></div></div>
+                <div class="chapter-score" style="color:var(--yellow)">52%</div>
+                <span class="badge-pill badge-med">Medium</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── WEAK TOPICS + PREDICTION + STREAK ──────────────── -->
+    <div class="anim anim-4">
+      <div class="three-col">
+
+        <!-- Weak Topics -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">
+                <span class="material-symbols-outlined" style="color:var(--red)">crisis_alert</span>
+                Weak Topics
+              </div>
+              <div class="card-sub">Topic-level weaknesses across all subjects</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="topic-grid">
+              <div class="topic-chip sev-1">
+                <div class="topic-icon"><span class="material-symbols-outlined">bolt</span></div>
+                <div class="topic-text">
+                  <div class="topic-name">Gauss's Law</div>
+                  <div class="topic-subject">Physics</div>
+                </div>
+                <div class="topic-score">22%</div>
+              </div>
+              <div class="topic-chip sev-1">
+                <div class="topic-icon"><span class="material-symbols-outlined">science</span></div>
+                <div class="topic-text">
+                  <div class="topic-name">Hybridization</div>
+                  <div class="topic-subject">Chemistry</div>
+                </div>
+                <div class="topic-score">29%</div>
+              </div>
+              <div class="topic-chip sev-2">
+                <div class="topic-icon"><span class="material-symbols-outlined">functions</span></div>
+                <div class="topic-text">
+                  <div class="topic-name">Conic Sections</div>
+                  <div class="topic-subject">Maths</div>
+                </div>
+                <div class="topic-score">38%</div>
+              </div>
+              <div class="topic-chip sev-2">
+                <div class="topic-icon"><span class="material-symbols-outlined">thermostat</span></div>
+                <div class="topic-text">
+                  <div class="topic-name">Entropy</div>
+                  <div class="topic-subject">Physics</div>
+                </div>
+                <div class="topic-score">41%</div>
+              </div>
+              <div class="topic-chip sev-2">
+                <div class="topic-icon"><span class="material-symbols-outlined">colorize</span></div>
+                <div class="topic-text">
+                  <div class="topic-name">Aldehydes</div>
+                  <div class="topic-subject">Chemistry</div>
+                </div>
+                <div class="topic-score">45%</div>
+              </div>
+              <div class="topic-chip sev-3">
+                <div class="topic-icon"><span class="material-symbols-outlined">waves</span></div>
+                <div class="topic-text">
+                  <div class="topic-name">SHM</div>
+                  <div class="topic-subject">Physics</div>
+                </div>
+                <div class="topic-score">51%</div>
+              </div>
+              <div class="topic-chip sev-3">
+                <div class="topic-icon"><span class="material-symbols-outlined">calculate</span></div>
+                <div class="topic-text">
+                  <div class="topic-name">3D Geometry</div>
+                  <div class="topic-subject">Maths</div>
+                </div>
+                <div class="topic-score">53%</div>
+              </div>
+              <div class="topic-chip sev-3">
+                <div class="topic-icon"><span class="material-symbols-outlined">biotech</span></div>
+                <div class="topic-text">
+                  <div class="topic-name">Electrochemistry</div>
+                  <div class="topic-subject">Chemistry</div>
+                </div>
+                <div class="topic-score">55%</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- JEE Rank Prediction -->
+        <div>
+          <div class="prediction-card" style="margin-bottom:1rem;">
+            <div class="card-title" style="margin-bottom:0.75rem;font-size:0.65rem;color:var(--text3);font-family:'DM Mono',monospace;letter-spacing:0.1em;text-transform:uppercase;font-weight:400;">
+              Projected JEE Score
+            </div>
+            <div class="prediction-score">247</div>
+            <div class="prediction-label">/ 300 · Est. Rank ~4,200</div>
+            <div class="prediction-breakdown">
+              <div class="pb-row">
+                <div class="pb-subject">PHY</div>
+                <div class="pb-bar-wrap"><div class="pb-bar" style="width:80%;background:var(--cyan);"></div></div>
+                <div class="pb-score" style="color:var(--cyan)">80</div>
+              </div>
+              <div class="pb-row">
+                <div class="pb-subject">CHEM</div>
+                <div class="pb-bar-wrap"><div class="pb-bar" style="width:60%;background:var(--purple);"></div></div>
+                <div class="pb-score" style="color:var(--purple)">67</div>
+              </div>
+              <div class="pb-row">
+                <div class="pb-subject">MATH</div>
+                <div class="pb-bar-wrap"><div class="pb-bar" style="width:89%;background:var(--green);"></div></div>
+                <div class="pb-score" style="color:var(--green)">100</div>
+              </div>
+            </div>
+          </div>
+          <!-- Quick mini stats -->
+          <div class="mini-stat-row">
+            <div class="mini-stat">
+              <div class="mini-stat-icon" style="background:rgba(0,240,255,0.1);"><span class="material-symbols-outlined" style="font-size:13px;color:var(--cyan)">timer</span></div>
+              <div class="mini-stat-label">Avg time / question</div>
+              <div class="mini-stat-val">2.6m</div>
+            </div>
+            <div class="mini-stat">
+              <div class="mini-stat-icon" style="background:rgba(176,106,255,0.1);"><span class="material-symbols-outlined" style="font-size:13px;color:var(--purple)">cancel</span></div>
+              <div class="mini-stat-label">Negative marks today</div>
+              <div class="mini-stat-val" style="color:var(--red)">−8</div>
+            </div>
+            <div class="mini-stat">
+              <div class="mini-stat-icon" style="background:rgba(0,229,160,0.1);"><span class="material-symbols-outlined" style="font-size:13px;color:var(--green)">skip_next</span></div>
+              <div class="mini-stat-label">Questions skipped</div>
+              <div class="mini-stat-val">12</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Streak tracker -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">
+                <span class="material-symbols-outlined" style="color:var(--orange)">local_fire_department</span>
+                Study Streak
+              </div>
+              <div class="card-sub">Last 14 days attendance</div>
+            </div>
+          </div>
+          <div class="streak-row">
+            <div class="streak-day">
+              <div class="streak-day-name">M</div>
+              <div class="streak-pip done"><span class="material-symbols-outlined">check</span></div>
+            </div>
+            <div class="streak-day">
+              <div class="streak-day-name">T</div>
+              <div class="streak-pip done"><span class="material-symbols-outlined">check</span></div>
+            </div>
+            <div class="streak-day">
+              <div class="streak-day-name">W</div>
+              <div class="streak-pip done"><span class="material-symbols-outlined">check</span></div>
+            </div>
+            <div class="streak-day">
+              <div class="streak-day-name">T</div>
+              <div class="streak-pip missed"><span class="material-symbols-outlined">close</span></div>
+            </div>
+            <div class="streak-day">
+              <div class="streak-day-name">F</div>
+              <div class="streak-pip done"><span class="material-symbols-outlined">check</span></div>
+            </div>
+            <div class="streak-day">
+              <div class="streak-day-name">S</div>
+              <div class="streak-pip done"><span class="material-symbols-outlined">check</span></div>
+            </div>
+            <div class="streak-day">
+              <div class="streak-day-name">S</div>
+              <div class="streak-pip done"><span class="material-symbols-outlined">check</span></div>
+            </div>
+          </div>
+          <div class="streak-row" style="padding-top:0;">
+            <div class="streak-day">
+              <div class="streak-day-name">M</div>
+              <div class="streak-pip done"><span class="material-symbols-outlined">check</span></div>
+            </div>
+            <div class="streak-day">
+              <div class="streak-day-name">T</div>
+              <div class="streak-pip done"><span class="material-symbols-outlined">check</span></div>
+            </div>
+            <div class="streak-day">
+              <div class="streak-day-name">W</div>
+              <div class="streak-pip done"><span class="material-symbols-outlined">check</span></div>
+            </div>
+            <div class="streak-day">
+              <div class="streak-day-name">T</div>
+              <div class="streak-pip done"><span class="material-symbols-outlined">check</span></div>
+            </div>
+            <div class="streak-day">
+              <div class="streak-day-name">F</div>
+              <div class="streak-pip done"><span class="material-symbols-outlined">check</span></div>
+            </div>
+            <div class="streak-day">
+              <div class="streak-day-name">S</div>
+              <div class="streak-pip today"><span class="material-symbols-outlined">star</span></div>
+            </div>
+            <div class="streak-day">
+              <div class="streak-day-name">S</div>
+              <div class="streak-pip future"></div>
+            </div>
+          </div>
+          <div class="streak-count-wrap">
+            <div>
+              <div class="streak-num">14 <span>day streak</span></div>
+              <div style="font-family:'DM Mono',monospace;font-size:0.6rem;color:var(--text3);margin-top:2px;">Keep going — 7 more to beat your best!</div>
+            </div>
+            <div class="streak-best">
+              <div>Personal Best</div>
+              <strong>21 days</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ACTIVITY HEATMAP ─────────────────────────────────── -->
+    <div class="anim anim-5">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">
+              <span class="material-symbols-outlined">calendar_month</span>
+              Activity Heatmap · 2025
+            </div>
+            <div class="card-sub">Daily study sessions — darker = more time spent</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.5rem;">
+            <span style="font-family:'DM Mono',monospace;font-size:0.58rem;color:var(--text3);">Less</span>
+            <div style="width:10px;height:10px;border-radius:3px;background:var(--bg3);"></div>
+            <div style="width:10px;height:10px;border-radius:3px;background:rgba(0,240,255,0.2);"></div>
+            <div style="width:10px;height:10px;border-radius:3px;background:rgba(0,240,255,0.45);"></div>
+            <div style="width:10px;height:10px;border-radius:3px;background:rgba(0,240,255,0.7);"></div>
+            <div style="width:10px;height:10px;border-radius:3px;background:var(--cyan);"></div>
+            <span style="font-family:'DM Mono',monospace;font-size:0.58rem;color:var(--text3);">More</span>
+          </div>
+        </div>
+        <div class="card-body" style="overflow-x:auto;">
+          <div id="heatmap-wrap" style="min-width:600px;">
+            <div class="heatmap-days">
+              <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span><span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dec</span>
+            </div>
+            <div class="heatmap-grid" id="heatmap-grid"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SUBJECT DETAIL TABLE ──────────────────────────────── -->
+    <div class="anim anim-5">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">
+              <span class="material-symbols-outlined">table_chart</span>
+              Resource Allocation
+            </div>
+            <div class="card-sub">Detailed time & performance metrics per subject</div>
+          </div>
+          <button class="btn-outline">
+            <span class="material-symbols-outlined">download</span>Export CSV
+          </button>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th>Subject</th>
+                <th>Time Spent</th>
+                <th>Questions</th>
+                <th>Correct</th>
+                <th>Avg Time/Q</th>
+                <th>Neg Marks</th>
+                <th>Status</th>
+                <th>Trend</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <div style="display:flex;align-items:center;gap:0.6rem;">
+                    <span class="subject-dot" style="background:var(--cyan);"></span>
+                    <div>
+                      <div style="font-weight:700;color:var(--text);">Physics</div>
+                      <div style="font-family:'DM Mono',monospace;font-size:0.6rem;color:var(--text3);">Modern Physics Focus</div>
+                    </div>
+                  </div>
+                </td>
+                <td style="color:var(--cyan);font-family:'DM Mono',monospace;font-weight:600;">12h 45m</td>
+                <td style="font-family:'DM Mono',monospace;">284</td>
+                <td style="font-family:'DM Mono',monospace;">227 <span style="color:var(--text3);font-size:0.7rem;">(80%)</span></td>
+                <td style="font-family:'DM Mono',monospace;">2.4m</td>
+                <td style="font-family:'DM Mono',monospace;color:var(--red);">−16</td>
+                <td><span class="status-badge st-ex">Excellent</span></td>
+                <td style="color:var(--green);">
+                  <span class="material-symbols-outlined" style="font-size:18px;vertical-align:middle;">trending_up</span>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div style="display:flex;align-items:center;gap:0.6rem;">
+                    <span class="subject-dot" style="background:var(--purple);"></span>
+                    <div>
+                      <div style="font-weight:700;color:var(--text);">Chemistry</div>
+                      <div style="font-family:'DM Mono',monospace;font-size:0.6rem;color:var(--text3);">Organic Qual Analysis</div>
+                    </div>
+                  </div>
+                </td>
+                <td style="color:var(--purple);font-family:'DM Mono',monospace;font-weight:600;">08h 12m</td>
+                <td style="font-family:'DM Mono',monospace;">196</td>
+                <td style="font-family:'DM Mono',monospace;">118 <span style="color:var(--text3);font-size:0.7rem;">(60%)</span></td>
+                <td style="font-family:'DM Mono',monospace;">1.8m</td>
+                <td style="font-family:'DM Mono',monospace;color:var(--red);">−28</td>
+                <td><span class="status-badge st-cr">Needs Drill</span></td>
+                <td style="color:var(--red);">
+                  <span class="material-symbols-outlined" style="font-size:18px;vertical-align:middle;">trending_down</span>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div style="display:flex;align-items:center;gap:0.6rem;">
+                    <span class="subject-dot" style="background:var(--green);"></span>
+                    <div>
+                      <div style="font-weight:700;color:var(--text);">Mathematics</div>
+                      <div style="font-family:'DM Mono',monospace;font-size:0.6rem;color:var(--text3);">Integral Calculus</div>
+                    </div>
+                  </div>
+                </td>
+                <td style="color:var(--green);font-family:'DM Mono',monospace;font-weight:600;">15h 30m</td>
+                <td style="font-family:'DM Mono',monospace;">312</td>
+                <td style="font-family:'DM Mono',monospace;">296 <span style="color:var(--text3);font-size:0.7rem;">(95%)</span></td>
+                <td style="font-family:'DM Mono',monospace;">3.1m</td>
+                <td style="font-family:'DM Mono',monospace;color:var(--red);">−4</td>
+                <td><span class="status-badge st-ok">Optimised</span></td>
+                <td style="color:var(--text3);">
+                  <span class="material-symbols-outlined" style="font-size:18px;vertical-align:middle;">trending_flat</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
 </main>
-<!-- BottomNavBar (Shared Component Mobile Only) -->
-<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-3 bg-[#141414] md:hidden border-t border-[#1F1F1F] rounded-t-2xl shadow-[0_-8px_32px_rgba(0,0,0,0.5)]">
-<a class="flex flex-col items-center justify-center text-gray-500 active:scale-90 transition-transform" href="#">
-<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
-<span class="font-['Space_Grotesk'] text-[10px] font-bold tracking-tighter">HOME</span>
-</a>
-<a class="flex flex-col items-center justify-center text-gray-500 active:scale-90 transition-transform" href="#">
-<span class="material-symbols-outlined" data-icon="layers">layers</span>
-<span class="font-['Space_Grotesk'] text-[10px] font-bold tracking-tighter">MODES</span>
-</a>
-<a class="flex flex-col items-center justify-center text-[#00F0FF] bg-[#00F0FF]/10 rounded-xl px-4 py-1 active:scale-90 transition-transform" href="#">
-<span class="material-symbols-outlined" data-icon="insights" style="font-variation-settings: 'FILL' 1;">insights</span>
-<span class="font-['Space_Grotesk'] text-[10px] font-bold tracking-tighter">STATS</span>
-</a>
-<a class="flex flex-col items-center justify-center text-gray-500 active:scale-90 transition-transform" href="#">
-<span class="material-symbols-outlined" data-icon="person">person</span>
-<span class="font-['Space_Grotesk'] text-[10px] font-bold tracking-tighter">PROFILE</span>
-</a>
-</nav>
-</body></html>
+
+<script>
+/* ── Generate heatmap ─────────────────────────────────────── */
+(function() {
+  var grid = document.getElementById('heatmap-grid');
+  if (!grid) return;
+  var levels = [0,0,0,1,1,2,0,3,1,2,4,1,0,2,3,1,0,0,1,2];
+  var html = '';
+  for (var i = 0; i < 365; i++) {
+    var rand = Math.random();
+    var l = rand < 0.35 ? 0 : rand < 0.55 ? 1 : rand < 0.72 ? 2 : rand < 0.88 ? 3 : 4;
+    // Simulate recent months being more active
+    if (i > 200) {
+      rand = Math.random();
+      l = rand < 0.15 ? 0 : rand < 0.35 ? 1 : rand < 0.55 ? 2 : rand < 0.75 ? 3 : 4;
+    }
+    html += '<div class="hm-cell hm-' + l + '" title="Day ' + (i+1) + ': ' + [0,1,2,3,5][l] + 'h studied"></div>';
+  }
+  grid.innerHTML = html;
+})();
+</script>
+
+</body>
+</html>
