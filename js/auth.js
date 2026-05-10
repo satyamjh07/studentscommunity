@@ -403,7 +403,20 @@ async function loadUserProfile() {
   applyTheme(profile.theme || 'dark');
   updateSidebarUI();
   showScreen('app-screen');
-  goToPage('dashboard');
+
+  // Check for ?page= URL param (e.g. coming from solver.html?page=community)
+  // If present, open that tab directly instead of defaulting to dashboard.
+  (function() {
+    var params = new URLSearchParams(window.location.search);
+    var requestedPage = params.get('page');
+    if (requestedPage) {
+      try { history.replaceState(null, '', window.location.pathname); } catch(e) {}
+      goToPage(requestedPage);
+    } else {
+      goToPage('dashboard');
+    }
+  })();
+
   checkUnfinishedSession();
   // Delay notification count fetch slightly to ensure RLS session cookie is set
   setTimeout(() => { if (currentUser) loadNotificationCount(); }, 800);
