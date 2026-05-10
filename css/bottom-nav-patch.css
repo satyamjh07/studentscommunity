@@ -51,6 +51,12 @@
     display: none !important;
   }
 
+  /* ── 5b. Hide notifications from bottom bar (bell is top-right) */
+  .nav-link[data-page="notifications"],
+  .nav-links li:has(.nav-link[data-page="notifications"]) {
+    display: none !important;
+  }
+
   /* ── 6. Nav links list — horizontal, full width ─────────── */
   .nav-links {
     display: flex !important;
@@ -209,4 +215,11 @@
   .settings-layout {
     margin-left: 0 !important;
   }
+}
+
+/* ─────────────────────────────────────────────────────────
+   MOBILE  (≤600px) — completely untouched
+   ───────────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  /* Your existing mobile sidebar handles this */
 }
