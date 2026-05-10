@@ -7,11 +7,11 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
   <link rel="icon" type="image/png" href="logo2.png"/>
 
-  <!-- KaTeX for LaTeX rendering -->
+  <!-- KaTeX -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"/>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
@@ -19,84 +19,1056 @@
   <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <!-- Theme system — must load before solver-v2.css so variables are defined -->
+  <!-- Design system (themes + solver base — must load first) -->
   <link rel="stylesheet" href="css/themes.css"/>
   <link rel="stylesheet" href="css/solver-v2.css"/>
 
-  <!-- ── Flash prevention: apply saved theme BEFORE first paint ── -->
+  <!-- Flash prevention -->
   <script>
     (function() {
-      // Try localStorage first (instant, no network round-trip)
       var t = localStorage.getItem('zd_theme');
-      // Apply immediately to both <html> and <body> (body may not exist yet, handled below)
       document.documentElement.setAttribute('data-theme', t || 'dark');
     })();
   </script>
+
   <style>
-    /* ── Overflow fix ── */
-    .zd-layout,
-    .zd-right,
-    .zd-q-card,
-    .zd-card {
-      min-width: 0;
-      max-width: 100%;
-      box-sizing: border-box;
-    }
+    /* ════════════════════════════════════════════════════════
+       SOLVER FLOW  —  all colours via CSS variables.
+       Zero hardcoded hex so all 6 themes work out of the box.
+    ════════════════════════════════════════════════════════ */
 
-    /* Force the question text to wrap within its card — never overflow */
+    /* ── Text-wrap / overflow fixes (preserved from original) ── */
+    .zd-layout, .zd-right, .zd-q-card, .zd-card {
+      min-width: 0; max-width: 100%; box-sizing: border-box;
+    }
     .zd-q-text {
-      display: block;
-      width: 100%;
-      max-width: 100%;
-      overflow: hidden;           /* clip anything that still tries to escape */
-      overflow-wrap: anywhere;    /* wrap at ANY point if needed, including mid-word as last resort */
-      word-break: normal;         /* prefer natural word boundaries */
-      white-space: normal;
-      box-sizing: border-box;
+      display: block; width: 100%; max-width: 100%;
+      overflow: hidden; overflow-wrap: anywhere;
+      word-break: normal; white-space: normal; box-sizing: border-box;
     }
-
-    /* All inline elements inside must inherit wrapping */
     .zd-q-text *:not(.katex):not(.katex *) {
-      max-width: 100%;
-      overflow-wrap: anywhere;
-      word-break: normal;
-      white-space: normal;
-      box-sizing: border-box;
+      max-width: 100%; overflow-wrap: anywhere;
+      word-break: normal; white-space: normal; box-sizing: border-box;
+    }
+    .solver-option-btn { white-space: normal; word-break: normal; overflow-wrap: anywhere; }
+    .katex-display { overflow-x: auto; overflow-y: hidden; max-width: 100%; }
+    .zd-q-card { overflow-x: hidden; }
+
+    /* ── View system ── */
+    .zdv { display: none; }
+    .zdv.active {
+      display: block;
+      animation: zdSlideUp 0.26s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    @keyframes zdSlideUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: none; }
     }
 
-    /* Options text wrapping */
-    .solver-option-btn {
-      white-space: normal;
-      word-break: normal;
-      overflow-wrap: anywhere;
+    /* ── Shared back / breadcrumb ── */
+    .zd-breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 1.6rem;
+      flex-wrap: wrap;
+    }
+    .zd-breadcrumb-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: none;
+      border: none;
+      color: var(--text2);
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.66rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: var(--radius-xs);
+      transition: color 0.15s, background 0.15s;
+    }
+    .zd-breadcrumb-btn:hover { color: var(--accent); background: var(--accent-glow); }
+    .zd-breadcrumb-btn .material-symbols-outlined { font-size: 14px; }
+    .zd-breadcrumb-sep { color: var(--border-hover); font-size: 13px; line-height: 1; }
+    .zd-breadcrumb-current {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.66rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    /* ════════════════════════════════════════════
+       VIEW 1 — MODE SELECTION
+    ════════════════════════════════════════════ */
+    .ms-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 1rem;
+      max-width: 1040px;
+    }
+    .ms-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.8rem;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.22s, transform 0.18s, box-shadow 0.22s;
+    }
+    .ms-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-card), 0 0 24px var(--accent-glow);
+    }
+    .ms-card:active { transform: scale(0.99); }
+
+    /* Column assignments */
+    .ms-card-pyq  { grid-column: 1; grid-row: 1; }
+    .ms-card-book { grid-column: 2; grid-row: 1; }
+    .ms-card-mock {
+      grid-column: 1 / -1; grid-row: 2;
+      border-left: 3px solid var(--accent);
+    }
+
+    /* Arrow reveal on hover */
+    .ms-arrow {
+      position: absolute;
+      right: 1.4rem; top: 50%;
+      transform: translateX(-8px);
+      opacity: 0;
+      color: var(--accent);
+      transition: opacity 0.2s, transform 0.2s;
+      pointer-events: none;
+    }
+    .ms-card:hover .ms-arrow { opacity: 1; transform: translateX(0); }
+
+    /* Badge */
+    .ms-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.59rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: var(--accent-glow);
+      color: var(--accent);
+      border: 1px solid var(--border-hover);
+      margin-bottom: 0.9rem;
+    }
+    .ms-badge .material-symbols-outlined { font-size: 12px; }
+
+    .ms-card-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: -0.02em;
+      margin-bottom: 7px;
+      transition: color 0.18s;
+    }
+    .ms-card:hover .ms-card-title { color: var(--accent); }
+
+    .ms-card-mock .ms-card-title {
+      font-size: 1.9rem;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      font-style: italic;
+      text-transform: uppercase;
+    }
+    .ms-card-desc {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.81rem;
+      color: var(--text2);
+      line-height: 1.65;
+      margin-bottom: 1.3rem;
+      max-width: 380px;
+    }
+
+    /* Inline CTA (not interactive — card is clickable) */
+    .ms-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: var(--accent-grad);
+      color: #fff;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.68rem;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      padding: 10px 20px;
+      border-radius: var(--radius-sm);
+      border: none;
+      box-shadow: 0 0 16px var(--accent-glow);
+      pointer-events: none;
+    }
+    .ms-cta-outline {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: transparent;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.68rem;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      padding: 10px 18px;
+      border-radius: var(--radius-sm);
+      pointer-events: none;
+    }
+
+    /* Progress bar (booklet card) */
+    .ms-prog-bar {
+      height: 2px;
+      background: var(--border);
+      border-radius: 999px;
+      overflow: hidden;
+      margin: 12px 0 16px;
+    }
+    .ms-prog-fill {
+      height: 100%;
+      background: var(--accent-grad);
+      box-shadow: 0 0 6px var(--accent-glow);
+    }
+
+    /* Mock card layout */
+    .ms-mock-inner {
+      display: flex;
+      align-items: center;
+      gap: 2.4rem;
+      flex-wrap: wrap;
+    }
+    .ms-mock-inner .ms-card-desc { max-width: 460px; }
+    .ms-mock-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    /* Animated clock visual */
+    .ms-clock {
+      flex-shrink: 0;
+      width: 130px; height: 130px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-left: auto;
+    }
+    .ms-clock-ring {
+      position: absolute; inset: 0;
+      border: 1.5px solid var(--border-hover);
+      border-radius: 50%;
+      animation: clockPulse 2.4s ease-in-out infinite;
+    }
+    .ms-clock-ring2 {
+      position: absolute; inset: 14px;
+      border: 1px solid var(--border);
+      border-radius: 50%;
+    }
+    @keyframes clockPulse { 0%,100%{opacity:0.8} 50%{opacity:0.25} }
+    .ms-clock-text { text-align: center; position: relative; z-index: 1; }
+    .ms-clock-text span {
+      display: block;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.55rem;
+      font-weight: 900;
+      color: var(--accent);
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+    .ms-clock-text small {
+      display: block;
+      font-family: 'Space Grotesk', monospace;
+      font-size: 0.5rem;
+      color: var(--text2);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+
+    @media (max-width: 760px) {
+      .ms-grid { grid-template-columns: 1fr; }
+      .ms-card-pyq,.ms-card-book,.ms-card-mock { grid-column: 1; grid-row: auto; }
+      .ms-clock { display: none; }
+      .ms-card-mock .ms-card-title { font-size: 1.4rem; }
+      .ms-card { padding: 1.4rem; }
+    }
+
+    /* ════════════════════════════════════════════
+       VIEW 2 — PYQ SELECTION
+    ════════════════════════════════════════════ */
+    #view-pyq-select { padding-bottom: 80px; } /* room for sticky bar */
+
+    .ps-wrap { max-width: 800px; }
+    .ps-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.6rem;
+      font-weight: 900;
+      color: var(--text);
+      letter-spacing: -0.02em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .ps-sub { font-size: 0.81rem; color: var(--text2); margin-bottom: 2.2rem; }
+
+    /* Step row */
+    .ps-step { margin-bottom: 2rem; }
+    .ps-step-hdr {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 0.9rem;
+    }
+    .ps-num {
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      background: var(--bg3);
+      border: 1px solid var(--border-hover);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Space Grotesk', monospace;
+      font-size: 0.62rem;
+      font-weight: 700;
+      color: var(--accent);
+      flex-shrink: 0;
+      transition: all 0.18s;
+    }
+    .ps-num.locked { color: var(--text3); border-color: var(--border); background: var(--bg2); }
+    .ps-num.done   { background: var(--accent-glow); border-color: var(--accent); }
+    .ps-step-lbl {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--text);
+    }
+
+    /* Subject row */
+    .ps-subj-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .ps-subj-btn {
+      flex: 1;
+      min-width: 120px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 16px 18px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text2);
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.16s;
+    }
+    .ps-subj-btn .material-symbols-outlined { font-size: 21px; }
+    .ps-subj-btn:hover { border-color: var(--accent); background: var(--card2); color: var(--text); }
+    .ps-subj-btn.active {
+      background: var(--accent-grad);
+      color: #fff;
+      border-color: transparent;
+      box-shadow: 0 0 14px var(--accent-glow);
+    }
+    .ps-subj-btn.active .material-symbols-outlined {
+      font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+    }
+
+    /* Year chips */
+    .ps-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .ps-chip {
+      padding: 6px 13px;
+      border-radius: 999px;
+      font-family: 'Inter', monospace;
+      font-size: 0.7rem;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      color: var(--text2);
+      background: transparent;
+      cursor: pointer;
+      transition: all 0.14s;
+    }
+    .ps-chip:hover { border-color: var(--accent); color: var(--text); }
+    .ps-chip.active { background: var(--accent-glow); border-color: var(--accent); color: var(--accent); }
+
+    /* Filter pills */
+    .ps-filter-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.4rem; margin-top: 1.1rem; }
+    .ps-filter-lbl {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text2);
+      display: block;
+      margin-bottom: 7px;
+    }
+    .ps-pills { display: flex; gap: 5px; }
+    .ps-pill {
+      flex: 1;
+      padding: 8px 5px;
+      border-radius: var(--radius-xs);
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text2);
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.14s;
+    }
+    .ps-pill:hover { border-color: var(--accent); color: var(--text); }
+    .ps-pill.active { background: var(--accent-glow); border-color: var(--accent); color: var(--accent); }
+
+    /* Sticky CTA bar */
+    .ps-cta-bar {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: var(--glass);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-top: 1px solid var(--border);
+      padding: 13px 2.4rem;
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .ps-cta-meta { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+    .ps-cta-meta-item {
+      font-family: 'Space Grotesk', monospace;
+      font-size: 0.66rem;
+      color: var(--text2);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .ps-cta-meta-item b { color: var(--accent); }
+    .ps-cta-sep { width: 1px; height: 14px; background: var(--border); flex-shrink: 0; }
+    .ps-start-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--accent-grad);
+      color: #fff;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      padding: 13px 28px;
+      border-radius: var(--radius-sm);
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 0 28px var(--accent-glow);
+      transition: filter 0.14s, transform 0.14s;
+      white-space: nowrap;
+    }
+    .ps-start-btn:hover { filter: brightness(1.08); }
+    .ps-start-btn:active { transform: scale(0.98); }
+    @media (max-width: 600px) {
+      .ps-filter-row { grid-template-columns: 1fr; }
+      .ps-cta-bar { padding: 11px 1rem; }
+      .ps-cta-meta { display: none; }
+    }
+
+    /* ════════════════════════════════════════════
+       VIEW 3 — BOOKLETS
+    ════════════════════════════════════════════ */
+    .bl-header { margin-bottom: 1.6rem; }
+    .bl-header h2 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.7rem;
+      font-weight: 900;
+      color: var(--accent);
+      letter-spacing: -0.03em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .bl-header p { font-size: 0.81rem; color: var(--text2); }
+
+    .bl-filter-bar { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 1.4rem; }
+    .bl-chip {
+      padding: 5px 13px;
+      border-radius: 999px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      color: var(--text2);
+      background: transparent;
+      transition: all 0.14s;
+    }
+    .bl-chip:hover { border-color: var(--accent); color: var(--text); }
+    .bl-chip.active { background: var(--accent-glow); border-color: var(--accent); color: var(--accent); }
+
+    .bl-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+      gap: 1rem;
+    }
+    .bl-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.35rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.9rem;
+      cursor: pointer;
+      transition: border-color 0.2s, transform 0.18s, box-shadow 0.2s;
+    }
+    .bl-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-card), 0 0 18px var(--accent-glow);
+    }
+    .bl-card-hdr { display: flex; justify-content: space-between; align-items: flex-start; }
+    .bl-subj-tag {
+      display: inline-block;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.57rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 3px 7px;
+      border-radius: 4px;
+      background: var(--accent-glow);
+      color: var(--accent);
+      border: 1px solid var(--border-hover);
+      margin-bottom: 4px;
+    }
+    .bl-card-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: 0.01em;
+    }
+    .bl-card-pct {
+      font-family: 'Inter', monospace;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .bl-bar { height: 2px; background: var(--border); border-radius: 999px; overflow: hidden; }
+    .bl-bar-fill { height: 100%; background: var(--accent-grad); box-shadow: 0 0 5px var(--accent-glow); }
+
+    .bl-chapters { display: flex; flex-direction: column; gap: 5px; flex: 1; }
+    .bl-ch {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 11px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xs);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.78rem;
+      color: var(--text2);
+    }
+    .bl-ch.current {
+      border-color: var(--accent);
+      color: var(--text);
+      background: var(--accent-glow);
+      font-weight: 600;
+    }
+    .bl-ch .material-symbols-outlined { font-size: 14px; color: var(--accent); flex-shrink: 0; }
+
+    .bl-empty-hint {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 18px 0;
+      opacity: 0.38;
+    }
+    .bl-empty-hint .material-symbols-outlined { font-size: 30px; color: var(--text2); }
+    .bl-empty-hint span {
+      font-family: 'Space Grotesk', monospace;
+      font-size: 0.58rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text2);
+    }
+
+    .bl-action {
+      width: 100%;
+      padding: 11px;
+      border-radius: var(--radius-xs);
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.66rem;
+      font-weight: 900;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      cursor: pointer;
+      border: none;
+      transition: all 0.16s;
+    }
+    .bl-action.primary {
+      background: var(--accent-grad);
+      color: #fff;
+      box-shadow: 0 0 12px var(--accent-glow);
+    }
+    .bl-action.primary:hover { filter: brightness(1.08); box-shadow: 0 0 22px var(--accent-glow); }
+    .bl-action.ghost {
+      background: transparent;
+      border: 1px solid var(--border-hover);
+      color: var(--text2);
+    }
+    .bl-action.ghost:hover { background: var(--bg3); color: var(--text); }
+    .bl-action.outline {
+      background: transparent;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+    }
+    .bl-action.outline:hover { background: var(--accent-glow); }
+    .bl-action:disabled { opacity: 0.32; cursor: not-allowed; }
+
+    /* Unlock card */
+    .bl-unlock-card {
+      background: transparent;
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 1.4rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 11px;
+      cursor: pointer;
+      min-height: 210px;
+      transition: border-color 0.18s;
+    }
+    .bl-unlock-card:hover { border-color: var(--accent); }
+    .bl-unlock-icon {
+      width: 42px; height: 42px;
+      border-radius: 50%;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.18s;
+    }
+    .bl-unlock-card:hover .bl-unlock-icon { border-color: var(--accent); background: var(--accent-glow); }
+    .bl-unlock-icon .material-symbols-outlined { font-size: 19px; color: var(--text2); }
+    .bl-unlock-card:hover .bl-unlock-icon .material-symbols-outlined { color: var(--accent); }
+    .bl-unlock-txt { text-align: center; }
+    .bl-unlock-txt p {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.66rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text2);
+    }
+    .bl-unlock-txt small { font-family: 'Inter', monospace; font-size: 0.6rem; color: var(--text3); display: block; margin-top: 3px; }
+
+    @media (max-width: 600px) { .bl-grid { grid-template-columns: 1fr; } }
+
+    /* ════════════════════════════════════════════
+       VIEW 4 — MOCK TESTS
+    ════════════════════════════════════════════ */
+    .mk-header { margin-bottom: 1.6rem; }
+    .mk-header h2 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.7rem;
+      font-weight: 900;
+      color: var(--text);
+      letter-spacing: -0.03em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .mk-header p { font-size: 0.81rem; color: var(--text2); }
+
+    .mk-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+
+    .mk-panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.4rem;
+    }
+    .mk-panel-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text);
+      margin-bottom: 1.3rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .mk-panel-title .material-symbols-outlined { font-size: 17px; color: var(--accent); }
+    .mk-curated-badge {
+      margin-left: auto;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.56rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: var(--accent-glow);
+      color: var(--accent);
+    }
+
+    .mk-form-group { margin-bottom: 1.1rem; }
+    .mk-label {
+      display: block;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text2);
+      margin-bottom: 7px;
+    }
+    .mk-select {
+      width: 100%;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xs);
+      padding: 10px 13px;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.83rem;
+      appearance: none;
+      cursor: pointer;
+      outline: none;
+      transition: border-color 0.14s;
+    }
+    .mk-select:focus { border-color: var(--accent); }
+    .mk-select option { background: var(--bg2); color: var(--text); }
+
+    .mk-range-row { display: flex; align-items: center; gap: 10px; }
+    .mk-range { flex: 1; accent-color: var(--accent); cursor: pointer; }
+    .mk-range-val { font-family: 'Space Grotesk', monospace; font-size: 0.82rem; font-weight: 700; color: var(--accent); min-width: 26px; text-align: right; }
+    .mk-range-unit { font-family: 'Space Grotesk', monospace; font-size: 0.6rem; color: var(--text2); }
+
+    .mk-subj-row { display: flex; gap: 5px; }
+    .mk-subj-pill {
+      flex: 1;
+      padding: 8px 5px;
+      border-radius: var(--radius-xs);
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      color: var(--text2);
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.14s;
+    }
+    .mk-subj-pill.on { background: var(--accent-glow); border-color: var(--accent); color: var(--accent); }
+
+    .mk-start-btn {
+      width: 100%;
+      background: var(--accent-grad);
+      color: #fff;
+      border: none;
+      padding: 14px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      cursor: pointer;
+      border-radius: var(--radius-sm);
+      margin-top: 1.3rem;
+      box-shadow: 0 0 18px var(--accent-glow);
+      transition: filter 0.14s, box-shadow 0.14s;
+    }
+    .mk-start-btn:hover { filter: brightness(1.08); box-shadow: 0 0 32px var(--accent-glow); }
+
+    /* Test list cards */
+    .mk-test-card {
+      background: var(--card2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 1rem 1.1rem;
+      margin-bottom: 0.7rem;
+      transition: border-color 0.16s;
+    }
+    .mk-test-card:last-child { margin-bottom: 0; }
+    .mk-test-card:hover { border-color: var(--accent); }
+    .mk-test-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.85rem; }
+    .mk-test-pill {
+      display: inline-block;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.56rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: var(--accent-glow);
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+    .mk-test-pill.danger { background: rgba(248,113,113,0.1); color: var(--red); }
+    .mk-test-pill.soft   { background: rgba(196,132,252,0.1); color: var(--purple); }
+    .mk-test-name { font-family: 'Inter', sans-serif; font-size: 0.88rem; font-weight: 600; color: var(--text); }
+    .mk-test-meta { text-align: right; font-family: 'Inter', monospace; font-size: 0.66rem; color: var(--text2); text-transform: uppercase; }
+    .mk-test-meta .hl { color: var(--accent); display: block; margin-top: 2px; }
+    .mk-now-btn {
+      width: 100%;
+      background: transparent;
+      border: 1px solid var(--border-hover);
+      color: var(--accent);
+      padding: 9px;
+      border-radius: var(--radius-xs);
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.66rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      transition: all 0.16s;
+    }
+    .mk-now-btn:hover { background: var(--accent-grad); color: #fff; border-color: transparent; }
+
+    /* Stats bar */
+    .mk-stats {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: var(--radius-sm);
+      padding: 1.1rem 1.5rem;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+    }
+    .mk-stat p {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.58rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text2);
+      margin-bottom: 3px;
+    }
+    .mk-stat h4 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: var(--accent);
+      letter-spacing: -0.02em;
+    }
+    .mk-stat h4.n { color: var(--text); }
+    .mk-stat h4.p { color: var(--purple); }
+    .mk-stat h4 small { font-size: 0.78rem; font-weight: 500; opacity: 0.7; }
+
+    @media (max-width: 760px) {
+      .mk-layout { grid-template-columns: 1fr; }
+      .mk-stats   { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    /* ════════════════════════════════════════════
+       VIEW 5 — SOLVING
+       (inherits all zd-* from solver-v2.css)
+    ════════════════════════════════════════════ */
+    #view-solving .zd-topbar { display: flex !important; }
+
+    /* ════════════════════════════════════════════
+       CHAPTER CARDS  (Step 2 of PYQ selection)
+    ════════════════════════════════════════════ */
+
+    /* Grid container */
+    .ps-ch-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+      gap: 8px;
+    }
+
+    /* Individual chapter card */
+    .ps-ch-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px 10px;
+      cursor: pointer;
+      transition: border-color 0.18s, background 0.18s, transform 0.15s, box-shadow 0.18s;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
       text-align: left;
+      position: relative;
+      overflow: hidden;
+    }
+    .ps-ch-card::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: var(--border);
+      transition: background 0.18s;
+    }
+    .ps-ch-card:hover {
+      border-color: var(--accent);
+      background: var(--card2);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px var(--accent-glow);
+    }
+    .ps-ch-card:hover::before { background: var(--accent-grad); }
+    .ps-ch-card.selected {
+      border-color: var(--accent);
+      background: var(--accent-glow);
+      box-shadow: 0 0 0 1px var(--accent), 0 4px 20px var(--accent-glow);
+    }
+    .ps-ch-card.selected::before { background: var(--accent-grad); }
+
+    /* Chapter name */
+    .ps-ch-name {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1.35;
+      padding-right: 20px; /* room for check icon */
     }
 
-    /* KaTeX: scroll horizontally within card, never expand it */
-    .katex-display {
-      overflow-x: auto;
-      overflow-y: hidden;
-      max-width: 100%;
+    /* Selected checkmark */
+    .ps-ch-check {
+      position: absolute;
+      top: 9px; right: 9px;
+      font-size: 14px !important;
+      color: var(--accent);
+      opacity: 0;
+      transition: opacity 0.15s;
+      font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+    }
+    .ps-ch-card.selected .ps-ch-check { opacity: 1; }
+
+    /* Total count badge */
+    .ps-ch-total {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-family: 'Space Grotesk', monospace;
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: var(--accent);
+      background: var(--accent-glow);
+      border: 1px solid var(--border-hover);
+      border-radius: 999px;
+      padding: 2px 8px;
+      width: fit-content;
+    }
+    .ps-ch-total .material-symbols-outlined { font-size: 11px !important; }
+
+    /* Year breakdown row */
+    .ps-ch-years {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    .ps-ch-yr {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      font-family: 'Inter', monospace;
+      font-size: 0.58rem;
+      font-weight: 600;
+      color: var(--text2);
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1px 5px;
+      line-height: 1.5;
+    }
+    .ps-ch-yr b {
+      color: var(--text);
+      font-weight: 700;
+    }
+    .ps-ch-card.selected .ps-ch-yr {
+      background: var(--bg3);
+      border-color: var(--border-hover);
     }
 
-    /* Remove any horizontal scroll on the card itself */
-    .zd-q-card {
-      overflow-x: hidden;
+    /* Loading skeleton */
+    .ps-ch-loading {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+      gap: 8px;
+    }
+    .ps-ch-skeleton {
+      height: 90px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      animation: psSkel 1.4s ease-in-out infinite;
+    }
+    @keyframes psSkel {
+      0%,100% { opacity: 0.5; }
+      50%      { opacity: 1; }
+    }
+
+    /* Empty / error state */
+    .ps-ch-empty {
+      grid-column: 1 / -1;
+      padding: 2rem;
+      text-align: center;
+      color: var(--text2);
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    @media (max-width: 600px) {
+      .ps-ch-grid, .ps-ch-loading {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      }
     }
   </style>
 </head>
 <body>
 
-<!-- ═══════════════════ SIDEBAR ═══════════════════ -->
+<!-- ══════════════════ SIDEBAR ══════════════════ -->
 <aside class="zd-sidebar" id="sidebar">
   <div class="zd-sidebar-brand">
     <img src="logo2.png" width="28" height="28" alt="" onerror="this.style.display='none'"/>
     <span>ZEROday</span>
   </div>
 
-  <div class="zd-sidebar-user" id="sidebar-user">
+  <div class="zd-sidebar-user">
     <div class="zd-avatar" id="sidebar-avatar-img">
-      <span class="material-symbols-outlined" style="font-size:15px;color:#849495">person</span>
+      <span class="material-symbols-outlined" style="font-size:15px;color:var(--text2)">person</span>
     </div>
     <div class="zd-user-info">
       <div class="zd-user-name" id="sidebar-name">Loading…</div>
@@ -106,35 +1078,29 @@
 
   <nav class="zd-nav">
     <a href="index.html?page=dashboard" class="zd-nav-link">
-      <span class="material-symbols-outlined">grid_view</span>
-      HOME
+      <span class="material-symbols-outlined">grid_view</span>HOME
     </a>
     <a href="#" class="zd-nav-link active" style="position:relative;">
-      <span class="solver-nav-badge" style="
+      <span style="
         position:absolute;top:6px;left:50%;transform:translateX(6px);
-        background:#00f0ff;color:#000;font-family:'Space Grotesk',sans-serif;
-        font-size:0.42rem;font-weight:900;letter-spacing:0.08em;
-        padding:1px 4px;border-radius:3px;line-height:1.4;pointer-events:none;
-      ">NEW</span>
-      <span class="material-symbols-outlined">layers</span>
-      SOLVER
+        background:var(--accent);color:#fff;font-family:'Space Grotesk',sans-serif;
+        font-size:0.4rem;font-weight:900;letter-spacing:0.08em;
+        padding:1px 4px;border-radius:3px;line-height:1.4;pointer-events:none;">NEW</span>
+      <span class="material-symbols-outlined">layers</span>SOLVER
     </a>
-    <a href="index.html?page=community" class="zd-nav-link" data-page="community">
-      <span class="material-symbols-outlined">group</span>
-      Community
+    <a href="index.html?page=community" class="zd-nav-link">
+      <span class="material-symbols-outlined">group</span>Community
     </a>
-    <a href="index.html?page=whitenoise" class="zd-nav-link" data-page="whitenoise">
-      <span class="material-symbols-outlined">music_note</span>
-      White Noise
+    <a href="index.html?page=whitenoise" class="zd-nav-link">
+      <span class="material-symbols-outlined">music_note</span>White Noise
     </a>
-    <a href="index.html?page=settings" class="zd-nav-link" data-page="settings">
-      <span class="material-symbols-outlined">Settings</span>
-      SETTINGS
+    <a href="index.html?page=settings" class="zd-nav-link">
+      <span class="material-symbols-outlined">settings</span>SETTINGS
     </a>
   </nav>
 
   <div class="zd-sidebar-footer">
-    <button class="zd-mock-btn" onclick="window.location.href='mock.html'">
+    <button class="zd-mock-btn" onclick="showView('mock')">
       <span class="material-symbols-outlined" style="font-size:14px">bolt</span>
       START_MOCK_TEST
     </button>
@@ -145,7 +1111,7 @@
   </div>
 </aside>
 
-<!-- ═══════════════════ MOBILE TOPBAR ═══════════════════ -->
+<!-- ══════════════════ MOBILE HEADER ══════════════════ -->
 <header class="zd-mobile-header">
   <button class="zd-hamburger" id="hamburger">
     <span class="material-symbols-outlined">menu</span>
@@ -157,123 +1123,566 @@
 </header>
 <div class="zd-overlay" id="sidebar-overlay"></div>
 
-<!-- ═══════════════════ MAIN ═══════════════════ -->
+<!-- ══════════════════ MAIN ══════════════════ -->
 <main class="zd-main">
 
-  <!-- TOP BAR -->
-  <div class="zd-topbar">
-    <div>
-      <h1 class="zd-page-title">JEE_SOLVER</h1>
-      <p class="zd-page-sub">PYQs &amp; Booklets — select a subject and chapter to begin</p>
+  <!-- ─────────────────────────────────────────
+       VIEW 1 — MODE SELECTION
+  ───────────────────────────────────────── -->
+  <div id="view-mode-select" class="zdv active">
+
+    <div class="zd-topbar">
+      <div>
+        <h1 class="zd-page-title">JEE_SOLVER</h1>
+        <p class="zd-page-sub">Choose your training protocol</p>
+      </div>
+      <div class="zd-score-pill">
+        <span class="material-symbols-outlined" style="font-size:13px;color:var(--accent)">bolt</span>
+        <span id="solver-score-val" style="font-family:'Space Grotesk';font-weight:700;color:var(--text)">0</span>
+        <span style="font-size:0.7rem;color:var(--text2)">pts</span>
+      </div>
     </div>
-    <div class="zd-score-pill" id="solver-score-pill">
-      <span class="material-symbols-outlined" style="font-size:13px;color:#00f0ff">bolt</span>
-      <span id="solver-score-val" style="font-family:'Space Grotesk';font-weight:700;color:#dbfcff">0</span>
-      <span style="font-size:0.7rem;color:#849495">pts</span>
-    </div>
-  </div>
 
-  <!-- MODE TABS -->
-  <div class="zd-tabs">
-    <button class="zd-tab active" id="tab-pyq" onclick="switchMode('pyq')">
-      <span class="material-symbols-outlined" style="font-size:15px">history_edu</span>
-      PYQ SOLVER
-    </button>
-    <button class="zd-tab" id="tab-booklet" onclick="switchMode('booklet')">
-      <span class="material-symbols-outlined" style="font-size:15px">menu_book</span>
-      BOOKLETS
-    </button>
-  </div>
+    <div class="ms-grid">
 
-  <!-- ═══ PYQ MODE ═══ -->
-  <div id="mode-pyq" class="zd-mode-panel">
-    <div class="zd-layout">
+      <!-- PYQs -->
+      <div class="ms-card ms-card-pyq" onclick="showView('pyq-select')" tabindex="0" role="button"
+           onkeydown="if(event.key==='Enter')showView('pyq-select')">
+        <div class="ms-badge">
+          <span class="material-symbols-outlined">history_edu</span>ARCHIVE_ACCESS
+        </div>
+        <div class="ms-card-title">PYQs</div>
+        <p class="ms-card-desc">Practice previous year papers. An authentic database of 15 years of JEE examination questions.</p>
+        <div class="ms-cta">
+          Select Year
+          <span class="material-symbols-outlined" style="font-size:14px">arrow_forward</span>
+        </div>
+        <span class="ms-arrow"><span class="material-symbols-outlined" style="font-size:20px">chevron_right</span></span>
+      </div>
 
-      <!-- LEFT PANEL -->
-      <div class="zd-left">
-        <div class="zd-card">
-          <div class="zd-section-label">SUBJECT</div>
-          <button class="zd-subject-btn active" data-subject="physics" onclick="selectSubject(this)">
-            <span class="zd-dot" style="background:#00f0ff"></span>PHYSICS
-          </button>
-          <button class="zd-subject-btn" data-subject="chemistry" onclick="selectSubject(this)">
-            <span class="zd-dot" style="background:#cf5cff"></span>CHEMISTRY
-          </button>
-          <button class="zd-subject-btn" data-subject="mathematics" onclick="selectSubject(this)">
-            <span class="zd-dot" style="background:#ecb2ff"></span>MATHEMATICS
-          </button>
+      <!-- Booklets -->
+      <div class="ms-card ms-card-book" onclick="showView('booklets')" tabindex="0" role="button"
+           onkeydown="if(event.key==='Enter')showView('booklets')">
+        <div class="ms-badge">
+          <span class="material-symbols-outlined">menu_book</span>MODULAR
+        </div>
+        <div class="ms-card-title">Booklets</div>
+        <p class="ms-card-desc">Topic-wise practice designed to eliminate weak spots in your preparation matrix.</p>
+        <div class="ms-prog-bar"><div class="ms-prog-fill" style="width:66%"></div></div>
+        <div class="ms-cta-outline">Choose Booklet</div>
+        <span class="ms-arrow"><span class="material-symbols-outlined" style="font-size:20px">chevron_right</span></span>
+      </div>
 
-          <div class="zd-divider"></div>
-          <div class="zd-section-label">CHAPTER</div>
-          <div id="pyq-chapter-list" class="zd-chapter-list">
-            <div class="zd-loading">Select a subject</div>
+      <!-- Mock Test -->
+      <div class="ms-card ms-card-mock" onclick="showView('mock')" tabindex="0" role="button"
+           onkeydown="if(event.key==='Enter')showView('mock')">
+        <div class="ms-mock-inner">
+          <div>
+            <div class="ms-badge" style="display:inline-flex;">
+              <span class="material-symbols-outlined">bolt</span>LIVE_SIMULATION
+            </div>
+            <div class="ms-card-title">Mock Test</div>
+            <p class="ms-card-desc">Full-length and custom exams with real-time analytics. Experience the pressure, master the clock.</p>
+            <div class="ms-mock-btns">
+              <div class="ms-cta">
+                <span class="material-symbols-outlined" style="font-size:14px">timer</span>Go to Tests
+              </div>
+              <div class="ms-cta-outline">Custom Setup</div>
+            </div>
           </div>
+          <div class="ms-clock">
+            <div class="ms-clock-ring"></div>
+            <div class="ms-clock-ring2"></div>
+            <div class="ms-clock-text">
+              <span>03:00</span>
+              <small>REMAINING</small>
+            </div>
+          </div>
+        </div>
+        <span class="ms-arrow" style="top:2rem;transform:none;"><span class="material-symbols-outlined" style="font-size:20px">chevron_right</span></span>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ─────────────────────────────────────────
+       VIEW 2 — PYQ SELECTION
+  ───────────────────────────────────────── -->
+  <div id="view-pyq-select" class="zdv">
+
+    <div class="zd-breadcrumb">
+      <button class="zd-breadcrumb-btn" onclick="showView('mode-select')">
+        <span class="material-symbols-outlined">home</span>Modes
+      </button>
+      <span class="zd-breadcrumb-sep">/</span>
+      <span class="zd-breadcrumb-current">PYQ Selection</span>
+    </div>
+
+    <div class="ps-wrap">
+      <div class="ps-title">Previous Year Questions</div>
+      <p class="ps-sub">Target high-yield concepts. Select your focus area to begin the deep-work session.</p>
+
+      <!-- Step 1 -->
+      <div class="ps-step">
+        <div class="ps-step-hdr">
+          <div class="ps-num done" id="ps-n1">01</div>
+          <div class="ps-step-lbl">Select_Subject</div>
+        </div>
+        <div class="ps-subj-row">
+          <button class="ps-subj-btn active" data-subject="physics" onclick="selectPYQSubject(this)">
+            <span class="material-symbols-outlined">functions</span>PHYSICS
+          </button>
+          <button class="ps-subj-btn" data-subject="chemistry" onclick="selectPYQSubject(this)">
+            <span class="material-symbols-outlined">science</span>CHEMISTRY
+          </button>
+          <button class="ps-subj-btn" data-subject="mathematics" onclick="selectPYQSubject(this)">
+            <span class="material-symbols-outlined">calculate</span>MATHS
+          </button>
         </div>
       </div>
 
-      <!-- RIGHT PANEL -->
-      <div class="zd-right">
-
-        <!-- Q NAVIGATOR -->
-        <div class="zd-card zd-qnav-card">
-          <div class="zd-qnav-header">
-            <span class="zd-qnav-title" id="qnav-title">QUESTIONS</span>
-            <div class="zd-qnav-legend">
-              <span class="zd-pip" style="background:#27ae60"></span>Correct
-              <span class="zd-pip" style="background:#e74c3c"></span>Wrong
-              <span class="zd-pip" style="background:#f39c12"></span>Skipped
-              <span class="zd-pip" style="background:#2a2a2a"></span>Unseen
-            </div>
-          </div>
-          <div class="zd-qnav-grid" id="q-nav-grid"></div>
+      <!-- Step 2 -->
+      <div class="ps-step">
+        <div class="ps-step-hdr">
+          <div class="ps-num locked" id="ps-n2">02</div>
+          <div class="ps-step-lbl">Choose_Chapter</div>
+          <span id="ps-ch-selected-lbl" style="
+            margin-left:auto;font-family:'Space Grotesk',monospace;font-size:0.62rem;
+            font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
+            color:var(--accent);display:none;">
+          </span>
         </div>
 
-        <!-- QUESTION CARD -->
-        <div class="zd-card zd-q-card" id="q-card">
-          <div id="empty-state-q" class="zd-empty-state">
-            <span class="material-symbols-outlined" style="font-size:48px;color:#353534;margin-bottom:1rem">layers</span>
-            <h3>SELECT A CHAPTER TO BEGIN</h3>
-            <p>Choose a subject and chapter from the left panel</p>
-          </div>
+        <!-- Loading skeleton -->
+        <div id="ps-ch-loading" class="ps-ch-loading">
+          <div class="ps-ch-skeleton"></div>
+          <div class="ps-ch-skeleton"></div>
+          <div class="ps-ch-skeleton"></div>
+          <div class="ps-ch-skeleton"></div>
+          <div class="ps-ch-skeleton"></div>
+          <div class="ps-ch-skeleton"></div>
+        </div>
 
-          <div id="q-content" class="hidden">
-            <div class="zd-q-meta" id="q-meta"></div>
-            <div class="zd-q-text" id="q-text"></div>
-            <img id="q-image" class="zd-q-image hidden" alt="Question image"/>
-            <div class="zd-options-grid" id="options-grid"></div>
+        <!-- Chapter cards grid -->
+        <div id="ps-ch-grid" class="ps-ch-grid" style="display:none;"></div>
+      </div>
 
-            <div id="integer-wrap" class="zd-integer-box hidden">
-              <label>ENTER YOUR NUMERICAL ANSWER:</label>
-              <div class="zd-integer-row">
-                <input type="number" step="any" class="zd-integer-input" id="integer-input"/>
-                <button class="zd-btn zd-btn-check" id="btn-check-int">CHECK</button>
-              </div>
-              <div class="zd-integer-feedback" id="integer-feedback"></div>
-            </div>
+      <!-- Step 3 -->
+      <div class="ps-step">
+        <div class="ps-step-hdr">
+          <div class="ps-num locked" id="ps-n3">03</div>
+          <div class="ps-step-lbl">Fine_Tune</div>
+        </div>
 
-            <div class="zd-explanation" id="explanation-box">
-              <div class="zd-explanation-label">
-                <span class="material-symbols-outlined" style="font-size:12px">auto_awesome</span>
-                SOLUTION
-              </div>
-              <div class="zd-explanation-text" id="explanation-text"></div>
-            </div>
-
-            <div class="zd-q-actions">
-              <button class="zd-btn zd-btn-ghost" id="btn-skip">SKIP</button>
-              <button class="zd-btn zd-btn-primary" id="btn-next" disabled>NEXT →</button>
-              <span class="zd-q-progress" id="q-progress">1 / 1</span>
-            </div>
+        <div style="margin-bottom:1.1rem;">
+          <span class="ps-filter-lbl">EXAM YEARS</span>
+          <div class="ps-chips" id="year-chips">
+            <button class="ps-chip active" data-year="all" onclick="selectYear(this)">ALL</button>
+            <button class="ps-chip" data-year="2024" onclick="selectYear(this)">2024</button>
+            <button class="ps-chip" data-year="2023" onclick="selectYear(this)">2023</button>
+            <button class="ps-chip" data-year="2022" onclick="selectYear(this)">2022</button>
+            <button class="ps-chip" data-year="2021" onclick="selectYear(this)">2021</button>
+            <button class="ps-chip" data-year="2020" onclick="selectYear(this)">2020</button>
+            <button class="ps-chip" data-year="2019" onclick="selectYear(this)">2019</button>
           </div>
         </div>
 
-      </div><!-- /zd-right -->
-    </div><!-- /zd-layout -->
-  </div><!-- /mode-pyq -->
+        <div class="ps-filter-row">
+          <div>
+            <span class="ps-filter-lbl">DIFFICULTY</span>
+            <div class="ps-pills">
+              <button class="ps-pill" data-diff="easy"   onclick="selectPill(this,'diff')">EASY</button>
+              <button class="ps-pill active" data-diff="medium" onclick="selectPill(this,'diff')">MED</button>
+              <button class="ps-pill" data-diff="hard"   onclick="selectPill(this,'diff')">HARD</button>
+            </div>
+          </div>
+          <div>
+            <span class="ps-filter-lbl">QUESTION TYPE</span>
+            <div class="ps-pills">
+              <button class="ps-pill active" data-type="mcq"     onclick="selectPill(this,'type')">MCQ</button>
+              <button class="ps-pill"        data-type="integer" onclick="selectPill(this,'type')">NUMERICAL</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-  <!-- ═══ BOOKLET MODE ═══ -->
-  <div id="mode-booklet" class="zd-mode-panel hidden">
-    <div id="booklet-content"></div>
+    <!-- Sticky CTA -->
+    <div class="ps-cta-bar">
+      <div class="ps-cta-meta">
+        <div class="ps-cta-meta-item">EST_TIME: <b>45_MIN</b></div>
+        <div class="ps-cta-sep"></div>
+        <div class="ps-cta-meta-item">QUESTIONS: <b id="pyq-q-count">—</b></div>
+      </div>
+      <button class="ps-start-btn" onclick="startPYQSolving()">
+        START SOLVING
+        <span class="material-symbols-outlined" style="font-size:15px">arrow_forward</span>
+      </button>
+    </div>
+  </div>
+
+
+  <!-- ─────────────────────────────────────────
+       VIEW 3 — BOOKLETS
+  ───────────────────────────────────────── -->
+  <div id="view-booklets" class="zdv">
+
+    <div class="zd-breadcrumb">
+      <button class="zd-breadcrumb-btn" onclick="showView('mode-select')">
+        <span class="material-symbols-outlined">home</span>Modes
+      </button>
+      <span class="zd-breadcrumb-sep">/</span>
+      <span class="zd-breadcrumb-current">Booklets</span>
+    </div>
+
+    <div class="bl-header">
+      <h2>JEE_BOOKLETS</h2>
+      <p>Complete your module sets to unlock Rank Predictive Analytics.</p>
+    </div>
+
+    <div class="bl-filter-bar">
+      <button class="bl-chip active" onclick="blFilter(this)">ALL</button>
+      <button class="bl-chip" onclick="blFilter(this)">PHYSICS</button>
+      <button class="bl-chip" onclick="blFilter(this)">CHEMISTRY</button>
+      <button class="bl-chip" onclick="blFilter(this)">MATHEMATICS</button>
+      <button class="bl-chip" onclick="blFilter(this)">PENDING</button>
+    </div>
+
+    <div class="bl-grid">
+
+      <div class="bl-card">
+        <div class="bl-card-hdr">
+          <div><div class="bl-subj-tag">PHYSICS</div><div class="bl-card-title">MECHANICS_I</div></div>
+          <span class="bl-card-pct">78%</span>
+        </div>
+        <div class="bl-bar"><div class="bl-bar-fill" style="width:78%"></div></div>
+        <div class="bl-chapters">
+          <div class="bl-ch">
+            <span>Kinematics &amp; Projectiles</span>
+            <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">check_circle</span>
+          </div>
+          <div class="bl-ch">
+            <span>Newton's Laws of Motion</span>
+            <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">check_circle</span>
+          </div>
+          <div class="bl-ch current">
+            <span>Circular Motion</span>
+            <span class="material-symbols-outlined">play_circle</span>
+          </div>
+        </div>
+        <button class="bl-action primary" onclick="startBookletSolving('Mechanics I','physics')">START_SOLVING</button>
+      </div>
+
+      <div class="bl-card">
+        <div class="bl-card-hdr">
+          <div>
+            <div class="bl-subj-tag" style="background:rgba(196,132,252,0.12);color:var(--purple);border-color:var(--border-hover)">CHEMISTRY</div>
+            <div class="bl-card-title">ORGANIC_II</div>
+          </div>
+          <span class="bl-card-pct" style="color:var(--text2)">12%</span>
+        </div>
+        <div class="bl-bar"><div class="bl-bar-fill" style="width:12%;background:var(--purple);box-shadow:none"></div></div>
+        <div class="bl-empty-hint">
+          <span class="material-symbols-outlined">auto_stories</span>
+          <span>CHAPTERS_LOCKED</span>
+        </div>
+        <button class="bl-action ghost">RESUME_PACK</button>
+      </div>
+
+      <div class="bl-card">
+        <div class="bl-card-hdr">
+          <div><div class="bl-subj-tag">MATHEMATICS</div><div class="bl-card-title">CALCULUS_FLUX</div></div>
+          <span class="bl-card-pct">45%</span>
+        </div>
+        <div class="bl-bar"><div class="bl-bar-fill" style="width:45%"></div></div>
+        <div class="bl-chapters" style="flex:1;justify-content:center;">
+          <div style="height:56px;background:var(--bg2);border-radius:var(--radius-xs);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;opacity:0.45;">
+            <span class="material-symbols-outlined" style="font-size:26px;color:var(--text2)">functions</span>
+          </div>
+        </div>
+        <button class="bl-action primary" onclick="startBookletSolving('Calculus Flux','mathematics')">START_SOLVING</button>
+      </div>
+
+      <div class="bl-card">
+        <div class="bl-card-hdr">
+          <div><div class="bl-subj-tag">PHYSICS</div><div class="bl-card-title">ELECTRO_DYNAMICS</div></div>
+          <span class="bl-card-pct" style="color:var(--text2)">0%</span>
+        </div>
+        <div class="bl-bar"><div class="bl-bar-fill" style="width:0%"></div></div>
+        <div class="bl-chapters" style="flex:1;justify-content:flex-end;">
+          <div style="display:flex;align-items:center;gap:6px;padding:6px 0;">
+            <span class="material-symbols-outlined" style="font-size:13px;color:var(--red)">warning</span>
+            <span style="font-family:'Space Grotesk',monospace;font-size:0.58rem;color:var(--red);letter-spacing:0.12em;text-transform:uppercase;">UPCOMING_DEADLINE: 24H</span>
+          </div>
+        </div>
+        <button class="bl-action outline" onclick="startBookletSolving('Electro Dynamics','physics')">PRIORITIZE</button>
+      </div>
+
+      <div class="bl-card">
+        <div class="bl-card-hdr">
+          <div><div class="bl-subj-tag">MATHEMATICS</div><div class="bl-card-title">LINEAR_ALGEBRA</div></div>
+          <span class="bl-card-pct">100%</span>
+        </div>
+        <div class="bl-bar"><div class="bl-bar-fill" style="width:100%"></div></div>
+        <div class="bl-chapters" style="flex:1;align-items:center;justify-content:center;">
+          <span class="material-symbols-outlined" style="font-size:42px;color:var(--accent);opacity:0.18">verified</span>
+          <span style="font-family:'Space Grotesk',monospace;font-size:0.6rem;color:var(--accent);letter-spacing:0.14em;text-transform:uppercase;margin-top:5px">MASTERED</span>
+        </div>
+        <button class="bl-action ghost" disabled>ARCHIVED</button>
+      </div>
+
+      <div class="bl-unlock-card">
+        <div class="bl-unlock-icon"><span class="material-symbols-outlined">add</span></div>
+        <div class="bl-unlock-txt">
+          <p>UNLOCK_NEW_MODULE</p>
+          <small>REDEEM_ZERO_CREDITS</small>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ─────────────────────────────────────────
+       VIEW 4 — MOCK TESTS
+  ───────────────────────────────────────── -->
+  <div id="view-mock" class="zdv">
+
+    <div class="zd-breadcrumb">
+      <button class="zd-breadcrumb-btn" onclick="showView('mode-select')">
+        <span class="material-symbols-outlined">home</span>Modes
+      </button>
+      <span class="zd-breadcrumb-sep">/</span>
+      <span class="zd-breadcrumb-current">Mock Tests</span>
+    </div>
+
+    <div class="mk-header">
+      <h2>MOCK_TESTS</h2>
+      <p>Full-length and custom exams with real-time analytics. Experience the pressure, master the clock.</p>
+    </div>
+
+    <div class="mk-layout">
+
+      <div class="mk-panel">
+        <div class="mk-panel-title">
+          <span class="material-symbols-outlined">tune</span>
+          Custom Test Setup
+        </div>
+
+        <div class="mk-form-group">
+          <label class="mk-label">EXAM_TYPE</label>
+          <select class="mk-select">
+            <option>JEE Main — Full Paper</option>
+            <option>JEE Advanced — Full Paper</option>
+            <option>Subject-wise Test</option>
+            <option>Chapter-wise Test</option>
+          </select>
+        </div>
+
+        <div class="mk-form-group">
+          <label class="mk-label">DURATION</label>
+          <div class="mk-range-row">
+            <input type="range" class="mk-range" min="15" max="180" value="90"
+              oninput="document.getElementById('mk-dur').textContent=this.value"/>
+            <span class="mk-range-val" id="mk-dur">90</span>
+            <span class="mk-range-unit">MIN</span>
+          </div>
+        </div>
+
+        <div class="mk-form-group">
+          <label class="mk-label">QUESTION COUNT</label>
+          <div class="mk-range-row">
+            <input type="range" class="mk-range" min="10" max="90" value="30"
+              oninput="document.getElementById('mk-qc').textContent=this.value"/>
+            <span class="mk-range-val" id="mk-qc">30</span>
+            <span class="mk-range-unit">Q</span>
+          </div>
+        </div>
+
+        <div class="mk-form-group">
+          <label class="mk-label">SUBJECTS</label>
+          <div class="mk-subj-row">
+            <button class="mk-subj-pill on" onclick="this.classList.toggle('on')">PHY</button>
+            <button class="mk-subj-pill on" onclick="this.classList.toggle('on')">CHEM</button>
+            <button class="mk-subj-pill on" onclick="this.classList.toggle('on')">MATH</button>
+          </div>
+        </div>
+
+        <button class="mk-start-btn" onclick="startMockTest()">START_MOCK_TEST</button>
+      </div>
+
+      <div class="mk-panel">
+        <div class="mk-panel-title">
+          <span class="material-symbols-outlined">layers</span>
+          Full Tests
+          <span class="mk-curated-badge">CURATED</span>
+        </div>
+
+        <div class="mk-test-card">
+          <div class="mk-test-top">
+            <div>
+              <div class="mk-test-pill danger">HARD_LEVEL</div>
+              <div class="mk-test-name">JEE Advanced: Full Paper 01</div>
+            </div>
+            <div class="mk-test-meta">3.0 HOURS<span class="hl">180 MARKS</span></div>
+          </div>
+          <button class="mk-now-btn" onclick="startMockTest()">
+            START NOW <span class="material-symbols-outlined" style="font-size:14px">bolt</span>
+          </button>
+        </div>
+
+        <div class="mk-test-card">
+          <div class="mk-test-top">
+            <div>
+              <div class="mk-test-pill">PYQ_2023</div>
+              <div class="mk-test-name">JEE Main: Morning Session Jan</div>
+            </div>
+            <div class="mk-test-meta">3.0 HOURS<span class="hl">300 MARKS</span></div>
+          </div>
+          <button class="mk-now-btn" onclick="startMockTest()">
+            START NOW <span class="material-symbols-outlined" style="font-size:14px">bolt</span>
+          </button>
+        </div>
+
+        <div class="mk-test-card">
+          <div class="mk-test-top">
+            <div>
+              <div class="mk-test-pill soft">MOCK_ELITE</div>
+              <div class="mk-test-name">National Ranker Challenge</div>
+            </div>
+            <div class="mk-test-meta">3.0 HOURS<span class="hl">360 MARKS</span></div>
+          </div>
+          <button class="mk-now-btn" onclick="startMockTest()">
+            START NOW <span class="material-symbols-outlined" style="font-size:14px">bolt</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="mk-stats">
+      <div class="mk-stat"><p>Simulations</p><h4>124</h4></div>
+      <div class="mk-stat"><p>Avg Accuracy</p><h4 class="n">82<small>%</small></h4></div>
+      <div class="mk-stat"><p>Focus Time</p><h4 class="n">342<small>H</small></h4></div>
+      <div class="mk-stat"><p>Global %ile</p><h4 class="p">99.8</h4></div>
+    </div>
+
+  </div>
+
+
+  <!-- ─────────────────────────────────────────
+       VIEW 5 — SOLVING  (original solver layout)
+  ───────────────────────────────────────── -->
+  <div id="view-solving" class="zdv">
+
+    <div class="zd-breadcrumb">
+      <button class="zd-breadcrumb-btn" onclick="showView('mode-select')">
+        <span class="material-symbols-outlined">home</span>Modes
+      </button>
+      <span class="zd-breadcrumb-sep">/</span>
+      <button class="zd-breadcrumb-btn" id="crumb-section-btn" onclick="showView('pyq-select')">PYQs</button>
+      <span class="zd-breadcrumb-sep">/</span>
+      <span class="zd-breadcrumb-current" id="crumb-current">Physics</span>
+    </div>
+
+    <div class="zd-topbar">
+      <div>
+        <h1 class="zd-page-title" id="solving-title">PYQ_SOLVER</h1>
+        <p class="zd-page-sub" id="solving-sub">Select a chapter to begin</p>
+      </div>
+    </div>
+
+    <!-- Tabs (hidden — section already chosen via flow) -->
+    <div class="zd-tabs" style="display:none;">
+      <button class="zd-tab active" id="tab-pyq" onclick="switchMode('pyq')">
+        <span class="material-symbols-outlined" style="font-size:15px">history_edu</span>PYQ SOLVER
+      </button>
+      <button class="zd-tab" id="tab-booklet" onclick="switchMode('booklet')">
+        <span class="material-symbols-outlined" style="font-size:15px">menu_book</span>BOOKLETS
+      </button>
+    </div>
+
+    <!-- PYQ panel -->
+    <div id="mode-pyq" class="zd-mode-panel">
+      <div class="zd-layout">
+
+        <div class="zd-left">
+          <div class="zd-card">
+            <div class="zd-section-label">SUBJECT</div>
+            <button class="zd-subject-btn active" data-subject="physics" onclick="selectSubject(this)">
+              <span class="zd-dot" style="background:var(--blue)"></span>PHYSICS
+            </button>
+            <button class="zd-subject-btn" data-subject="chemistry" onclick="selectSubject(this)">
+              <span class="zd-dot" style="background:var(--purple)"></span>CHEMISTRY
+            </button>
+            <button class="zd-subject-btn" data-subject="mathematics" onclick="selectSubject(this)">
+              <span class="zd-dot" style="background:var(--orange)"></span>MATHEMATICS
+            </button>
+            <div class="zd-divider"></div>
+            <div class="zd-section-label">CHAPTER</div>
+            <div id="pyq-chapter-list" class="zd-chapter-list">
+              <div class="zd-loading">Select a subject</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="zd-right">
+          <div class="zd-card zd-qnav-card">
+            <div class="zd-qnav-header">
+              <span class="zd-qnav-title" id="qnav-title">QUESTIONS</span>
+              <div class="zd-qnav-legend">
+                <span class="zd-pip" style="background:var(--green)"></span>Correct
+                <span class="zd-pip" style="background:var(--red)"></span>Wrong
+                <span class="zd-pip" style="background:var(--orange)"></span>Skipped
+                <span class="zd-pip" style="background:var(--bg3)"></span>Unseen
+              </div>
+            </div>
+            <div class="zd-qnav-grid" id="q-nav-grid"></div>
+          </div>
+
+          <div class="zd-card zd-q-card" id="q-card">
+            <div id="empty-state-q" class="zd-empty-state">
+              <span class="material-symbols-outlined" style="font-size:48px;color:var(--border-hover);margin-bottom:1rem">layers</span>
+              <h3>SELECT A CHAPTER TO BEGIN</h3>
+              <p>Choose a subject and chapter from the left panel</p>
+            </div>
+            <div id="q-content" class="hidden">
+              <div class="zd-q-meta" id="q-meta"></div>
+              <div class="zd-q-text" id="q-text"></div>
+              <img id="q-image" class="zd-q-image hidden" alt="Question image"/>
+              <div class="zd-options-grid" id="options-grid"></div>
+              <div id="integer-wrap" class="zd-integer-box hidden">
+                <label>ENTER YOUR NUMERICAL ANSWER:</label>
+                <div class="zd-integer-row">
+                  <input type="number" step="any" class="zd-integer-input" id="integer-input"/>
+                  <button class="zd-btn zd-btn-check" id="btn-check-int">CHECK</button>
+                </div>
+                <div class="zd-integer-feedback" id="integer-feedback"></div>
+              </div>
+              <div class="zd-explanation" id="explanation-box">
+                <div class="zd-explanation-label">
+                  <span class="material-symbols-outlined" style="font-size:12px">auto_awesome</span>SOLUTION
+                </div>
+                <div class="zd-explanation-text" id="explanation-text"></div>
+              </div>
+              <div class="zd-q-actions">
+                <button class="zd-btn zd-btn-ghost" id="btn-skip">SKIP</button>
+                <button class="zd-btn zd-btn-primary" id="btn-next" disabled>NEXT →</button>
+                <span class="zd-q-progress" id="q-progress">1 / 1</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Booklet panel -->
+    <div id="mode-booklet" class="zd-mode-panel hidden">
+      <div id="booklet-content"></div>
+    </div>
+
   </div>
 
 </main>
@@ -281,69 +1690,64 @@
 <!-- MOBILE BOTTOM NAV -->
 <nav class="zd-bottom-nav">
   <a href="index.html" class="zd-bnav-item">
-    <span class="material-symbols-outlined">grid_view</span>
-    <span>HOME</span>
+    <span class="material-symbols-outlined">grid_view</span><span>HOME</span>
   </a>
   <a href="#" class="zd-bnav-item active" style="position:relative;">
     <span style="
       position:absolute;top:4px;left:50%;transform:translateX(4px);
-      background:#00f0ff;color:#000;font-family:'Space Grotesk',sans-serif;
-      font-size:0.42rem;font-weight:900;letter-spacing:0.08em;
-      padding:1px 4px;border-radius:3px;line-height:1.4;pointer-events:none;
-    ">NEW</span>
+      background:var(--accent);color:#fff;font-family:'Space Grotesk',sans-serif;
+      font-size:0.4rem;font-weight:900;letter-spacing:0.08em;
+      padding:1px 4px;border-radius:3px;line-height:1.4;pointer-events:none;">NEW</span>
     <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">layers</span>
     <span>SOLVER</span>
   </a>
   <a href="index.html#community" class="zd-bnav-item">
-    <span class="material-symbols-outlined">group</span>
-    <span>SOCIAL</span>
+    <span class="material-symbols-outlined">group</span><span>SOCIAL</span>
   </a>
   <a href="index.html#whitenoise" class="zd-bnav-item">
-    <span class="material-symbols-outlined">music_note</span>
-    <span>NOISE</span>
+    <span class="material-symbols-outlined">music_note</span><span>NOISE</span>
   </a>
   <a href="settings.html" class="zd-bnav-item">
-    <span class="material-symbols-outlined">settings</span>
-    <span>SETTINGS</span>
+    <span class="material-symbols-outlined">settings</span><span>SETTINGS</span>
   </a>
 </nav>
 
-<!-- ═══════════════════ SCRIPTS ═══════════════════ -->
+<!-- ═══════ SCRIPTS ═══════ -->
 <script src="js/config.js"></script>
+
 <script>
-(function initSolverAuth() {
+/* ── Auth & sidebar ───────────────────────────── */
+(function initAuth() {
   db.auth.getSession().then(function(result) {
     var session = result.data && result.data.session;
     if (!session) { window.location.href = 'index.html'; return; }
     currentUser = session.user;
 
-    db.from('profiles').select('*').eq('id', currentUser.id).single()
-      .then(function(r) {
-        if (!r.data) return;
-        currentProfile = r.data;
+    db.from('profiles').select('*').eq('id', currentUser.id).single().then(function(r) {
+      if (!r.data) return;
+      currentProfile = r.data;
 
-        var nameEl   = document.getElementById('sidebar-name');
-        var classEl  = document.getElementById('sidebar-class');
-        var avatarEl = document.getElementById('sidebar-avatar-img');
-        var mobAv    = document.getElementById('mobile-avatar');
+      var nameEl  = document.getElementById('sidebar-name');
+      var classEl = document.getElementById('sidebar-class');
+      var avEl    = document.getElementById('sidebar-avatar-img');
+      var mobAv   = document.getElementById('mobile-avatar');
 
-        if (nameEl)  nameEl.textContent  = r.data.name || '';
-        if (classEl) classEl.textContent = (r.data.class || '') + (r.data.target_year ? ' · ' + r.data.target_year : '');
+      if (nameEl)  nameEl.textContent  = r.data.name || '';
+      if (classEl) classEl.textContent = (r.data.class || '') + (r.data.target_year ? ' · ' + r.data.target_year : '');
 
-        // ── Apply user theme from profile ──────────────────────────
-        var theme = r.data.theme || localStorage.getItem('zd_theme') || 'dark';
-        document.documentElement.setAttribute('data-theme', theme);
-        document.body.setAttribute('data-theme', theme);
-        localStorage.setItem('zd_theme', theme); // cache for next visit (flash-free)
+      var theme = r.data.theme || localStorage.getItem('zd_theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', theme);
+      document.body.setAttribute('data-theme', theme);
+      localStorage.setItem('zd_theme', theme);
 
-        var avHtml = r.data.avatar_url
-          ? '<img src="' + r.data.avatar_url + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
-          : '<span class="material-symbols-outlined" style="font-size:15px;color:#849495">person</span>';
-        if (avatarEl) avatarEl.innerHTML = avHtml;
-        if (mobAv) mobAv.innerHTML = r.data.avatar_url
-          ? '<img src="' + r.data.avatar_url + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
-          : '<span class="material-symbols-outlined" style="font-size:14px">person</span>';
-      });
+      var avHtml = r.data.avatar_url
+        ? '<img src="' + r.data.avatar_url + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
+        : '<span class="material-symbols-outlined" style="font-size:15px;color:var(--text2)">person</span>';
+      if (avEl)  avEl.innerHTML  = avHtml;
+      if (mobAv) mobAv.innerHTML = r.data.avatar_url
+        ? '<img src="' + r.data.avatar_url + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
+        : '<span class="material-symbols-outlined" style="font-size:14px">person</span>';
+    });
   });
 
   document.addEventListener('DOMContentLoaded', function() {
@@ -351,7 +1755,6 @@
     if (logoutBtn) logoutBtn.addEventListener('click', function() {
       db.auth.signOut().then(function() { window.location.href = 'index.html'; });
     });
-
     var hamburger = document.getElementById('hamburger');
     var sidebarEl = document.getElementById('sidebar');
     var overlay   = document.getElementById('sidebar-overlay');
@@ -365,35 +1768,252 @@
     });
   });
 })();
+
+/* ── View system ──────────────────────────────── */
+var ZD_VIEWS = {
+  'mode-select': 'view-mode-select',
+  'pyq-select' : 'view-pyq-select',
+  'booklets'   : 'view-booklets',
+  'mock'       : 'view-mock',
+  'solving'    : 'view-solving'
+};
+
+function showView(name) {
+  var id = ZD_VIEWS[name]; if (!id) return;
+  Object.values(ZD_VIEWS).forEach(function(vid) {
+    var el = document.getElementById(vid);
+    if (el) el.classList.remove('active');
+  });
+  var target = document.getElementById(id);
+  if (target) {
+    target.classList.add('active');
+    var main = document.querySelector('.zd-main');
+    if (main) main.scrollTop = 0;
+    window.scrollTo(0, 0);
+  }
+}
+
+/* ── PYQ state & handlers ─────────────────────── */
+var _pyq = { subject: 'physics', chapter: '', year: 'all', diff: 'medium', type: 'mcq' };
+
+function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+function selectPYQSubject(btn) {
+  document.querySelectorAll('#view-pyq-select .ps-subj-btn').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+  _pyq.subject = btn.dataset.subject;
+  _pyq.chapter = ''; // reset chapter
+  // Reset step 2 heading
+  var lbl = document.getElementById('ps-ch-selected-lbl');
+  if (lbl) { lbl.style.display = 'none'; lbl.textContent = ''; }
+  var n2 = document.getElementById('ps-n2');
+  if (n2) { n2.classList.remove('locked', 'done'); }
+  loadPYQChapters(_pyq.subject);
+}
+
+function loadPYQChapters(subject) {
+  if (typeof db === 'undefined') return;
+
+  var grid    = document.getElementById('ps-ch-grid');
+  var loading = document.getElementById('ps-ch-loading');
+  var n2      = document.getElementById('ps-n2');
+  var qCount  = document.getElementById('pyq-q-count');
+
+  // Show skeleton, hide grid
+  if (loading) loading.style.display = 'grid';
+  if (grid)    { grid.style.display = 'none'; grid.innerHTML = ''; }
+
+  // Fetch chapter + year for this subject in one query
+  db.from('questions')
+    .select('chapter, year')
+    .eq('subject', subject)
+    .then(function(res) {
+      if (loading) loading.style.display = 'none';
+      if (!res.data || !res.data.length) {
+        if (grid) {
+          grid.style.display = 'grid';
+          grid.innerHTML = '<div class="ps-ch-empty">No questions found for this subject.</div>';
+        }
+        return;
+      }
+
+      // Build map: { chapter -> { total, years: { year -> count } } }
+      var map = {};
+      res.data.forEach(function(r) {
+        if (!r.chapter) return;
+        if (!map[r.chapter]) map[r.chapter] = { total: 0, years: {} };
+        map[r.chapter].total++;
+        if (r.year) {
+          map[r.chapter].years[r.year] = (map[r.chapter].years[r.year] || 0) + 1;
+        }
+      });
+
+      var chapters = Object.keys(map).sort();
+
+      // Update total question count estimate in CTA bar
+      var total = res.data.length;
+      if (qCount) qCount.textContent = total;
+
+      // Render chapter cards
+      if (grid) {
+        grid.style.display = 'grid';
+        grid.innerHTML = '';
+
+        chapters.forEach(function(ch) {
+          var info   = map[ch];
+          var years  = Object.keys(info.years).sort().reverse(); // newest first
+
+          // Build year pills — show up to 5 years to stay compact
+          var yearHTML = '';
+          years.slice(0, 6).forEach(function(yr) {
+            yearHTML += '<span class="ps-ch-yr">' + yr.toString().slice(2) + ' <b>' + info.years[yr] + '</b></span>';
+          });
+          if (years.length > 6) {
+            yearHTML += '<span class="ps-ch-yr" style="opacity:0.55">+' + (years.length - 6) + '</span>';
+          }
+
+          var card = document.createElement('button');
+          card.className = 'ps-ch-card';
+          card.dataset.chapter = ch;
+          card.innerHTML =
+            '<span class="material-symbols-outlined ps-ch-check">check_circle</span>' +
+            '<div class="ps-ch-name">' + ch + '</div>' +
+            '<div class="ps-ch-total">' +
+              '<span class="material-symbols-outlined">quiz</span>' +
+              info.total + ' Q' +
+            '</div>' +
+            '<div class="ps-ch-years">' + yearHTML + '</div>';
+
+          card.addEventListener('click', function() {
+            // Deselect all, select this
+            grid.querySelectorAll('.ps-ch-card').forEach(function(c) { c.classList.remove('selected'); });
+            card.classList.add('selected');
+            _pyq.chapter = ch;
+
+            // Update step indicators
+            var n2el = document.getElementById('ps-n2');
+            if (n2el) { n2el.classList.remove('locked'); n2el.classList.add('done'); }
+            var n3el = document.getElementById('ps-n3');
+            if (n3el) { n3el.classList.remove('locked'); n3el.classList.add('done'); }
+
+            // Show selected label in header
+            var lbl = document.getElementById('ps-ch-selected-lbl');
+            if (lbl) { lbl.style.display = 'inline'; lbl.textContent = ch; }
+
+            // Update count in CTA
+            if (qCount) qCount.textContent = info.total;
+          });
+
+          grid.appendChild(card);
+        });
+
+        // Mark previously selected if user comes back
+        if (_pyq.chapter) {
+          var existing = grid.querySelector('[data-chapter="' + _pyq.chapter + '"]');
+          if (existing) existing.classList.add('selected');
+        }
+
+        if (n2) { n2.classList.remove('locked'); }
+      }
+    });
+}
+
+function selectYear(btn) {
+  document.querySelectorAll('#year-chips .ps-chip').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+  _pyq.year = btn.dataset.year;
+}
+
+function selectPill(btn, group) {
+  btn.closest('.ps-pills').querySelectorAll('.ps-pill').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+  if (group === 'diff') _pyq.diff = btn.dataset.diff;
+  if (group === 'type') _pyq.type = btn.dataset.type;
+}
+
+/* ── Launch functions ─────────────────────────── */
+function startPYQSolving() {
+  // _pyq.chapter is already set by clicking a chapter card
+  var cBtn = document.getElementById('crumb-section-btn');
+  var cCur = document.getElementById('crumb-current');
+  if (cBtn) { cBtn.textContent = 'PYQs'; cBtn.onclick = function() { showView('pyq-select'); }; }
+  if (cCur) cCur.textContent = cap(_pyq.subject) + (_pyq.chapter ? ' / ' + _pyq.chapter : '');
+  document.getElementById('solving-title').textContent = 'PYQ_SOLVER';
+  document.getElementById('solving-sub').textContent = cap(_pyq.subject) + (_pyq.chapter ? ' — ' + _pyq.chapter : ' — All Chapters');
+  showView('solving');
+  setTimeout(function() {
+    document.querySelectorAll('#view-solving .zd-subject-btn').forEach(function(btn) {
+      if (btn.dataset.subject === _pyq.subject) selectSubject(btn);
+    });
+    if (_pyq.chapter) {
+      setTimeout(function() {
+        document.querySelectorAll('#pyq-chapter-list .zd-chapter-btn').forEach(function(cb) {
+          if (cb.textContent.trim() === _pyq.chapter || cb.dataset.chapter === _pyq.chapter) cb.click();
+        });
+      }, 700);
+    }
+  }, 120);
+}
+
+function startBookletSolving(name, subject) {
+  var cBtn = document.getElementById('crumb-section-btn');
+  var cCur = document.getElementById('crumb-current');
+  if (cBtn) { cBtn.textContent = 'Booklets'; cBtn.onclick = function() { showView('booklets'); }; }
+  if (cCur) cCur.textContent = name;
+  document.getElementById('solving-title').textContent = 'BOOKLET_SOLVER';
+  document.getElementById('solving-sub').textContent = name;
+  showView('solving');
+  setTimeout(function() {
+    if (typeof switchMode === 'function') switchMode('booklet');
+    document.querySelectorAll('#view-solving .zd-subject-btn').forEach(function(btn) {
+      if (btn.dataset.subject === subject) selectSubject(btn);
+    });
+  }, 120);
+}
+
+function startMockTest() {
+  var cBtn = document.getElementById('crumb-section-btn');
+  var cCur = document.getElementById('crumb-current');
+  if (cBtn) { cBtn.textContent = 'Mock Tests'; cBtn.onclick = function() { showView('mock'); }; }
+  if (cCur) cCur.textContent = 'Custom Test';
+  document.getElementById('solving-title').textContent = 'MOCK_TEST';
+  document.getElementById('solving-sub').textContent = 'Full simulation — all subjects';
+  showView('solving');
+  setTimeout(function() {
+    if (typeof switchMode === 'function') switchMode('pyq');
+    if (typeof loadSolverStats === 'function') loadSolverStats();
+  }, 120);
+}
+
+function blFilter(chip) {
+  document.querySelectorAll('#view-booklets .bl-chip').forEach(function(c) { c.classList.remove('active'); });
+  chip.classList.add('active');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  // Pre-load physics chapters so grid is ready when user lands on view 2
+  loadPYQChapters('physics');
+});
 </script>
+
 <script src="js/analyticsService.js"></script>
 <script src="js/solver.js"></script>
 <script src="js/app.js"></script>
 <script src="js/admin.js"></script>
+
+<!-- Text-wrapping patch (preserved from original) -->
 <script>
-/* ── Text wrapping patch ─────────────────────────────────────────
-   Patches loadQuestion() to sanitize &nbsp; / \u00A0 from DB text
-   before render — these non-breaking spaces block line wrapping.
-   ─────────────────────────────────────────────────────────────── */
 (function patchLoadQuestion() {
   var _orig = window.loadQuestion;
   if (typeof _orig !== 'function') return;
-  window.loadQuestion = function () {
+  window.loadQuestion = function() {
     if (qState && qState.questions && qState.questions[qState.index]) {
       var q = qState.questions[qState.index];
-      if (q.text) {
-        q.text = q.text
-          .replace(/\u00A0/g, ' ')
-          .replace(/&nbsp;/gi, ' ');
-      }
+      if (q.text) q.text = q.text.replace(/\u00A0/g,' ').replace(/&nbsp;/gi,' ');
       if (Array.isArray(q.options)) {
-        q.options = q.options.map(function(opt) {
-          if (opt && opt.text) {
-            opt.text = opt.text
-              .replace(/\u00A0/g, ' ')
-              .replace(/&nbsp;/gi, ' ');
-          }
-          return opt;
+        q.options = q.options.map(function(o) {
+          if (o && o.text) o.text = o.text.replace(/\u00A0/g,' ').replace(/&nbsp;/gi,' ');
+          return o;
         });
       }
     }
@@ -401,5 +2021,6 @@
   };
 })();
 </script>
+
 </body>
 </html>
