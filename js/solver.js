@@ -46,6 +46,51 @@ var bNav = { id: null, folder: null, subjectKey: null, chapter: null };
 var _cache = {};
 var _currentMode = "pyq";
 
+// ── PYQ attempt cooldown cache ───────────────────────────
+// Map of questionId → { id, is_correct, selected_answer, created_at }
+var _pyqAttemptCache = {};   // populated per chapter load
+var _COOLDOWN_MS = 12 * 60 * 60 * 1000; // 12 hours
+
+function _isOnCooldown(attempt) {
+  if (!attempt) return false;
+  var age = Date.now() - new Date(attempt.created_at).getTime();
+  return age < _COOLDOWN_MS;
+}
+
+function _timeUntilCooldownEnd(attempt) {
+  if (!attempt) return 0;
+  var age = Date.now() - new Date(attempt.created_at).getTime();
+  var remaining = _COOLDOWN_MS - age;
+  return Math.max(0, remaining);
+}
+
+function _formatCountdown(ms) {
+  var totalSec = Math.floor(ms / 1000);
+  var h = Math.floor(totalSec / 3600);
+  var m = Math.floor((totalSec % 3600) / 60);
+  return h + 'h ' + m + 'm';
+}
+
+// Fetch latest attempt per question for the given question IDs (PYQ only)
+async function _loadAttemptsForQuestions(questionIds) {
+  if (!currentUser || !questionIds.length) return;
+  var result = await db
+    .from('user_attempts')
+    .select('id, question_id, is_correct, selected_answer, created_at')
+    .eq('user_id', currentUser.id)
+    .in('question_id', questionIds)
+    .order('created_at', { ascending: false });
+
+  if (result.error || !result.data) return;
+
+  // Keep only latest attempt per question
+  result.data.forEach(function(row) {
+    if (!_pyqAttemptCache[row.question_id]) {
+      _pyqAttemptCache[row.question_id] = row;
+    }
+  });
+}
+
 // ═══════════════════════════════════════════════════════
 //  Init
 // ═══════════════════════════════════════════════════════
@@ -62,7 +107,14 @@ document.addEventListener("DOMContentLoaded", function () {
     } else {
       qState.index = 0;
     }
-    qState.answered = false;
+    // In PYQ mode, check if next question has cooldown
+    if (qState.mode === "pyq") {
+      var nq = qState.questions[qState.index];
+      var na = nq && _pyqAttemptCache[nq._dbId];
+      qState.answered = !!(na && _isOnCooldown(na));
+    } else {
+      qState.answered = false;
+    }
     loadQuestion();
     updateQNav();
   });
@@ -78,7 +130,13 @@ document.addEventListener("DOMContentLoaded", function () {
     } else {
       qState.index = 0;
     }
-    qState.answered = false;
+    if (qState.mode === "pyq") {
+      var nq = qState.questions[qState.index];
+      var na = nq && _pyqAttemptCache[nq._dbId];
+      qState.answered = !!(na && _isOnCooldown(na));
+    } else {
+      qState.answered = false;
+    }
     loadQuestion();
     updateQNav();
   });
@@ -86,6 +144,10 @@ document.addEventListener("DOMContentLoaded", function () {
   var btnCheckInt = document.getElementById("btn-check-int");
   if (btnCheckInt) btnCheckInt.addEventListener("click", function () {
     if (qState.answered || qState.mode !== "pyq") return;
+    // Guard: PYQ cooldown
+    var qNow = qState.questions[qState.index];
+    var attNow = qNow && _pyqAttemptCache[qNow._dbId];
+    if (attNow && _isOnCooldown(attNow)) return;
     var val = document.getElementById("integer-input").value.trim();
     if (!val) return;
     qState.answered = true;
@@ -99,7 +161,7 @@ document.addEventListener("DOMContentLoaded", function () {
     fb.textContent = isCorrect
       ? "✓ Correct!"
       : "✗ Wrong. Answer: " + q.answer;
-    finalize(isCorrect, q);
+    finalize(isCorrect, q, val);
   });
 });
 
@@ -228,7 +290,17 @@ async function selectChapter(btn) {
   qState.questions = _cache[cacheKey];
   qState.index = 0;
   qState.answered = false;
-  qState.statuses = qState.questions.map(function () {
+
+  // Fetch DB attempts to apply cooldown state
+  var qIds = qState.questions.map(function(q) { return q._dbId; });
+  await _loadAttemptsForQuestions(qIds);
+
+  // Seed statuses from existing in-cooldown attempts
+  qState.statuses = qState.questions.map(function(q) {
+    var attempt = _pyqAttemptCache[q._dbId];
+    if (attempt && _isOnCooldown(attempt)) {
+      return attempt.is_correct ? "correct" : "wrong";
+    }
     return "unseen";
   });
 
@@ -285,7 +357,14 @@ function updateQNav() {
 
 function jumpToQ(idx) {
   qState.index = idx;
-  qState.answered = false;
+  // In PYQ mode, don't reset answered flag for cooldown questions
+  if (qState.mode === "pyq") {
+    var q = qState.questions[idx];
+    var attempt = q && _pyqAttemptCache[q._dbId];
+    qState.answered = !!(attempt && _isOnCooldown(attempt));
+  } else {
+    qState.answered = false;
+  }
   loadQuestion();
   updateQNav();
 }
@@ -310,6 +389,16 @@ function loadQuestion() {
   if (!q) return;
 
   var $ = getCtx();
+
+  // ── PYQ cooldown check ───────────────────────────────
+  if (qState.mode === "pyq") {
+    var attempt = _pyqAttemptCache[q._dbId];
+    if (attempt && _isOnCooldown(attempt)) {
+      _renderAttemptedQuestion(q, attempt, $);
+      return;
+    }
+  }
+
   qState.answered = false;
   $("btn-next").disabled = true;
   $("integer-feedback").textContent = "";
@@ -369,6 +458,138 @@ function loadQuestion() {
   renderMath($("q-card"));
 }
 
+// Render a PYQ question that was already answered and is still on cooldown
+function _renderAttemptedQuestion(q, attempt, $) {
+  qState.answered = true;
+  $("btn-next").disabled = false;
+  $("explanation-box").classList.remove("show");
+  $("q-card").classList.remove("solver-pop");
+
+  var diff = q.difficulty || "";
+  var typeLabel = q.type === "integer" ? "Numerical" : "MCQ";
+  var remaining = _formatCountdown(_timeUntilCooldownEnd(attempt));
+
+  $("q-meta").innerHTML =
+    '<span class="solver-badge solver-badge-chapter">' + _esc(q.chapter) + "</span>" +
+    '<span class="solver-badge solver-badge-' + diff + '">' + diff + "</span>" +
+    '<span class="solver-badge solver-badge-' + (q.type === "integer" ? "integer" : "mcq") + '">' + typeLabel + "</span>" +
+    (q.year ? '<span class="solver-badge solver-badge-year">' + q.year + (q.shift ? " · " + q.shift : "") + "</span>" : "") +
+    '<span class="solver-badge" style="background:rgba(255,147,64,0.15);color:#ff9340;border:1px solid rgba(255,147,64,0.3)">⏳ COOLDOWN ' + remaining + '</span>';
+
+  $("q-text").innerHTML = q.text || "";
+  renderMath($("q-text"));
+
+  var imgEl = $("q-image");
+  if (q.image) {
+    imgEl.src = q.image;
+    imgEl.classList.remove("hidden");
+    imgEl.onerror = function() { imgEl.classList.add("hidden"); };
+  } else {
+    imgEl.classList.add("hidden");
+  }
+
+  if (q.type === "integer") {
+    $("options-grid").classList.add("hidden");
+    $("integer-wrap").classList.remove("hidden");
+    var intInput = $("integer-input");
+    var selectedNum = Number(attempt.selected_answer);
+    intInput.value = isNaN(selectedNum) ? "" : selectedNum;
+    intInput.disabled = true;
+    intInput.className = "zd-integer-input " + (attempt.is_correct ? "correct" : "wrong");
+    var fb = $("integer-feedback");
+    fb.className = "zd-integer-feedback " + (attempt.is_correct ? "correct" : "wrong");
+    fb.textContent = attempt.is_correct
+      ? "✓ Correct! You answered this correctly."
+      : "✗ Wrong. Correct answer: " + q.answer;
+  } else {
+    $("integer-wrap").classList.add("hidden");
+    $("options-grid").classList.remove("hidden");
+    _renderAttemptedOptions(q, attempt, $);
+  }
+
+  // Show cooldown banner inside explanation-box area
+  var cooldownBanner =
+    '<div style="background:rgba(255,147,64,0.08);border:1px solid rgba(255,147,64,0.25);border-radius:10px;padding:0.75rem 1rem;margin-bottom:0.75rem;display:flex;align-items:center;gap:0.6rem">' +
+    '<span style="font-size:1.1rem">⏳</span>' +
+    '<div><div style="font-family:\'DM Mono\',monospace;font-size:0.68rem;color:#ff9340;font-weight:700;letter-spacing:0.08em">ALREADY ATTEMPTED</div>' +
+    '<div style="font-family:\'DM Mono\',monospace;font-size:0.6rem;color:var(--text3);margin-top:2px">You can attempt this question again in ' + remaining + '.</div>' +
+    '</div></div>';
+
+  if (q.explanation) {
+    $("explanation-text").innerHTML = cooldownBanner + _formatText(q.explanation);
+    if (q.explanation_image_url) {
+      $("explanation-text").innerHTML +=
+        '<img src="' + _esc(q.explanation_image_url) + '" style="max-width:100%;border-radius:8px;margin-top:0.8rem" onerror="this.style.display=\'none\'"/>';
+    }
+    $("explanation-box").classList.add("show");
+    renderMath($("explanation-text"));
+    renderMath($("explanation-box"));
+  } else {
+    $("explanation-text").innerHTML = cooldownBanner;
+    $("explanation-box").classList.add("show");
+  }
+
+  $("q-progress").textContent = qState.index + 1 + " / " + qState.questions.length;
+  renderMath($("q-card"));
+}
+
+function _renderAttemptedOptions(q, attempt, $) {
+  var keys = ["A", "B", "C", "D", "E"];
+
+  // selected_answer is the option index (0-based) for new attempts.
+  // Legacy wrong attempts were stored as "wrong" — we can't know which option was picked.
+  var rawSel = attempt.selected_answer;
+  var isLegacyWrong = (rawSel === "wrong" || rawSel === "" || rawSel === null || rawSel === undefined) && !attempt.is_correct;
+  var selectedIdx = (!isLegacyWrong && rawSel !== null && rawSel !== undefined && rawSel !== "")
+    ? Number(rawSel)
+    : -1;
+  var isUserCorrect = attempt.is_correct;
+
+  $("options-grid").innerHTML = (q.options || [])
+    .map(function(opt, i) {
+      var imgHtml = opt.image
+        ? '<img src="' + _esc(opt.image) + '" style="max-width:100%;margin-top:0.4rem;border-radius:6px"/>'
+        : "";
+      var optText = opt.text || "";
+
+      var isCorrectOpt = (i === q.correct);
+      var isUserOpt    = (selectedIdx >= 0 && i === selectedIdx);
+
+      var cls = "solver-option-btn disabled";
+      var labelHtml = "";
+
+      if (isUserCorrect && isUserOpt && isCorrectOpt) {
+        cls += " correct";
+        labelHtml = '<span class="zd-attempt-label zd-attempt-label--correct">Your Answer &nbsp;&middot;&nbsp; Correct Answer</span>';
+      } else if (isCorrectOpt) {
+        cls += " correct";
+        labelHtml = '<span class="zd-attempt-label zd-attempt-label--correct">Correct Answer</span>';
+      } else if (isUserOpt && !isCorrectOpt) {
+        cls += " wrong";
+        labelHtml = '<span class="zd-attempt-label zd-attempt-label--wrong">Your Answer</span>';
+      }
+
+      return (
+        '<button class="' + cls + '" data-idx="' + i + '">' +
+        labelHtml +
+        '<span class="solver-option-key">' + keys[i] + '</span>' +
+        '<span class="opt-text-' + i + '">' + optText + imgHtml + '</span>' +
+        '</button>'
+      );
+    })
+    .join("");
+
+  // For legacy wrong attempts where the choice wasn't stored, append a small notice
+  if (isLegacyWrong) {
+    $("options-grid").insertAdjacentHTML("afterend",
+      '<div style="font-family:\'DM Mono\',monospace;font-size:0.65rem;color:#849495;margin-top:0.5rem;padding:0.4rem 0.6rem;background:rgba(132,148,149,0.08);border-radius:6px;border:1px solid rgba(132,148,149,0.15)">' +
+      '\u26a0 Your previous selection wasn\'t recorded for this attempt. The correct answer is highlighted.' +
+      '</div>'
+    );
+  }
+  renderMath($("options-grid"));
+}
+
 function renderOptions(q, $) {
   var keys = ["A", "B", "C", "D", "E"];
   $("options-grid").innerHTML = (q.options || [])
@@ -403,6 +624,12 @@ function renderOptions(q, $) {
 
 function handleMCQ(selected) {
   if (qState.answered) return;
+  // Extra guard: block if PYQ cooldown is active
+  if (qState.mode === "pyq") {
+    var q0 = qState.questions[qState.index];
+    var att0 = q0 && _pyqAttemptCache[q0._dbId];
+    if (att0 && _isOnCooldown(att0)) return;
+  }
   qState.answered = true;
   var q = qState.questions[qState.index];
   var isCorrect = selected === q.correct;
@@ -415,10 +642,10 @@ function handleMCQ(selected) {
       if (i === q.correct) btn.classList.add("correct");
       if (i === selected && selected !== q.correct) btn.classList.add("wrong");
     });
-  finalize(isCorrect, q);
+  finalize(isCorrect, q, selected);
 }
 
-function finalize(isCorrect, q) {
+function finalize(isCorrect, q, selectedAnswer) {
   qState.statuses[qState.index] = isCorrect ? "correct" : "wrong";
   updateQNav();
 
@@ -441,21 +668,65 @@ function finalize(isCorrect, q) {
   saveSolverStats();
 
   if (currentUser && q._dbId) {
-    db.from("user_attempts")
-      .insert({
-        user_id: currentUser.id,
-        question_id: q._dbId,
-        is_correct: isCorrect,
-        selected_answer: String(
-          isCorrect
-            ? q.correct !== undefined
-              ? q.correct
-              : q.answer
-            : "wrong",
-        ),
-      })
-      .then(function () {})
-      .catch(function () {});
+    // Always store the actual answer the user chose — never a placeholder like "wrong".
+    // For MCQ: selectedAnswer is the option index (0-based).
+    // For integer: selectedAnswer is the numeric string the user typed.
+    var selectedStr = String(selectedAnswer !== undefined && selectedAnswer !== null ? selectedAnswer : "");
+
+    var existingAttempt = _pyqAttemptCache[q._dbId];
+
+    if (existingAttempt && existingAttempt.id && qState.mode === "pyq") {
+      // Update existing row (cooldown expired, user reattempts)
+      db.from("user_attempts")
+        .update({
+          is_correct: isCorrect,
+          selected_answer: selectedStr,
+          created_at: new Date().toISOString(),
+        })
+        .eq("id", existingAttempt.id)
+        .then(function() {})
+        .catch(function() {});
+    } else {
+      // Insert new row
+      db.from("user_attempts")
+        .insert({
+          user_id: currentUser.id,
+          question_id: q._dbId,
+          is_correct: isCorrect,
+          selected_answer: selectedStr,
+        })
+        .then(function(res) {
+          // Cache the new attempt so cooldown kicks in immediately
+          if (res.data && res.data[0] && qState.mode === "pyq") {
+            _pyqAttemptCache[q._dbId] = res.data[0];
+          } else if (qState.mode === "pyq") {
+            // Supabase v2 insert doesn't return data by default unless .select() is chained
+            // Build a local stand-in so the cooldown badge shows immediately if user navigates away and back
+            _pyqAttemptCache[q._dbId] = {
+              id: null,
+              question_id: q._dbId,
+              is_correct: isCorrect,
+              selected_answer: selectedStr,
+              created_at: new Date().toISOString(),
+            };
+          }
+        })
+        .catch(function() {});
+    }
+
+    // Always update local cache entry for immediate UI consistency
+    if (qState.mode === "pyq") {
+      _pyqAttemptCache[q._dbId] = Object.assign(
+        {},
+        _pyqAttemptCache[q._dbId] || {},
+        {
+          question_id: q._dbId,
+          is_correct: isCorrect,
+          selected_answer: selectedStr,
+          created_at: new Date().toISOString(),
+        }
+      );
+    }
   }
 
   if (q.explanation) {
@@ -784,14 +1055,14 @@ function renderBookletSolver(
     "</div>" +
     '<div class="zd-integer-feedback" id="integer-feedback"></div>' +
     "</div>" +
+     '<div class="zd-q-actions">' +
+    '<button class="zd-btn zd-btn-ghost" id="btn-skip">SKIP</button>' +
+    '<button class="zd-btn zd-btn-primary" id="btn-next" disabled>NEXT →</button>' +
+    '<span class="zd-q-progress" id="q-progress">1 / ' +
     '<div class="zd-explanation" id="explanation-box">' +
     '<div class="zd-explanation-label"><span class="material-symbols-outlined" style="font-size:12px">auto_awesome</span> SOLUTION</div>' +
     '<div class="zd-explanation-text" id="explanation-text"></div>' +
     "</div>" +
-    '<div class="zd-q-actions">' +
-    '<button class="zd-btn zd-btn-ghost" id="btn-skip">SKIP</button>' +
-    '<button class="zd-btn zd-btn-primary" id="btn-next" disabled>NEXT →</button>' +
-    '<span class="zd-q-progress" id="q-progress">1 / ' +
     questions.length +
     "</span>" +
     "</div>" +
@@ -839,7 +1110,7 @@ function renderBookletSolver(
     var fb = wrap.querySelector("#integer-feedback");
     fb.className = "zd-integer-feedback " + (isCorrect ? "correct" : "wrong");
     fb.textContent = isCorrect ? "✓ Correct!" : "✗ Wrong. Answer: " + q.answer;
-    finalize(isCorrect, q);
+    finalize(isCorrect, q, val);
   });
 
   buildQNav();
