@@ -54,6 +54,37 @@
     .katex-display { overflow-x: auto; overflow-y: hidden; max-width: 100%; }
     .zd-q-card { overflow-x: hidden; }
 
+    /* ── Attempted-question option labels ── */
+    /* Label floats on the top border of the option — zero layout impact */
+    .solver-option-btn { position: relative; }
+
+    .zd-attempt-label {
+      position: absolute;
+      top: -1px;          /* sit exactly on the top border line */
+      left: 50%;
+      transform: translate(-50%, -50%); /* vertically centred on the border */
+      white-space: nowrap;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.58rem;
+      font-weight: 700;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      padding: 1px 8px;
+      border-radius: 999px;
+      pointer-events: none;
+      line-height: 1.6;
+    }
+    .zd-attempt-label--correct {
+      background: #0d3320;
+      color: #27ae60;
+      border: 1px solid #27ae60;
+    }
+    .zd-attempt-label--wrong {
+      background: #3a0d0d;
+      color: #e74c3c;
+      border: 1px solid #e74c3c;
+    }
+
     /* ── View system ── */
     .zdv { display: none; }
     .zdv.active {

@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Terms of Use — SolvingMind</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Bebas+Neue&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:           #050508;
+      --bg2:          #08090f;
+      --bg3:          #0d0e18;
+      --card:         #0c0d16;
+      --border:       rgba(124, 111, 255, 0.12);
+      --text:         #e8eaf6;
+      --text2:        #8b90a8;
+      --text3:        #3a3d52;
+      --accent:       #7c6fff;
+      --accent2:      #00d4ff;
+      --accent-glow:  rgba(124, 111, 255, 0.22);
+      --accent-grad:  linear-gradient(135deg, #7c6fff 0%, #00d4ff 100%);
+      --green:        #00e5a0;
+      --orange:       #ff6b35;
+      --red:          #ff3b5c;
+      --radius:       14px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Space Grotesk', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.7;
+      background-image:
+        radial-gradient(ellipse 70% 55% at 80% -5%, rgba(0, 212, 255, 0.06) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 20% 110%, rgba(124, 111, 255, 0.05) 0%, transparent 60%);
+      background-attachment: fixed;
+    }
+
+    /* ── TOP NAV ── */
+    .topnav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(5,5,8,0.92);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .nav-brand {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.4rem;
+      letter-spacing: 0.08em;
+      background: var(--accent-grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-decoration: none;
+    }
+    .nav-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text2);
+      text-decoration: none;
+      padding: 0.4rem 0.9rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+    .nav-back:hover {
+      color: var(--accent2);
+      border-color: rgba(0,212,255,0.3);
+      background: rgba(0,212,255,0.05);
+    }
+
+    /* ── HERO ── */
+    .hero {
+      padding: 4rem 2rem 3rem;
+      text-align: center;
+    }
+    .hero-badge {
+      display: inline-block;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--orange);
+      background: rgba(255,107,53,0.08);
+      border: 1px solid rgba(255,107,53,0.22);
+      border-radius: 20px;
+      padding: 0.3rem 0.9rem;
+      margin-bottom: 1.2rem;
+      font-family: 'DM Mono', monospace;
+    }
+    .hero h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(2.8rem, 6vw, 4.5rem);
+      letter-spacing: 0.05em;
+      line-height: 1;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, #ff6b35 0%, #ffd166 50%, #00d4ff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero-meta {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+    }
+    .hero-meta span {
+      font-size: 0.75rem;
+      color: var(--text3);
+      font-family: 'DM Mono', monospace;
+      letter-spacing: 0.06em;
+    }
+    .hero-meta span strong { color: var(--text2); font-weight: 500; }
+    .hero-divider { width: 2px; height: 2px; border-radius: 50%; background: var(--text3); }
+
+    /* ── LAYOUT ── */
+    .page-wrap {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 0 1.5rem 6rem;
+    }
+
+    /* ── TOC ── */
+    .toc-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem 1.75rem;
+      margin-bottom: 2.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .toc-card::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: linear-gradient(180deg, #ff6b35, #ffd166);
+      border-radius: 0 2px 2px 0;
+    }
+    .toc-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--orange);
+      margin-bottom: 0.9rem;
+      font-family: 'DM Mono', monospace;
+    }
+    .toc-list {
+      list-style: none;
+      columns: 2;
+      gap: 0.3rem 2rem;
+    }
+    @media (max-width: 500px) { .toc-list { columns: 1; } }
+    .toc-list li { break-inside: avoid; }
+    .toc-list a {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--text2);
+      text-decoration: none;
+      font-size: 0.82rem;
+      padding: 0.22rem 0;
+      transition: color 0.15s;
+    }
+    .toc-list a:hover { color: var(--orange); }
+    .toc-num {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem;
+      color: var(--text3);
+      min-width: 18px;
+    }
+
+    /* ── SECTIONS ── */
+    .section {
+      margin-bottom: 2.5rem;
+      scroll-margin-top: 80px;
+      animation: fadeUp 0.45s ease both;
+    }
+    .section:nth-child(1)  { animation-delay: 0.05s; }
+    .section:nth-child(2)  { animation-delay: 0.10s; }
+    .section:nth-child(3)  { animation-delay: 0.14s; }
+    .section:nth-child(4)  { animation-delay: 0.17s; }
+    .section:nth-child(5)  { animation-delay: 0.20s; }
+    .section:nth-child(6)  { animation-delay: 0.23s; }
+    .section:nth-child(7)  { animation-delay: 0.26s; }
+    .section:nth-child(8)  { animation-delay: 0.29s; }
+    .section:nth-child(9)  { animation-delay: 0.32s; }
+    .section:nth-child(10) { animation-delay: 0.35s; }
+    .section:nth-child(11) { animation-delay: 0.38s; }
+    .section:nth-child(12) { animation-delay: 0.41s; }
+    .section:nth-child(13) { animation-delay: 0.44s; }
+    .section:nth-child(14) { animation-delay: 0.47s; }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      margin-bottom: 1rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .section-num {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.1rem;
+      letter-spacing: 0.06em;
+      color: var(--orange);
+      background: rgba(255,107,53,0.08);
+      border: 1px solid rgba(255,107,53,0.2);
+      border-radius: 8px;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .section-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.01em;
+    }
+    .section p {
+      font-size: 0.9rem;
+      color: var(--text2);
+      margin-bottom: 0.75rem;
+      line-height: 1.75;
+    }
+    .section p:last-child { margin-bottom: 0; }
+
+    /* Data list */
+    .data-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      padding: 0.5rem 0 0.25rem;
+    }
+    .data-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+      font-size: 0.875rem;
+      color: var(--text2);
+      line-height: 1.55;
+    }
+    .data-list li::before {
+      content: '›';
+      color: var(--orange);
+      font-size: 1rem;
+      line-height: 1.4;
+      flex-shrink: 0;
+      font-weight: 700;
+    }
+
+    /* ── HIGHLIGHT BOXES ── */
+    .highlight-box {
+      background: rgba(0,229,160,0.05);
+      border: 1px solid rgba(0,229,160,0.15);
+      border-radius: 10px;
+      padding: 0.9rem 1.1rem;
+      margin: 0.9rem 0;
+      display: flex;
+      gap: 0.7rem;
+      align-items: flex-start;
+    }
+    .highlight-box .icon { font-size: 1rem; flex-shrink: 0; margin-top: 0.1rem; }
+    .highlight-box p { font-size: 0.85rem; color: rgba(0,229,160,0.85); margin: 0 !important; line-height: 1.6; }
+
+    .warn-box { background: rgba(255,59,92,0.05); border-color: rgba(255,59,92,0.18); }
+    .warn-box p { color: rgba(255,130,150,0.9); }
+
+    .info-box { background: rgba(255,107,53,0.05); border-color: rgba(255,107,53,0.18); }
+    .info-box p { color: rgba(255,167,120,0.9); }
+
+    /* ── CONTACT CARD ── */
+    .contact-card {
+      background: linear-gradient(135deg, rgba(255,107,53,0.07), rgba(255,209,102,0.04));
+      border: 1px solid rgba(255,107,53,0.18);
+      border-radius: var(--radius);
+      padding: 1.75rem;
+      text-align: center;
+      margin-top: 3rem;
+    }
+    .contact-card h3 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.5rem;
+      letter-spacing: 0.06em;
+      background: linear-gradient(135deg, #ff6b35, #ffd166);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.5rem;
+    }
+    .contact-card p { font-size: 0.85rem; color: var(--text2); margin-bottom: 1rem; }
+    .contact-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--orange);
+      text-decoration: none;
+      border: 1px solid rgba(255,107,53,0.3);
+      border-radius: 8px;
+      padding: 0.5rem 1.1rem;
+      transition: all 0.2s;
+      font-family: 'DM Mono', monospace;
+    }
+    .contact-link:hover {
+      background: rgba(255,107,53,0.1);
+      border-color: rgba(255,107,53,0.5);
+    }
+
+    /* ── FOOTER ── */
+    .page-footer {
+      border-top: 1px solid var(--border);
+      padding: 1.5rem;
+      text-align: center;
+      max-width: 820px;
+      margin: 0 auto;
+    }
+    .page-footer p { font-size: 0.75rem; color: var(--text3); font-family: 'DM Mono', monospace; }
+    .page-footer a { color: var(--accent); text-decoration: none; }
+    .page-footer a:hover { color: var(--accent2); }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: rgba(255,107,53,0.2); border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,107,53,0.4); }
+  </style>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<nav class="topnav">
+  <a href="index.html" class="nav-brand">SolvingMind</a>
+  <a href="index.html" class="nav-back">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+    Back to App
+  </a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-badge">Legal Document</div>
+  <h1>Terms of Use</h1>
+  <div class="hero-meta">
+    <span><strong>Platform:</strong> SolvingMind</span>
+    <div class="hero-divider"></div>
+    <span><strong>Effective:</strong> [Insert Date]</span>
+    <div class="hero-divider"></div>
+    <span><strong>Updated:</strong> [Insert Date]</span>
+  </div>
+</section>
+
+<!-- CONTENT -->
+<div class="page-wrap">
+
+  <!-- TOC -->
+  <div class="toc-card">
+    <div class="toc-label">// Table of Contents</div>
+    <ul class="toc-list">
+      <li><a href="#s1"><span class="toc-num">01</span> Eligibility</a></li>
+      <li><a href="#s2"><span class="toc-num">02</span> Nature of Services</a></li>
+      <li><a href="#s3"><span class="toc-num">03</span> User Accounts</a></li>
+      <li><a href="#s4"><span class="toc-num">04</span> Acceptable Use</a></li>
+      <li><a href="#s5"><span class="toc-num">05</span> Content & AI Features</a></li>
+      <li><a href="#s6"><span class="toc-num">06</span> Payments & Subscriptions</a></li>
+      <li><a href="#s7"><span class="toc-num">07</span> Refund Policy</a></li>
+      <li><a href="#s8"><span class="toc-num">08</span> Intellectual Property</a></li>
+      <li><a href="#s9"><span class="toc-num">09</span> Community Features</a></li>
+      <li><a href="#s10"><span class="toc-num">10</span> Platform Availability</a></li>
+      <li><a href="#s11"><span class="toc-num">11</span> Limitation of Liability</a></li>
+      <li><a href="#s12"><span class="toc-num">12</span> Privacy</a></li>
+      <li><a href="#s13"><span class="toc-num">13</span> Termination</a></li>
+      <li><a href="#s14"><span class="toc-num">14</span> Governing Law</a></li>
+      <li><a href="#s15"><span class="toc-num">15</span> Changes to Terms</a></li>
+      <li><a href="#s16"><span class="toc-num">16</span> Contact</a></li>
+    </ul>
+  </div>
+
+  <!-- Intro -->
+  <div class="section">
+    <p>Welcome to <strong>SolvingMind</strong> ("Platform", "we", "our", or "us"). These Terms of Use ("Terms") govern your access to and use of the SolvingMind website, applications, educational services, features, and related content. By accessing or using SolvingMind, you agree to comply with these Terms. If you do not agree, please discontinue use of the platform.</p>
+  </div>
+
+  <!-- S1 -->
+  <div class="section" id="s1">
+    <div class="section-header">
+      <div class="section-num">1</div>
+      <div class="section-title">Eligibility</div>
+    </div>
+    <p>By using SolvingMind, you represent that:</p>
+    <ul class="data-list">
+      <li>You are legally capable of entering into a binding agreement under applicable laws; or</li>
+      <li>You are using the platform under appropriate parental or guardian supervision where required</li>
+    </ul>
+    <p style="margin-top:0.75rem;">Users are responsible for ensuring that their use of the platform complies with applicable laws and regulations.</p>
+  </div>
+
+  <!-- S2 -->
+  <div class="section" id="s2">
+    <div class="section-header">
+      <div class="section-num">2</div>
+      <div class="section-title">Nature of Services</div>
+    </div>
+    <p>SolvingMind provides educational and learning-related services including, but not limited to:</p>
+    <ul class="data-list">
+      <li>Previous year questions (PYQs) and mock tests</li>
+      <li>Practice modules and study resources</li>
+      <li>AI-assisted learning tools</li>
+      <li>Performance analytics, rankings, and related educational features</li>
+    </ul>
+    <p style="margin-top:0.75rem;">All content and services are provided for educational and informational purposes only.</p>
+  </div>
+
+  <!-- S3 -->
+  <div class="section" id="s3">
+    <div class="section-header">
+      <div class="section-num">3</div>
+      <div class="section-title">User Accounts</div>
+    </div>
+    <p>To access certain features, users may be required to create an account. Users agree to provide accurate information, maintain account confidentiality, and remain responsible for all activity conducted through their account.</p>
+    <div class="highlight-box warn-box">
+      <span class="icon">🚫</span>
+      <p>Users must not share accounts, impersonate others, create fraudulent accounts, or attempt unauthorized access to the platform. We reserve the right to suspend or terminate accounts that violate these Terms.</p>
+    </div>
+  </div>
+
+  <!-- S4 -->
+  <div class="section" id="s4">
+    <div class="section-header">
+      <div class="section-num">4</div>
+      <div class="section-title">Acceptable Use</div>
+    </div>
+    <p>Users agree not to:</p>
+    <ul class="data-list">
+      <li>Misuse or exploit the platform, or interfere with platform security or operations</li>
+      <li>Scrape, copy, or redistribute paid content without authorization</li>
+      <li>Use automated bots or scripts without permission</li>
+      <li>Manipulate rankings, leaderboards, or upload malicious content</li>
+      <li>Engage in abusive, unlawful, or harmful conduct</li>
+      <li>Attempt to reverse engineer platform systems</li>
+    </ul>
+    <p style="margin-top:0.75rem;">Any misuse may result in account suspension, termination, or legal action where appropriate.</p>
+  </div>
+
+  <!-- S5 -->
+  <div class="section" id="s5">
+    <div class="section-header">
+      <div class="section-num">5</div>
+      <div class="section-title">Educational Content & AI Features</div>
+    </div>
+    <p>SolvingMind may provide AI-generated explanations, recommendations, study insights, and performance analytics. While we aim to provide high-quality educational assistance:</p>
+    <div class="highlight-box info-box">
+      <span class="icon">⚠️</span>
+      <p>We do not guarantee examination success, rank improvement, admission outcomes, or complete accuracy of AI-generated responses. Users are encouraged to independently verify important academic information.</p>
+    </div>
+  </div>
+
+  <!-- S6 -->
+  <div class="section" id="s6">
+    <div class="section-header">
+      <div class="section-num">6</div>
+      <div class="section-title">Payments, Subscriptions & Premium Services</div>
+    </div>
+    <p>Certain features may require payment or subscription. By purchasing premium services, users agree that pricing may change, subscriptions may have limited validity periods, and access may depend on successful payment confirmation.</p>
+    <div class="highlight-box">
+      <span class="icon">🔒</span>
+      <p>Payments are securely processed through third-party gateways such as Razorpay. We do not store sensitive payment credentials such as card numbers or CVV.</p>
+    </div>
+  </div>
+
+  <!-- S7 -->
+  <div class="section" id="s7">
+    <div class="section-header">
+      <div class="section-num">7</div>
+      <div class="section-title">Refund Policy Reference</div>
+    </div>
+    <p>Due to the nature of digital educational services, purchases made on SolvingMind are generally non-refundable once access to premium content or services has been granted.</p>
+    <p>Exceptions may be considered in cases of duplicate transactions, technical billing errors, or unauthorized payments verified by us. Detailed refund terms may be provided separately in our Refund Policy.</p>
+  </div>
+
+  <!-- S8 -->
+  <div class="section" id="s8">
+    <div class="section-header">
+      <div class="section-num">8</div>
+      <div class="section-title">Intellectual Property</div>
+    </div>
+    <p>All platform materials including branding, logos, UI designs, educational content, graphics, analytics systems, software, and platform features are owned by or licensed to SolvingMind unless otherwise stated.</p>
+    <div class="highlight-box warn-box">
+      <span class="icon">©</span>
+      <p>Users may not reproduce, distribute, modify, or commercially exploit platform content without prior written permission.</p>
+    </div>
+  </div>
+
+  <!-- S9 -->
+  <div class="section" id="s9">
+    <div class="section-header">
+      <div class="section-num">9</div>
+      <div class="section-title">Community Features</div>
+    </div>
+    <p>Where community or discussion features are available, users agree:</p>
+    <ul class="data-list">
+      <li>Not to post unlawful, abusive, defamatory, hateful, or misleading content</li>
+      <li>Not to harass or impersonate others</li>
+      <li>Not to share spam or unauthorized advertisements</li>
+    </ul>
+    <p style="margin-top:0.75rem;">We reserve the right to moderate, remove, or restrict content and accounts that violate community standards.</p>
+  </div>
+
+  <!-- S10 -->
+  <div class="section" id="s10">
+    <div class="section-header">
+      <div class="section-num">10</div>
+      <div class="section-title">Platform Availability</div>
+    </div>
+    <p>We strive to maintain uninterrupted access to the platform; however, we do not guarantee continuous availability, error-free operation, or uninterrupted services. Features may be modified, suspended, or discontinued at any time without prior notice.</p>
+  </div>
+
+  <!-- S11 -->
+  <div class="section" id="s11">
+    <div class="section-header">
+      <div class="section-num">11</div>
+      <div class="section-title">Limitation of Liability</div>
+    </div>
+    <p>To the maximum extent permitted under applicable law, SolvingMind shall not be liable for:</p>
+    <ul class="data-list">
+      <li>Indirect or consequential losses</li>
+      <li>Examination outcomes or academic performance</li>
+      <li>Service interruptions or data loss</li>
+      <li>Inaccuracies in educational or AI-generated content</li>
+    </ul>
+    <p style="margin-top:0.75rem;">Use of the platform is at the user's own discretion and risk.</p>
+  </div>
+
+  <!-- S12 -->
+  <div class="section" id="s12">
+    <div class="section-header">
+      <div class="section-num">12</div>
+      <div class="section-title">Privacy</div>
+    </div>
+    <p>Use of SolvingMind is also governed by our <a href="privacy-policy.html" style="color:var(--accent2);text-decoration:none;font-weight:600;">Privacy Policy</a>, which explains how user information is collected and processed. By using the platform, users acknowledge and agree to the Privacy Policy.</p>
+  </div>
+
+  <!-- S13 -->
+  <div class="section" id="s13">
+    <div class="section-header">
+      <div class="section-num">13</div>
+      <div class="section-title">Termination & Suspension</div>
+    </div>
+    <p>We reserve the right to suspend, restrict, or terminate access to users who violate these Terms, misuse the platform, engage in fraudulent activity, or create security risks. Such actions may be taken without prior notice where reasonably necessary.</p>
+  </div>
+
+  <!-- S14 -->
+  <div class="section" id="s14">
+    <div class="section-header">
+      <div class="section-num">14</div>
+      <div class="section-title">Governing Law & Jurisdiction</div>
+    </div>
+    <p>These Terms shall be governed by and interpreted in accordance with the laws of India. Any disputes arising in connection with these Terms or platform usage shall be subject to the jurisdiction of competent courts located in [Insert City/State], India.</p>
+  </div>
+
+  <!-- S15 -->
+  <div class="section" id="s15">
+    <div class="section-header">
+      <div class="section-num">15</div>
+      <div class="section-title">Changes to Terms</div>
+    </div>
+    <p>We may update these Terms from time to time. Updated versions will be published on this page with a revised "Last Updated" date. Continued use of the platform after updates constitutes acceptance of the revised Terms.</p>
+  </div>
+
+  <!-- S16 -->
+  <div class="section" id="s16">
+    <div class="section-header">
+      <div class="section-num">16</div>
+      <div class="section-title">Contact Information</div>
+    </div>
+    <p>For questions or concerns regarding these Terms, users may contact:</p>
+  </div>
+
+  <!-- Contact Card -->
+  <div class="contact-card">
+    <h3>Contact Support</h3>
+    <p>Have a question about these Terms? We're here to help.</p>
+    <a href="mailto:support@solvingmind.in" class="contact-link">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+      support@solvingmind.in
+    </a>
+    <p style="margin-top:0.75rem; font-size:0.78rem;">
+      <a href="https://solvingmind.in" style="color:var(--accent); text-decoration:none;">solvingmind.in</a>
+    </p>
+  </div>
+
+</div>
+
+<!-- FOOTER -->
+<footer class="page-footer">
+  <p>© 2024 SolvingMind · <a href="privacy-policy.html">Privacy Policy</a> · <a href="terms-of-use.html">Terms of Use</a></p>
+</footer>
+
+</body>
+</html>
