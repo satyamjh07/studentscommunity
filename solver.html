@@ -337,7 +337,7 @@
     /* ════════════════════════════════════════════
        VIEW 2 — PYQ SELECTION
     ════════════════════════════════════════════ */
-    #view-pyq-select { padding-bottom: 80px; } /* room for sticky bar */
+    #view-pyq-select { padding-bottom: 100px; }
 
     .ps-wrap { max-width: 800px; }
     .ps-title {
@@ -471,17 +471,25 @@
     /* Sticky CTA bar */
     .ps-cta-bar {
       position: fixed;
-      bottom: 0; left: 0; right: 0;
+      bottom: 0;
+      left: 0; right: 0;
       background: var(--glass);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       border-top: 1px solid var(--border);
       padding: 13px 2.4rem;
-      z-index: 200;
+      z-index: 600; /* above bottom nav z-index: 500 !important */
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 16px;
+    }
+    /* On mobile (≤900px) the bottom nav is fixed at bottom:0 with ~66px height.
+       Shift CTA bar up by exactly that amount so it sits flush above it. */
+    @media (max-width: 900px) {
+      .ps-cta-bar {
+        bottom: 66px;
+      }
     }
     .ps-cta-meta { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
     .ps-cta-meta-item {
@@ -514,9 +522,13 @@
     }
     .ps-start-btn:hover { filter: brightness(1.08); }
     .ps-start-btn:active { transform: scale(0.98); }
-    @media (max-width: 600px) {
+    @media (max-width: 900px) {
       .ps-filter-row { grid-template-columns: 1fr; }
       .ps-cta-bar { padding: 11px 1rem; }
+      /* Extra scroll room: nav (66px) + CTA bar (~60px) + breathing room */
+      #view-pyq-select { padding-bottom: 160px; }
+    }
+    @media (max-width: 600px) {
       .ps-cta-meta { display: none; }
     }
 
@@ -1310,12 +1322,11 @@
           <span class="ps-filter-lbl">EXAM YEARS</span>
           <div class="ps-chips" id="year-chips">
             <button class="ps-chip active" data-year="all" onclick="selectYear(this)">ALL</button>
+            <button class="ps-chip" data-year="2026" onclick="selectYear(this)">2026</button>
+            <button class="ps-chip" data-year="2025" onclick="selectYear(this)">2025</button>
             <button class="ps-chip" data-year="2024" onclick="selectYear(this)">2024</button>
             <button class="ps-chip" data-year="2023" onclick="selectYear(this)">2023</button>
-            <button class="ps-chip" data-year="2022" onclick="selectYear(this)">2022</button>
-            <button class="ps-chip" data-year="2021" onclick="selectYear(this)">2021</button>
-            <button class="ps-chip" data-year="2020" onclick="selectYear(this)">2020</button>
-            <button class="ps-chip" data-year="2019" onclick="selectYear(this)">2019</button>
+            <!-- <button class="ps-chip" data-year="2019" onclick="selectYear(this)">2019</button> -->
           </div>
         </div>
 
@@ -1323,15 +1334,17 @@
           <div>
             <span class="ps-filter-lbl">DIFFICULTY</span>
             <div class="ps-pills">
-              <button class="ps-pill" data-diff="easy"   onclick="selectPill(this,'diff')">EASY</button>
-              <button class="ps-pill active" data-diff="medium" onclick="selectPill(this,'diff')">MED</button>
-              <button class="ps-pill" data-diff="hard"   onclick="selectPill(this,'diff')">HARD</button>
+              <button class="ps-pill active" data-diff="all"    onclick="selectPill(this,'diff')">ALL</button>
+              <button class="ps-pill"        data-diff="easy"   onclick="selectPill(this,'diff')">EASY</button>
+              <button class="ps-pill"        data-diff="medium" onclick="selectPill(this,'diff')">MED</button>
+              <button class="ps-pill"        data-diff="hard"   onclick="selectPill(this,'diff')">HARD</button>
             </div>
           </div>
           <div>
             <span class="ps-filter-lbl">QUESTION TYPE</span>
             <div class="ps-pills">
-              <button class="ps-pill active" data-type="mcq"     onclick="selectPill(this,'type')">MCQ</button>
+              <button class="ps-pill active" data-type="all"     onclick="selectPill(this,'type')">ALL</button>
+              <button class="ps-pill"        data-type="mcq"     onclick="selectPill(this,'type')">MCQ</button>
               <button class="ps-pill"        data-type="integer" onclick="selectPill(this,'type')">NUMERICAL</button>
             </div>
           </div>
@@ -1342,13 +1355,16 @@
     <!-- Sticky CTA -->
     <div class="ps-cta-bar">
       <div class="ps-cta-meta">
-        <div class="ps-cta-meta-item">EST_TIME: <b>45_MIN</b></div>
+        <div class="ps-cta-meta-item">SUBJECT: <b id="cta-subject">PHYSICS</b></div>
+        <div class="ps-cta-sep"></div>
+        <div class="ps-cta-meta-item">CHAPTER: <b id="cta-chapter">—</b></div>
         <div class="ps-cta-sep"></div>
         <div class="ps-cta-meta-item">QUESTIONS: <b id="pyq-q-count">—</b></div>
       </div>
-      <button class="ps-start-btn" onclick="startPYQSolving()">
-        START SOLVING
-        <span class="material-symbols-outlined" style="font-size:15px">arrow_forward</span>
+      <button class="ps-start-btn" id="ps-start-btn" onclick="startPYQSolving()" disabled
+        style="opacity:0.45;cursor:not-allowed;">
+        <span class="material-symbols-outlined" style="font-size:15px">layers</span>
+        SELECT A CHAPTER
       </button>
     </div>
   </div>
@@ -1825,7 +1841,7 @@ function showView(name) {
 }
 
 /* ── PYQ state & handlers ─────────────────────── */
-var _pyq = { subject: 'physics', chapter: '', year: 'all', diff: 'medium', type: 'mcq' };
+var _pyq = { subject: 'physics', chapter: '', year: 'all', diff: 'all', type: 'all' };
 
 function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
 
@@ -1833,12 +1849,26 @@ function selectPYQSubject(btn) {
   document.querySelectorAll('#view-pyq-select .ps-subj-btn').forEach(function(b) { b.classList.remove('active'); });
   btn.classList.add('active');
   _pyq.subject = btn.dataset.subject;
-  _pyq.chapter = ''; // reset chapter
+  _pyq.chapter = ''; // reset chapter selection
   // Reset step 2 heading
   var lbl = document.getElementById('ps-ch-selected-lbl');
   if (lbl) { lbl.style.display = 'none'; lbl.textContent = ''; }
   var n2 = document.getElementById('ps-n2');
   if (n2) { n2.classList.remove('locked', 'done'); }
+  // Reset CTA bar
+  var ctaSubj = document.getElementById('cta-subject');
+  if (ctaSubj) ctaSubj.textContent = btn.dataset.subject.toUpperCase();
+  var ctaCh = document.getElementById('cta-chapter');
+  if (ctaCh) ctaCh.textContent = '—';
+  var qCount = document.getElementById('pyq-q-count');
+  if (qCount) qCount.textContent = '—';
+  var startBtn = document.getElementById('ps-start-btn');
+  if (startBtn) {
+    startBtn.disabled = true;
+    startBtn.style.opacity = '0.45';
+    startBtn.style.cursor = 'not-allowed';
+    startBtn.innerHTML = '<span class="material-symbols-outlined" style="font-size:15px">layers</span> SELECT A CHAPTER';
+  }
   loadPYQChapters(_pyq.subject);
 }
 
@@ -1931,8 +1961,19 @@ function loadPYQChapters(subject) {
             var lbl = document.getElementById('ps-ch-selected-lbl');
             if (lbl) { lbl.style.display = 'inline'; lbl.textContent = ch; }
 
-            // Update count in CTA
-            if (qCount) qCount.textContent = info.total;
+            // Update count in CTA bar — reflect active filters
+            _updateFilteredCount();
+
+            // Enable START button and update CTA meta
+            var startBtn = document.getElementById('ps-start-btn');
+            if (startBtn) {
+              startBtn.disabled = false;
+              startBtn.style.opacity = '';
+              startBtn.style.cursor = '';
+              startBtn.innerHTML = '<span class="material-symbols-outlined" style="font-size:15px">bolt</span> START SOLVING';
+            }
+            var ctaCh = document.getElementById('cta-chapter');
+            if (ctaCh) ctaCh.textContent = ch;
           });
 
           grid.appendChild(card);
@@ -1953,6 +1994,7 @@ function selectYear(btn) {
   document.querySelectorAll('#year-chips .ps-chip').forEach(function(b) { b.classList.remove('active'); });
   btn.classList.add('active');
   _pyq.year = btn.dataset.year;
+  _updateFilteredCount();
 }
 
 function selectPill(btn, group) {
@@ -1960,30 +2002,63 @@ function selectPill(btn, group) {
   btn.classList.add('active');
   if (group === 'diff') _pyq.diff = btn.dataset.diff;
   if (group === 'type') _pyq.type = btn.dataset.type;
+  _updateFilteredCount();
+}
+
+// Apply the current _pyq filters to a raw question array and return the filtered subset
+function _applyPYQFilters(questions) {
+  return questions.filter(function(q) {
+    if (_pyq.year !== 'all' && String(q.year) !== String(_pyq.year)) return false;
+    if (_pyq.diff !== 'all' && q.difficulty !== _pyq.diff) return false;
+    if (_pyq.type !== 'all' && q.type !== _pyq.type) return false;
+    return true;
+  });
+}
+
+// Update the question count badge in the CTA bar based on current filters + selected chapter
+function _updateFilteredCount() {
+  var qCount = document.getElementById('pyq-q-count');
+  if (!qCount) return;
+  if (!_pyq.chapter) { qCount.textContent = '—'; return; }
+  var cacheKey = _pyq.subject + '/' + _pyq.chapter;
+  var raw = _cache[cacheKey];
+  if (!raw) { qCount.textContent = '—'; return; }
+  var filtered = _applyPYQFilters(raw);
+  qCount.textContent = filtered.length || '0';
 }
 
 /* ── Launch functions ─────────────────────────── */
-function startPYQSolving() {
-  // _pyq.chapter is already set by clicking a chapter card
+async function startPYQSolving() {
+  if (!_pyq.chapter) {
+    // Flash the chapter step to tell the user they need to pick one
+    var n2 = document.getElementById('ps-n2');
+    if (n2) {
+      n2.style.outline = '2px solid var(--accent)';
+      n2.style.background = 'var(--accent-glow)';
+      setTimeout(function() { n2.style.outline = ''; n2.style.background = ''; }, 1200);
+    }
+    var grid = document.getElementById('ps-ch-grid');
+    if (grid) { grid.style.outline = '1px solid var(--accent)'; setTimeout(function() { grid.style.outline = ''; }, 1200); }
+    return;
+  }
+
   var cBtn = document.getElementById('crumb-section-btn');
   var cCur = document.getElementById('crumb-current');
   if (cBtn) { cBtn.textContent = 'PYQs'; cBtn.onclick = function() { showView('pyq-select'); }; }
-  if (cCur) cCur.textContent = cap(_pyq.subject) + (_pyq.chapter ? ' / ' + _pyq.chapter : '');
+  if (cCur) cCur.textContent = cap(_pyq.subject) + ' / ' + _pyq.chapter;
   document.getElementById('solving-title').textContent = 'PYQ_SOLVER';
-  document.getElementById('solving-sub').textContent = cap(_pyq.subject) + (_pyq.chapter ? ' — ' + _pyq.chapter : ' — All Chapters');
+  document.getElementById('solving-sub').textContent = cap(_pyq.subject) + ' — ' + _pyq.chapter;
   showView('solving');
-  setTimeout(function() {
-    document.querySelectorAll('#view-solving .zd-subject-btn').forEach(function(btn) {
-      if (btn.dataset.subject === _pyq.subject) selectSubject(btn);
-    });
-    if (_pyq.chapter) {
-      setTimeout(function() {
-        document.querySelectorAll('#pyq-chapter-list .zd-chapter-btn').forEach(function(cb) {
-          if (cb.textContent.trim() === _pyq.chapter || cb.dataset.chapter === _pyq.chapter) cb.click();
-        });
-      }, 700);
-    }
-  }, 120);
+
+  // Sync subject button state in the solving panel
+  document.querySelectorAll('#view-solving .zd-subject-btn').forEach(function(btn) {
+    btn.classList.toggle('active', btn.dataset.subject === _pyq.subject);
+  });
+
+  // Directly call selectChapter with a synthetic button object — no setTimeout race condition.
+  var syntheticBtn = { dataset: { chapter: _pyq.chapter } };
+  await buildChapterList(_pyq.subject);
+  await selectChapter(syntheticBtn);
 }
 
 function startBookletSolving(name, subject) {
