@@ -572,8 +572,15 @@ body {
 }
 
 /* ── MCQ Options ─────────────────────────────────────── */
+/*
+  Smart 2-column layout on desktop:
+  Each option gets at least 340px — if the container is wide
+  enough for two, they sit side by side; if not (long text,
+  mobile, narrow panel) each falls to its own row automatically.
+*/
 .zd-options-grid {
   display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr));
   gap: 0.55rem;
   margin-bottom: 1.4rem;
 }
@@ -591,6 +598,9 @@ body {
   font-size: 0.93rem;
   cursor: pointer;
   transition: all 0.17s;
+  /* Ensure option fills its grid cell fully */
+  width: 100%;
+  min-width: 0;
 }
 .solver-option-btn:hover:not(.disabled) {
   border-color: var(--accent);
@@ -1213,4 +1223,6 @@ body {
   .zd-q-text { font-size: 0.94rem; }
   .zd-page-title { font-size: 1.5rem; }
   .zd-qnav-legend { display: none; }
+  /* Always single column on small phones */
+  .zd-options-grid { grid-template-columns: 1fr; }
 }
