@@ -81,9 +81,15 @@ async function _loadAttemptsForQuestions(questionIds) {
     .in('question_id', questionIds)
     .order('created_at', { ascending: false });
 
-  if (result.error || !result.data) return;
+  if (result.error) {
+    console.error("[ZEROday] _loadAttemptsForQuestions failed:", result.error.message);
+    return;
+  }
+  if (!result.data) return;
 
-  // Keep only latest attempt per question
+  // Keep only the latest attempt per question (results are ordered by created_at DESC,
+  // so the first row we see for each question_id is the most recent one).
+  // Caller deletes cache entries before calling us, so this always writes fresh data.
   result.data.forEach(function(row) {
     if (!_pyqAttemptCache[row.question_id]) {
       _pyqAttemptCache[row.question_id] = row;
@@ -253,10 +259,19 @@ async function selectChapter(btn) {
   var subject = qState.subject;
   var cacheKey = subject + "/" + ch;
 
-  document.querySelectorAll(".zd-chapter-btn").forEach(function (b) {
-    b.classList.remove("active");
-  });
-  btn.classList.add("active");
+  // btn may be a real DOM button or a synthetic { dataset: { chapter } } object
+  // (e.g. when called directly from startPYQSolving to avoid the setTimeout race).
+  if (btn.classList) {
+    document.querySelectorAll(".zd-chapter-btn").forEach(function (b) {
+      b.classList.remove("active");
+    });
+    btn.classList.add("active");
+  } else {
+    // Synthetic call — highlight the matching real button if it exists in the DOM
+    document.querySelectorAll(".zd-chapter-btn").forEach(function (b) {
+      b.classList.toggle("active", b.dataset.chapter === ch || b.textContent.trim() === ch);
+    });
+  }
 
   document.getElementById("empty-state-q").classList.add("hidden");
   document.getElementById("q-content").classList.add("hidden");
@@ -287,12 +302,36 @@ async function selectChapter(btn) {
   qState.mode = "pyq";
   qState.chapter = ch;
   qState.subject = subject;
-  qState.questions = _cache[cacheKey];
+
+  // Apply filters (year / difficulty / type) from the selection screen.
+  // _cache[cacheKey] always holds the full unfiltered set so we can re-filter
+  // without hitting the DB again if the user changes a filter and re-enters.
+  var allForChapter = _cache[cacheKey];
+  var filtered = (typeof _applyPYQFilters === "function")
+    ? _applyPYQFilters(allForChapter)
+    : allForChapter;
+
+  if (!filtered.length) {
+    document.getElementById("empty-state-q").classList.remove("hidden");
+    document.getElementById("empty-state-q").innerHTML =
+      '<span class="material-symbols-outlined" style="font-size:36px;color:var(--border-hover);margin-bottom:0.6rem">filter_alt_off</span>' +
+      "<h3>NO QUESTIONS MATCH</h3>" +
+      "<p>Try adjusting the Year, Difficulty or Type filters</p>";
+    document.getElementById("q-content").classList.add("hidden");
+    document.getElementById("q-nav-grid").innerHTML = "";
+    return;
+  }
+
+  qState.questions = filtered;
   qState.index = 0;
   qState.answered = false;
 
-  // Fetch DB attempts to apply cooldown state
+  // Fetch DB attempts to apply cooldown state.
+  // Always clear the cache entries for THIS chapter before fetching — this ensures
+  // that on a page refresh (or chapter re-visit), we always read the authoritative
+  // state from the database rather than stale in-memory data.
   var qIds = qState.questions.map(function(q) { return q._dbId; });
+  qIds.forEach(function(id) { delete _pyqAttemptCache[id]; });
   await _loadAttemptsForQuestions(qIds);
 
   // Seed statuses from existing in-cooldown attempts
@@ -676,7 +715,8 @@ function finalize(isCorrect, q, selectedAnswer) {
     var existingAttempt = _pyqAttemptCache[q._dbId];
 
     if (existingAttempt && existingAttempt.id && qState.mode === "pyq") {
-      // Update existing row (cooldown expired, user reattempts)
+      // UPDATE the existing row — one row per (user, question), saves DB space.
+      // Requires an UPDATE RLS policy: USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id)
       db.from("user_attempts")
         .update({
           is_correct: isCorrect,
@@ -684,10 +724,21 @@ function finalize(isCorrect, q, selectedAnswer) {
           created_at: new Date().toISOString(),
         })
         .eq("id", existingAttempt.id)
-        .then(function() {})
-        .catch(function() {});
+        .select()
+        .then(function(res) {
+          if (res.error) {
+            console.error("[ZEROday] Failed to update attempt:", res.error.message,
+              "— Did you add the UPDATE RLS policy on user_attempts?");
+            return;
+          }
+          if (res.data && res.data[0] && qState.mode === "pyq") {
+            _pyqAttemptCache[q._dbId] = res.data[0];
+          }
+        })
+        .catch(function(err) { console.error("[ZEROday] Attempt update threw:", err); });
+
     } else {
-      // Insert new row
+      // No existing row — INSERT for the first time
       db.from("user_attempts")
         .insert({
           user_id: currentUser.id,
@@ -695,26 +746,21 @@ function finalize(isCorrect, q, selectedAnswer) {
           is_correct: isCorrect,
           selected_answer: selectedStr,
         })
+        .select()
         .then(function(res) {
-          // Cache the new attempt so cooldown kicks in immediately
+          if (res.error) {
+            console.error("[ZEROday] Failed to insert attempt:", res.error.message);
+            return;
+          }
+          // Store the real DB row so future reattempts use UPDATE not INSERT
           if (res.data && res.data[0] && qState.mode === "pyq") {
             _pyqAttemptCache[q._dbId] = res.data[0];
-          } else if (qState.mode === "pyq") {
-            // Supabase v2 insert doesn't return data by default unless .select() is chained
-            // Build a local stand-in so the cooldown badge shows immediately if user navigates away and back
-            _pyqAttemptCache[q._dbId] = {
-              id: null,
-              question_id: q._dbId,
-              is_correct: isCorrect,
-              selected_answer: selectedStr,
-              created_at: new Date().toISOString(),
-            };
           }
         })
-        .catch(function() {});
+        .catch(function(err) { console.error("[ZEROday] Attempt insert threw:", err); });
     }
 
-    // Always update local cache entry for immediate UI consistency
+    // Immediately update local cache so cooldown UI shows without waiting for DB round-trip
     if (qState.mode === "pyq") {
       _pyqAttemptCache[q._dbId] = Object.assign(
         {},

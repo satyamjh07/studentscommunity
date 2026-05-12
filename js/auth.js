@@ -152,23 +152,50 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// ---- Sign Up ----
+// ---- Sign Up (with Terms & Privacy enforcement) ----
 const _signupBtn = document.getElementById('signup-btn');
 if (_signupBtn) _signupBtn.addEventListener('click', async () => {
-  const email = document.getElementById('signup-email').value.trim();
+ 
+  // ── 1. Terms checkbox gate ──────────────────────────────
+  const termsBox   = document.getElementById('terms-checkbox');
+  const termsWrap  = document.getElementById('terms-check-wrap');
+  const termsError = document.getElementById('terms-check-error');
+ 
+  if (termsBox && !termsBox.checked) {
+    termsWrap.classList.add('error');
+    termsError.textContent = 'You must agree to the Terms of Use and Privacy Policy.';
+    // Remove then re-add so shake re-triggers if clicked again
+    termsError.classList.remove('visible');
+    void termsError.offsetWidth; // force reflow
+    termsError.classList.add('visible');
+ 
+    // Auto-clear error state once they check the box
+    termsBox.addEventListener('change', function onCheck() {
+      if (termsBox.checked) {
+        termsWrap.classList.remove('error');
+        termsError.classList.remove('visible');
+        termsError.textContent = '';
+        termsBox.removeEventListener('change', onCheck);
+      }
+    });
+    return; // block signup
+  }
+ 
+  // ── 2. Existing validation (unchanged from your auth.js) ──
+  const email    = document.getElementById('signup-email').value.trim();
   const password = document.getElementById('signup-password').value;
   showError('signup-error', '');
-
+ 
   if (!email || !password) return showError('signup-error', 'Fill in all fields');
-
+ 
   const tempMailErr = getTempMailError(email);
   if (tempMailErr) return showError('signup-error', tempMailErr);
-
+ 
   if (password.length < 6) return showError('signup-error', 'Password must be at least 6 characters');
-
+ 
   const btn = _signupBtn;
   btn.textContent = 'Creating...'; btn.disabled = true;
-
+ 
   // Retry up to 2 times on network/gateway timeout errors
   let data, error;
   for (let attempt = 1; attempt <= 2; attempt++) {
@@ -184,9 +211,9 @@ if (_signupBtn) _signupBtn.addEventListener('click', async () => {
       break;
     }
   }
-
+ 
   btn.textContent = 'Create Account'; btn.disabled = false;
-
+ 
   if (error) {
     const isTimeout = error.status === 504 || error.status === 502 ||
       (error.message && (error.message.includes('timeout') || error.message.includes('Gateway')));
@@ -431,7 +458,8 @@ function updateSidebarUI() {
     ? '<img src="' + currentProfile.avatar_url + '" alt="avatar">'
     : '👤';
   document.getElementById('sidebar-avatar-img').innerHTML = avatarHTML;
-  document.getElementById('mobile-avatar').innerHTML = currentProfile.avatar_url
+  var _mav = document.getElementById('mobile-avatar');
+  if (_mav) _mav.innerHTML = currentProfile.avatar_url
     ? '<img src="' + currentProfile.avatar_url + '" alt="av" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
     : '👤';
 
