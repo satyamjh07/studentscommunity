@@ -22,7 +22,7 @@
       defer
       src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
     ></script>
-    <link rel="icon" type="image/png" href="logo2.png" />
+    <link rel="icon" type="image/png" href="logo2.jpg" />
     <link rel="stylesheet" href="css/themes.css" />
     <link rel="stylesheet" href="css/style.css" />
     <link rel="stylesheet" href="css/cloudinary-styles.css" />
@@ -643,6 +643,171 @@
 .an-st-ok { background: rgba(0,229,160,0.1); color: var(--green, #00e5a0); }
 .an-st-wr { background: rgba(255,147,64,0.1); color: var(--orange, #ff9340); }
 .an-st-cr { background: rgba(255,77,106,0.1); color: var(--red, #ff4d6a); }
+
+/* ═══════════════════════════════════════════════════
+   ZD PROFILE BUTTON + DROPDOWN  (zd- prefix, no conflict)
+   Lives inside .an-topbar-right on the dashboard topbar.
+   The notif-patch button sits beside it automatically.
+   ═══════════════════════════════════════════════════ */
+
+.zd-profile-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+/* Round avatar trigger */
+.zd-profile-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(124,111,255,0.35);
+  background: rgba(124,111,255,0.08);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  outline: none;
+  overflow: hidden;
+}
+.zd-profile-btn:hover,
+.zd-profile-btn[aria-expanded="true"] {
+  border-color: rgba(124,111,255,0.8);
+  box-shadow: 0 0 0 3px rgba(124,111,255,0.18);
+  background: rgba(124,111,255,0.14);
+}
+
+/* Avatar image or initials */
+.zd-profile-avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  color: rgba(124,111,255,0.9);
+  overflow: hidden;
+  user-select: none;
+  line-height: 1;
+}
+.zd-profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
+
+/* Dropdown panel */
+.zd-profile-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  min-width: 230px;
+  background: var(--bg2, #111118);
+  border: 1px solid rgba(124,111,255,0.18);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.03);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  z-index: 9999;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-8px) scale(0.96);
+  transform-origin: top right;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.zd-profile-dropdown.open {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
+}
+
+/* Header: large avatar + name + email */
+.zd-pd-header {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 1.1rem 1rem 0.9rem;
+}
+.zd-pd-avatar-lg {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: rgba(124,111,255,0.1);
+  border: 1.5px solid rgba(124,111,255,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.05rem;
+  color: rgba(124,111,255,0.9);
+  overflow: hidden;
+}
+.zd-pd-avatar-lg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
+.zd-pd-info { min-width: 0; flex: 1; }
+.zd-pd-name {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text, #f0f0ff);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.zd-pd-email {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.62rem;
+  color: var(--text3, #555);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 3px;
+}
+.zd-pd-divider {
+  height: 1px;
+  background: rgba(124,111,255,0.1);
+}
+
+/* Menu item */
+.zd-pd-item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  padding: 0.8rem 1rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  color: var(--text2, #999);
+  text-align: left;
+  transition: background 0.15s, color 0.15s;
+}
+.zd-pd-item:hover {
+  background: rgba(124,111,255,0.07);
+  color: var(--text, #f0f0ff);
+}
+.zd-pd-logout { color: var(--red, #ff4d6a); }
+.zd-pd-logout:hover {
+  background: rgba(255,77,106,0.08);
+  color: var(--red, #ff4d6a);
+}
 </style>
   </head>
   <body data-theme="dark" oncontextmenu="return false;">
@@ -1026,7 +1191,7 @@
       <div class="auth-container">
         <div class="auth-brand">
           <div class="brand-logo">
-            <img src="logo2.png" width="35" height="35" alt="" />
+            <img src="logo2.jpg" width="35" height="35" alt="" />
           </div>
           <h1>ZEROday</h1>
           <p>Your reality check starts here.</p>
@@ -1068,7 +1233,7 @@
 
           <div class="auth-divider"><span>or</span></div>
 
-          <div id="login-form" class="auth-form active">
+          <div id="login-form" class="auth-form active"><form onsubmit="return false" autocomplete="on">
             <div class="form-group">
               <label>Email</label>
               <input
@@ -1150,9 +1315,9 @@
             </div>
             <button class="btn-primary" id="login-btn">Sign In</button>
             <div id="login-error" class="form-error"></div>
-          </div>
+          </form></div>
 
-          <div id="signup-form" class="auth-form">
+          <div id="signup-form" class="auth-form"><form onsubmit="return false" autocomplete="on">
             <div class="form-group">
               <label>Email</label>
               <input
@@ -1213,9 +1378,30 @@
                 </button>
               </div>
             </div>
+            <div class="terms-check-wrap" id="terms-check-wrap">
+  <label class="terms-check-label" id="terms-check-label">
+    <span class="custom-checkbox" id="terms-checkbox-box">
+      <input type="checkbox" id="terms-checkbox" autocomplete="off" />
+      <span class="checkbox-visual">
+        <!-- Checkmark SVG (shown when checked) -->
+        <svg class="check-icon" viewBox="0 0 12 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <polyline points="1,5 4.5,8.5 11,1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </span>
+    </span>
+    <span class="terms-check-text">
+      I agree to SolvingMind's
+      <a href="terms-of-use.html" target="_blank" class="terms-link">Terms of Use</a>
+      and
+      <a href="privacy-policy.html" target="_blank" class="terms-link">Privacy Policy</a>
+    </span>
+  </label>
+  <!-- shake target -->
+  <p class="terms-check-error" id="terms-check-error"></p>
+</div>
             <button class="btn-primary" id="signup-btn">Create Account</button>
             <div id="signup-error" class="form-error"></div>
-          </div>
+          </form></div>
         </div>
       </div>
     </div>
@@ -1230,7 +1416,7 @@
       <div class="auth-container">
         <div class="auth-brand">
           <div class="brand-logo">
-            <img src="logo2.png" width="35" height="35" alt="" />
+            <img src="logo2.jpg" width="35" height="35" alt="" />
           </div>
           <h1>ZEROday</h1>
         </div>
@@ -1290,7 +1476,7 @@
       <div class="auth-container">
         <div class="auth-brand">
           <div class="brand-logo">
-            <img src="logo2.png" width="35" height="35" alt="" />
+            <img src="logo2.jpg" width="35" height="35" alt="" />
           </div>
           <h1>ZEROday</h1>
           <p>Reset your password</p>
@@ -1360,12 +1546,12 @@
       <div class="auth-container">
         <div class="auth-brand">
           <div class="brand-logo">
-            <img src="logo2.png" width="35" height="35" alt="" />
+            <img src="logo2.jpg" width="35" height="35" alt="" />
           </div>
           <h1>ZEROday</h1>
           <p>Set a new password</p>
         </div>
-        <div class="auth-card">
+        <div class="auth-card"><form onsubmit="return false" autocomplete="on">
           <p
             style="
               font-size: 0.88rem;
@@ -1495,7 +1681,7 @@
               Password updated! Signing you in…
             </p>
           </div>
-        </div>
+        </form></div>
       </div>
     </div>
 
@@ -1508,7 +1694,7 @@
       <div class="auth-container">
         <div class="auth-brand">
           <div class="brand-logo">
-            <img src="logo2.png" width="32" height="32" alt="" />
+            <img src="logo2.jpg" width="32" height="32" alt="" />
           </div>
           <h1>Set Up Profile</h1>
           <p>Tell us about yourself</p>
@@ -1587,7 +1773,7 @@
       <!-- Sidebar -->
       <nav class="sidebar" id="sidebar">
         <div class="sidebar-brand">
-          <img src="logo2.png" width="35" height="35" alt="" />
+          <img src="logo2.jpg" width="35" height="35" alt="" />
           <span>ZEROday</span>
         </div>
         <div class="sidebar-user" id="sidebar-user">
@@ -1689,7 +1875,32 @@
                 <div class="an-live-dot"></div>
                 Live tracking
               </div>
+              <!-- ── Profile button (always visible in topbar) ── -->
+              <div class="zd-profile-wrap" id="zd-profile-wrap">
+                <button class="zd-profile-btn" id="zd-profile-btn" aria-label="Profile menu" aria-expanded="false">
+                  <span class="zd-profile-avatar" id="zd-profile-avatar-sm"></span>
+                </button>
+                <div class="zd-profile-dropdown" id="zd-profile-dropdown" role="menu">
+                  <div class="zd-pd-header">
+                    <div class="zd-pd-avatar-lg" id="zd-pd-avatar-lg"></div>
+                    <div class="zd-pd-info">
+                      <div class="zd-pd-name" id="zd-pd-name">—</div>
+                      <div class="zd-pd-email" id="zd-pd-email">—</div>
+                    </div>
+                  </div>
+                  <div class="zd-pd-divider"></div>
+                  <button class="zd-pd-item zd-pd-logout" id="zd-pd-logout-btn" role="menuitem">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                      <polyline points="16 17 21 12 16 7"/>
+                      <line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                    Sign Out
+                  </button>
+                </div>
+              </div>
             </div>
+
           </div>
 
           <div class="an-content">
@@ -1865,17 +2076,17 @@
                       <text x="4" y="106" fill="rgba(255,255,255,0.18)" font-size="10" font-family="DM Mono">50%</text>
                       <text x="4" y="142" fill="rgba(255,255,255,0.18)" font-size="10" font-family="DM Mono">25%</text>
                       <!-- Physics (cyan) -->
-                      <path d="M50,64 L100,56 L150,68 L200,52 L250,60 L300,44 L350,56 L400,40 L450,36 L500,48 L550,40 L600,36 L650,44 L700,36" fill="url(#an-gcyan)" stroke="none" opacity="0.7"/>
-                      <path d="M50,64 L100,56 L150,68 L200,52 L250,60 L300,44 L350,56 L400,40 L450,36 L500,48 L550,40 L600,36 L650,44 L700,36" fill="none" stroke="var(--accent,#00f0ff)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path id="physics-fill" d="M50,64 L100,56 L150,68 L200,52 L250,60 L300,44 L350,56 L400,40 L450,36 L500,48 L550,40 L600,36 L650,44 L700,36" fill="url(#an-gcyan)" stroke="none" opacity="0.7"/>
+                      <path id="physics-line" d="M50,64 L100,56 L150,68 L200,52 L250,60 L300,44 L350,56 L400,40 L450,36 L500,48 L550,40 L600,36 L650,44 L700,36" fill="none" stroke="var(--accent,#00f0ff)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                       <!-- Chemistry (purple) -->
-                      <path d="M50,100 L100,112 L150,96 L200,108 L250,120 L300,108 L350,100 L400,108 L450,96 L500,104 L550,112 L600,104 L650,96 L700,108" fill="url(#an-gpurple)" stroke="none" opacity="0.6"/>
-                      <path d="M50,100 L100,112 L150,96 L200,108 L250,120 L300,108 L350,100 L400,108 L450,96 L500,104 L550,112 L600,104 L650,96 L700,108" fill="none" stroke="var(--purple,#b06aff)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path id="chemistry-fill" d="M50,100 L100,112 L150,96 L200,108 L250,120 L300,108 L350,100 L400,108 L450,96 L500,104 L550,112 L600,104 L650,96 L700,108" fill="url(#an-gpurple)" stroke="none" opacity="0.6"/>
+                      <path id="chemistry-line" d="M50,100 L100,112 L150,96 L200,108 L250,120 L300,108 L350,100 L400,108 L450,96 L500,104 L550,112 L600,104 L650,96 L700,108" fill="none" stroke="var(--purple,#b06aff)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                       <!-- Maths (green) -->
-                      <path d="M50,52 L100,48 L150,44 L200,48 L250,40 L300,36 L350,40 L400,36 L450,32 L500,36 L550,32 L600,28 L650,32 L700,28" fill="url(#an-ggreen)" stroke="none" opacity="0.6"/>
-                      <path d="M50,52 L100,48 L150,44 L200,48 L250,40 L300,36 L350,40 L400,36 L450,32 L500,36 L550,32 L600,28 L650,32 L700,28" fill="none" stroke="var(--green,#00e5a0)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                      <circle cx="700" cy="36" r="4" fill="var(--accent,#00f0ff)" stroke="var(--bg2,#0d0f18)" stroke-width="2"/>
-                      <circle cx="700" cy="108" r="4" fill="var(--purple,#b06aff)" stroke="var(--bg2,#0d0f18)" stroke-width="2"/>
-                      <circle cx="700" cy="28" r="4" fill="var(--green,#00e5a0)" stroke="var(--bg2,#0d0f18)" stroke-width="2"/>
+                      <path id="mathematics-fill" d="M50,52 L100,48 L150,44 L200,48 L250,40 L300,36 L350,40 L400,36 L450,32 L500,36 L550,32 L600,28 L650,32 L700,28" fill="url(#an-ggreen)" stroke="none" opacity="0.6"/>
+                      <path id="mathematics-line" d="M50,52 L100,48 L150,44 L200,48 L250,40 L300,36 L350,40 L400,36 L450,32 L500,36 L550,32 L600,28 L650,32 L700,28" fill="none" stroke="var(--green,#00e5a0)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <circle id="physics-dot" cx="700" cy="36" r="4" fill="var(--accent,#00f0ff)" stroke="var(--bg2,#0d0f18)" stroke-width="2"/>
+                      <circle id="chemistry-dot" cx="700" cy="108" r="4" fill="var(--purple,#b06aff)" stroke="var(--bg2,#0d0f18)" stroke-width="2"/>
+                      <circle id="mathematics-dot" cx="700" cy="28" r="4" fill="var(--green,#00e5a0)" stroke="var(--bg2,#0d0f18)" stroke-width="2"/>
                     </svg>
                   </div>
                   <div class="an-chart-x-labels">
@@ -1905,6 +2116,22 @@
                     <div>Personal Best</div>
                     <strong id="streak-best-big">—</strong>
                   </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ── WEEKLY STUDY HOURS ── -->
+            <div class="an-anim an-anim-3">
+              <div class="an-card">
+                <div class="an-card-header">
+                  <div>
+                    <div class="an-card-title"><svg width="15" height="15"><use href="#ic-clock"/></svg> This Week</div>
+                    <div class="an-card-sub">Daily study time · Mon–Sun</div>
+                  </div>
+                </div>
+                <div id="weekly-bars" class="weekly-bars"></div>
+                <div class="weekly-labels">
+                  <span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span>
                 </div>
               </div>
             </div>
@@ -1959,7 +2186,7 @@
                   </div>
                 </div>
                 <div class="an-card-body">
-                  <div class="an-topic-grid">
+                <div class="an-topic-grid" id="an-weak-topics-grid">
                     <div class="an-topic-chip an-sev-1">
                       <div class="an-topic-icon"><svg width="14" height="14"><use href="#ic-zap"/></svg></div>
                       <div class="an-topic-text">
@@ -2088,7 +2315,7 @@
                       <svg width="15" height="15"><use href="#ic-calendar"/></svg>
                       Activity Heatmap
                     </div>
-                    <div class="an-card-sub">Daily study sessions · darker = more time spent</div>
+                    <div class="an-card-sub" id="an-heatmap-sub">Questions solved per day · darker = more questions</div>
                   </div>
                   <div style="display:flex;align-items:center;gap:0.45rem;">
                     <span style="font-family:'DM Mono',monospace;font-size:0.57rem;color:var(--text3)">Less</span>
@@ -3416,210 +3643,154 @@
 })();
     </script>
 
-    <!-- ══ Activity Heatmap Generator ══ -->
+    <!-- ══ Activity Heatmap — real data from user_attempts ══ -->
     <script>
     (function() {
       'use strict';
-      function buildHeatmap() {
+
+      function isoDate(d) {
+        return d.getFullYear() + '-'
+          + String(d.getMonth() + 1).padStart(2, '0') + '-'
+          + String(d.getDate()).padStart(2, '0');
+      }
+
+      /* Build the 52-week skeleton immediately so layout never shifts */
+      function buildSkeleton() {
         var grid = document.getElementById('an-heatmap-grid');
-        if (!grid) return;
-        var html = '';
-        var year = new Date().getFullYear();
-        var startOfYear = new Date(year, 0, 1);
-        // 364 cells = 52 weeks × 7 days
+        if (!grid || grid.dataset.built) return;
+        grid.dataset.built = '1';
+
+        var now   = new Date();
+        var html  = '';
+        var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+        /* Start on the most-recent Sunday, 51 weeks back = 52-week window */
+        var start = new Date(now);
+        start.setDate(start.getDate() - start.getDay() - 51 * 7);
+        start.setHours(0, 0, 0, 0);
+
         for (var i = 0; i < 364; i++) {
-          var d = new Date(startOfYear);
+          var d = new Date(start);
           d.setDate(d.getDate() + i);
-          var isPast = d <= new Date();
-          var level = 0;
-          if (isPast) {
-            var rand = Math.random();
-            // Recent months more active
-            var monthsAgo = (new Date() - d) / (1000 * 60 * 60 * 24 * 30);
-            if (monthsAgo < 2) {
-              level = rand < 0.12 ? 0 : rand < 0.3 ? 1 : rand < 0.52 ? 2 : rand < 0.75 ? 3 : 4;
-            } else {
-              level = rand < 0.35 ? 0 : rand < 0.55 ? 1 : rand < 0.72 ? 2 : rand < 0.88 ? 3 : 4;
-            }
-          }
-          var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-          var label = months[d.getMonth()] + ' ' + d.getDate() + ': ' + [0,1,2,3,5][level] + 'h studied';
-          html += '<div class="an-hm-cell an-hm-' + level + '" title="' + label + '"></div>';
+          var isFuture = d > now;
+          var key   = isoDate(d);
+          var label = MONTHS[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear() + ': No activity';
+          html += '<div class="an-hm-cell an-hm-0'
+               + (isFuture ? ' an-hm-future' : '')
+               + '" data-date="' + key + '" title="' + label + '"></div>';
         }
         grid.innerHTML = html;
       }
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', buildHeatmap);
-      } else {
-        buildHeatmap();
-      }
-    })();
-    </script>
 
-    <!-- ══ Dashboard: Overall Accuracy + Questions Solved data binding ══ -->
-    <script>
-    /* These functions hook into the existing loadDashboardData() cycle.
-       They read from the same solver_attempts table if available,
-       or gracefully show placeholder values on first load. */
-    (function() {
-      'use strict';
+      /* Paint real question-counts onto the grid */
+      function paintHeatmap(activityMap) {
+        var grid = document.getElementById('an-heatmap-grid');
+        if (!grid) return;
 
-      // ── Overall Accuracy ────────────────────────────────────────
-      // Aggregates accuracy from gauge elements that app.js already populates.
-      // Runs after a short delay to let app.js fill the gauge elements first.
-      function updateOverallAccuracy() {
-        var physEl   = document.getElementById('gauge-physics-pct');
-        var chemEl   = document.getElementById('gauge-chemistry-pct');
-        var mathEl   = document.getElementById('gauge-mathematics-pct');
-        if (!physEl || !chemEl || !mathEl) return;
+        /* Dynamic thresholds based on personal max day */
+        var counts = Object.values(activityMap).filter(function(v){ return v > 0; });
+        var maxQ   = counts.length ? Math.max.apply(null, counts) : 20;
+        var t1 = 1;
+        var t2 = Math.max(2,  Math.round(maxQ * 0.25));
+        var t3 = Math.max(5,  Math.round(maxQ * 0.50));
+        var t4 = Math.max(10, Math.round(maxQ * 0.75));
 
-        var vals = [physEl, chemEl, mathEl].map(function(el) {
-          return parseFloat(el.textContent) || 0;
-        }).filter(function(v){ return v > 0; });
+        var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-        var valEl = document.getElementById('overall-accuracy-val');
-        var subEl = document.getElementById('overall-accuracy-sub');
-        if (!valEl) return;
+        var cells = grid.querySelectorAll('.an-hm-cell');
+        cells.forEach(function(cell) {
+          var date = cell.dataset.date;
+          if (!date || cell.classList.contains('an-hm-future')) return;
+          var count = activityMap[date] || 0;
 
-        if (vals.length === 0) {
-          valEl.textContent = '—';
-          if (subEl) subEl.textContent = 'Solve questions to track';
-          return;
+          var level = 0;
+          if      (count >= t4) level = 4;
+          else if (count >= t3) level = 3;
+          else if (count >= t2) level = 2;
+          else if (count >= t1) level = 1;
+
+          cell.className = cell.className.replace(/\ban-hm-\d\b/g, '').trim();
+          cell.classList.add('an-hm-' + level);
+
+          var d = new Date(date + 'T00:00:00');
+          var dayLabel = MONTHS[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+          cell.title = count > 0
+            ? dayLabel + ': ' + count + ' question' + (count === 1 ? '' : 's') + ' solved'
+            : dayLabel + ': No activity';
+        });
+
+        /* Update card subtitle */
+        var sub = document.getElementById('an-heatmap-sub');
+        if (sub) {
+          var totalDays = counts.length;
+          var totalQ    = counts.reduce(function(a, b){ return a + b; }, 0);
+          sub.textContent = totalQ.toLocaleString() + ' questions solved across '
+            + totalDays + ' active day' + (totalDays === 1 ? '' : 's');
         }
-        var avg = Math.round(vals.reduce(function(a,b){ return a+b; }, 0) / vals.length);
-        valEl.textContent = avg + '%';
-        if (subEl) {
-          var best = Math.max.apply(null, vals);
-          subEl.textContent = avg >= 75 ? '↑ Great consistency' : avg >= 50 ? '→ Keep improving' : '↓ Focus on weak areas';
-        }
       }
 
-      // ── Questions Solved (pulls from solver_attempts via Supabase) ──
-      // Falls back to placeholder "—" if db isn't ready yet.
-      async function loadQuestionsSolved() {
-        // Wait for the db global (set by config.js / auth.js)
+      /* Fetch from Supabase then paint */
+      async function loadHeatmap() {
         if (typeof db === 'undefined' || typeof currentUser === 'undefined' || !currentUser) return;
-
-        var now = new Date();
-        var todayStart  = new Date(now); todayStart.setHours(0,0,0,0);
-        var weekStart   = new Date(now); weekStart.setDate(now.getDate() - now.getDay() + 1); weekStart.setHours(0,0,0,0);
-        var monthStart  = new Date(now.getFullYear(), now.getMonth(), 1);
-
         try {
-          // Attempt to query solver_attempts; gracefully no-op if table doesn't exist
-          var { data, error } = await db
-            .from('solver_attempts')
-            .select('created_at, is_correct')
+          /* Fetch last 52 weeks of attempts for this user */
+          var windowStart = new Date();
+          windowStart.setDate(windowStart.getDate() - windowStart.getDay() - 51 * 7);
+          windowStart.setHours(0, 0, 0, 0);
+
+          var result = await db
+            .from('user_attempts')
+            .select('created_at')
             .eq('user_id', currentUser.id)
-            .gte('created_at', monthStart.toISOString());
+            .gte('created_at', windowStart.toISOString());
 
-          if (error || !data) return;
-
-          var todayQ  = data.filter(function(r){ return new Date(r.created_at) >= todayStart; });
-          var weekQ   = data.filter(function(r){ return new Date(r.created_at) >= weekStart; });
-          var monthQ  = data;
-
-          var DAILY_TARGET   = 70;
-          var WEEKLY_TARGET  = 420;
-          var MONTHLY_TARGET = 1200;
-
-          function pct(n, total) {
-            return Math.min(100, Math.round(n / total * 100));
-          }
-          function dashOffset(p) {
-            // circumference = 150.8, full offset = 0
-            return (150.8 * (1 - p / 100)).toFixed(1);
+          if (result.error) {
+            console.warn('[Heatmap] fetch error:', result.error.message);
+            return;
           }
 
-          // Today
-          var todayN = todayQ.length;
-          var todayP = pct(todayN, DAILY_TARGET);
-          setQStat('qstat-today', todayN,
-                   'qstat-today-sub', 'of ' + DAILY_TARGET + ' daily target · ' + todayP + '%',
-                   'qring-today-arc', dashOffset(todayP),
-                   'qring-today-pct', todayP + '%');
-
-          // Week
-          var weekN = weekQ.length;
-          var weekP = pct(weekN, WEEKLY_TARGET);
-          setQStat('qstat-week', weekN,
-                   'qstat-week-sub', 'of ' + WEEKLY_TARGET + ' weekly target · ' + weekP + '%',
-                   'qring-week-arc', dashOffset(weekP),
-                   'qring-week-pct', weekP + '%');
-
-          // Month
-          var monthN = monthQ.length;
-          var monthP = pct(monthN, MONTHLY_TARGET);
-          setQStat('qstat-month', monthN.toLocaleString(),
-                   'qstat-month-sub', 'of ' + MONTHLY_TARGET.toLocaleString() + ' monthly target · ' + monthP + '%',
-                   'qring-month-arc', dashOffset(monthP),
-                   'qring-month-pct', monthP + '%');
-
-          // ── Resource Allocation (subject breakdown) ──
-          var subjects = {
-            physics:    { timeId:'res-physics-time', qId:'res-physics-q', corrId:'res-physics-correct',
-                          avgId:'res-physics-avgtime', negId:'res-physics-neg', statId:'res-physics-status' },
-            chemistry:  { timeId:'res-chem-time',    qId:'res-chem-q',    corrId:'res-chem-correct',
-                          avgId:'res-chem-avgtime',   negId:'res-chem-neg', statId:'res-chem-status' },
-            mathematics:{ timeId:'res-math-time',    qId:'res-math-q',    corrId:'res-math-correct',
-                          avgId:'res-math-avgtime',   negId:'res-math-neg', statId:'res-math-status' }
-          };
-          // Gather subject-level data from solver_attempts (needs subject column)
-          Object.keys(subjects).forEach(function(subj) {
-            var rows = monthQ.filter(function(r){ return r.subject === subj; });
-            if (!rows.length) return;
-            var correct = rows.filter(function(r){ return r.is_correct; }).length;
-            var acc = Math.round(correct / rows.length * 100);
-            var ids = subjects[subj];
-            setText(ids.qId, rows.length);
-            setText(ids.corrId, correct + ' (' + acc + '%)');
-            // Status badge class
-            var statEl = document.getElementById(ids.statId);
-            if (statEl) {
-              statEl.className = 'an-status-badge ' +
-                (acc >= 80 ? 'an-st-ex' : acc >= 65 ? 'an-st-ok' : acc >= 50 ? 'an-st-wr' : 'an-st-cr');
-              statEl.textContent = acc >= 80 ? 'Excellent' : acc >= 65 ? 'Optimised' : acc >= 50 ? 'Improving' : 'Needs Drill';
-            }
+          var map = {};
+          (result.data || []).forEach(function(row) {
+            var key = isoDate(new Date(row.created_at));
+            map[key] = (map[key] || 0) + 1;
           });
 
+          buildSkeleton();
+          paintHeatmap(map);
         } catch(e) {
-          // solver_attempts table may not exist yet — silently ignore
+          console.error('[Heatmap] error:', e);
         }
       }
 
-      function setQStat(numId, numVal, subId, subText, arcId, arcOffset, pctId, pctVal) {
-        setText(numId, numVal);
-        setText(subId, subText);
-        var arc = document.getElementById(arcId);
-        if (arc) arc.setAttribute('stroke-dashoffset', arcOffset);
-        setText(pctId, pctVal || pctId);
+      /* Skeleton on DOM ready */
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', buildSkeleton);
+      } else {
+        buildSkeleton();
       }
 
-      function setText(id, val) {
-        var el = document.getElementById(id);
-        if (el && val !== undefined) el.textContent = val;
-      }
-
-      // Hook into dashboard load cycle: patch goToPage to trigger our updates
+      /* Refresh heatmap every time dashboard page opens */
       document.addEventListener('DOMContentLoaded', function() {
-        var origGoToPage = window.goToPage;
-        // Poll until goToPage is defined (app.js may load later)
+        var pollCount = 0;
         var poller = setInterval(function() {
-          if (typeof window.goToPage === 'function') {
-            clearInterval(poller);
-            var _orig = window.goToPage;
-            window.goToPage = function(pageId) {
-              _orig(pageId);
-              if (pageId === 'dashboard') {
-                setTimeout(updateOverallAccuracy, 800);
-                setTimeout(loadQuestionsSolved, 600);
-              }
-            };
-          }
+          if (++pollCount > 100) { clearInterval(poller); return; }
+          if (typeof window.goToPage !== 'function') return;
+          clearInterval(poller);
+          if (window.goToPage._heatmapPatched) return;
+          var _orig = window.goToPage;
+          window.goToPage = function(pageId) {
+            _orig.apply(this, arguments);
+            if (pageId === 'dashboard') setTimeout(loadHeatmap, 500);
+          };
+          window.goToPage._heatmapPatched = true;
         }, 150);
       });
+
+      window.loadActivityHeatmap = loadHeatmap;
     })();
     </script>
+
+    <!-- ══ Dashboard Analytics ══ (handled by js/dashboard-analytics.js) -->
 
 <script src="js/config.js"></script>
 <script src="js/auth.js"></script>
@@ -3637,6 +3808,7 @@
 <script src="js/zeroday-solver-nav.js"></script>
 <script src="js/zeroday-notif-patch.js"></script>
 <script src="js/bottom-nav-patch.js"></script>
+<script src="js/dashboard-analytics.js"></script>
 
     <!-- ══ Admin question form — option rows + dual image mode ══ -->
     <script>
@@ -3735,5 +3907,112 @@
       }
     })();
     </script>
-  </body>
+    
+  
+    <!-- ══ ZD Profile Dropdown ══ -->
+    <script>
+    (function () {
+      'use strict';
+
+      function getInitials(name) {
+        if (!name) return '?';
+        var parts = name.trim().split(/\s+/);
+        return parts.length >= 2
+          ? (parts[0][0] + parts[1][0]).toUpperCase()
+          : parts[0].slice(0, 2).toUpperCase();
+      }
+
+      function setEl(el, url, name) {
+        if (!el) return;
+        el.innerHTML = url
+          ? '<img src="' + url + '" alt="av">'
+          : getInitials(name);
+      }
+
+      function populate() {
+        var p = window.currentProfile;
+        var u = window.currentUser;
+        if (!p && !u) return;
+        var name  = (p && p.name)      || (u && u.email) || 'User';
+        var email = (u && u.email)     || '';
+        var av    = (p && p.avatar_url)|| '';
+        setEl(document.getElementById('zd-profile-avatar-sm'), av, name);
+        setEl(document.getElementById('zd-pd-avatar-lg'),      av, name);
+        var n = document.getElementById('zd-pd-name');
+        var e = document.getElementById('zd-pd-email');
+        if (n) n.textContent = name;
+        if (e) e.textContent = email;
+      }
+
+      /* Expose so auth.js can call window.zdPopulateProfile() after load/update */
+      window.zdPopulateProfile = populate;
+
+      function openDD() {
+        populate();
+        var dd = document.getElementById('zd-profile-dropdown');
+        var btn = document.getElementById('zd-profile-btn');
+        if (dd)  dd.classList.add('open');
+        if (btn) btn.setAttribute('aria-expanded', 'true');
+      }
+      function closeDD() {
+        var dd = document.getElementById('zd-profile-dropdown');
+        var btn = document.getElementById('zd-profile-btn');
+        if (dd)  dd.classList.remove('open');
+        if (btn) btn.setAttribute('aria-expanded', 'false');
+      }
+
+      document.addEventListener('DOMContentLoaded', function () {
+        var btn = document.getElementById('zd-profile-btn');
+        if (btn) {
+          btn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            var dd = document.getElementById('zd-profile-dropdown');
+            if (dd && dd.classList.contains('open')) closeDD(); else openDD();
+          });
+        }
+        document.addEventListener('click', function (e) {
+          var wrap = document.getElementById('zd-profile-wrap');
+          if (wrap && !wrap.contains(e.target)) closeDD();
+        });
+        document.addEventListener('keydown', function (e) {
+          if (e.key === 'Escape') closeDD();
+        });
+
+        var logoutBtn = document.getElementById('zd-pd-logout-btn');
+        if (logoutBtn) {
+          logoutBtn.addEventListener('click', async function () {
+            closeDD();
+            showConfirm(
+              'Sign Out',
+              'Are you sure you want to sign out of your account?',
+              async function () {
+                if (typeof stopTimerClean === 'function') stopTimerClean();
+                await db.auth.signOut();
+                currentUser = null; currentProfile = null;
+                showScreen('auth-screen');
+              },
+              '\uD83D\uDEAA'
+            );
+          });
+        }
+      });
+
+      /* Stay in sync when profile loads or updates */
+      function patchSidebar() {
+        if (typeof window.updateSidebarUI === 'function' && !window.updateSidebarUI._zdPatched) {
+          var orig = window.updateSidebarUI;
+          window.updateSidebarUI = function () {
+            orig.apply(this, arguments);
+            populate();
+          };
+          window.updateSidebarUI._zdPatched = true;
+        }
+      }
+      patchSidebar();
+      document.addEventListener('DOMContentLoaded', patchSidebar);
+
+    })();
+    </script>
+
+</body>
 </html>
